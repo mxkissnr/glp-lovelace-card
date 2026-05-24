@@ -41,3 +41,23 @@ title: Gaggiuino                                   # optional header title
 - Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure
 - Shots pulled today
 - Time since last sync with the Gaggiuino controller
+
+## Entities used
+
+The card reads the following entities (with default `entity_prefix`):
+
+| Entity | Description |
+|---|---|
+| `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state |
+| `sensor.gaggiuino_local_profiler_machine_status` | online / error |
+| `sensor.gaggiuino_local_profiler_last_shot_profile` | Profile name |
+| `sensor.gaggiuino_local_profiler_last_shot_coffee` | Coffee bean |
+| `sensor.gaggiuino_local_profiler_last_shot_score` | Shot score |
+| `sensor.gaggiuino_local_profiler_last_shot_duration` | Duration (s) |
+| `sensor.gaggiuino_local_profiler_last_shot_yield` | Yield (g) |
+| `sensor.gaggiuino_local_profiler_last_shot_brew_ratio` | Brew ratio |
+| `sensor.gaggiuino_local_profiler_last_shot_avg_pressure` | Avg pressure (bar) |
+| `sensor.gaggiuino_local_profiler_shots_today` | Shots today |
+| `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
+
+All entities are provided by the [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
