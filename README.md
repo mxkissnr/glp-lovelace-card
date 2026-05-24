@@ -1,5 +1,7 @@
 # GLP Shot Card
 
+![logo](logo.svg)
+
 Custom Lovelace card for [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler).
 
 Displays the last espresso shot (profile, score, duration, yield, ratio, pressure), shots today, last sync time and a live brewing indicator — all sourced from the [GLP HA Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
