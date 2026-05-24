@@ -1,0 +1,7 @@
+{
+  "name": "GLP Shot Card",
+  "content_in_root": true,
+  "filename": "glp-card.js",
+  "render_readme": true,
+  "homeassistant": "2024.1.0"
+}
