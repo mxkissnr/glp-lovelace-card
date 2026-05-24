@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.4] – 2026-05-24
+### Changed
+- Power button hit area enlarged: padding increased from `3px 7px` to `8px 12px`, icon from 13 px to 18 px
+
 ## [1.3.3] – 2026-05-24
 ### Fixed
 - Power button click not working from collapsed (machine-off) state — replaced shadow-root event delegation with direct listener bound to the button after each render; event retargeting at the `ha-card` shadow boundary caused `e.target.closest()` to resolve to `ha-card` rather than the button, silently swallowing the click

@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.3';
+const GLP_CARD_VERSION = '1.3.4';
 
 const STYLES = `
   :host {
@@ -147,8 +147,8 @@ const STYLES = `
   .power-btn {
     background: none;
     border: 1px solid var(--glp-border);
-    border-radius: 6px;
-    padding: 3px 7px;
+    border-radius: 8px;
+    padding: 8px 12px;
     cursor: pointer;
     color: var(--glp-sub);
     display: flex; align-items: center;
@@ -242,7 +242,7 @@ class GlpCard extends HTMLElement {
     const _powerBtn = switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
               title="${machineOff ? 'Einschalten' : 'Ausschalten'}">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
       </button>` : '';
