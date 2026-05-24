@@ -1,4 +1,15 @@
-const GLP_CARD_VERSION = '1.3.4';
+const GLP_CARD_VERSION = '1.3.5';
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function safeUrl(url) {
+  if (!url) return null;
+  try { const u = new URL(url); return (u.protocol==='http:'||u.protocol==='https:') ? url : null; }
+  catch { return null; }
+}
 
 const STYLES = `
   :host {
@@ -252,7 +263,7 @@ class GlpCard extends HTMLElement {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M2 21v-2h2V3h14v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2v6h2v2H2zm4-2h8V5H6v14zm10-6h2V7h-2v6z"/>
         </svg>
-        ${this._config.title}
+        ${esc(this._config.title)}
       </div>`;
 
     if (machineOff) {
@@ -314,7 +325,7 @@ class GlpCard extends HTMLElement {
       pressure  !== null ? { v: `${pressure}b`, l: 'Druck Ø' }  : null,
     ].filter(Boolean);
 
-    const glpUrl = this._config.glp_url;
+    const glpUrl = safeUrl(this._config.glp_url);
 
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
@@ -349,8 +360,8 @@ class GlpCard extends HTMLElement {
           ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>` : ''}
 
           ${profile ? `
-            <div class="shot-profile">${profile}</div>
-            ${coffee ? `<div class="shot-coffee">☕ ${coffee}</div>` : '<div style="margin-bottom:12px"></div>'}
+            <div class="shot-profile">${esc(profile)}</div>
+            ${coffee ? `<div class="shot-coffee">☕ ${esc(coffee)}</div>` : '<div style="margin-bottom:12px"></div>'}
           ` : `<div class="unavailable">Noch kein Shot aufgezeichnet</div>`}
 
           ${stats.length ? `

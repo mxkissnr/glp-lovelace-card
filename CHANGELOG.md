@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.5] – 2026-05-24
+### Fixed
+- Security: profile name and coffee bean injected into `innerHTML` are now HTML-escaped via `esc()` — prevents stored XSS from annotated shot data
+- Security: card title from YAML config is now escaped before `innerHTML` insertion
+- Security: `glp_url` is validated with `safeUrl()` — rejects `javascript:` and other non-http/https schemes before the link is rendered
+
 ## [1.3.4] – 2026-05-24
 ### Changed
 - Power button hit area enlarged: padding increased from `3px 7px` to `8px 12px`, icon from 13 px to 18 px
