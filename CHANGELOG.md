@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.2] – 2026-05-24
+### Fixed
+- Power toggle button now works when `switch_entity` is auto-detected — constructor click handler was reading `this._config?.switch_entity` (always null for auto-detected case) instead of the resolved `this._switchEntity`
+
 ## [1.3.1] – 2026-05-24
 ### Fixed
 - `switch_entity` is now auto-detected from `machine_status` sensor attribute (set by integration v1.4.1) — no manual card config needed; explicit `switch_entity` config still supported as fallback; closes #6

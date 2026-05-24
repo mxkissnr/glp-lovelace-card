@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.1';
+const GLP_CARD_VERSION = '1.3.2';
 
 const STYLES = `
   :host {
@@ -168,7 +168,7 @@ class GlpCard extends HTMLElement {
     this.shadowRoot.addEventListener('click', e => {
       if (e.target.closest('[data-action="toggle-switch"]')) {
         e.stopPropagation();
-        const entity = this._config?.switch_entity;
+        const entity = this._switchEntity;
         if (this._hass && entity) this._hass.callService('switch', 'toggle', { entity_id: entity });
       }
     });
@@ -228,9 +228,10 @@ class GlpCard extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
 
-    const switchEntity = this._config.switch_entity
+    this._switchEntity = this._config.switch_entity
       || this._s('machine_status')?.attributes?.switch_entity
       || null;
+    const switchEntity = this._switchEntity;
     const switchState  = switchEntity ? this._hass.states[switchEntity] : null;
     const machineOff   = !!(switchEntity && switchState?.state === 'off');
 
