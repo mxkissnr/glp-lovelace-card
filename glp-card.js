@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.2';
+const GLP_CARD_VERSION = '1.3.3';
 
 const STYLES = `
   :host {
@@ -165,13 +165,17 @@ class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.shadowRoot.addEventListener('click', e => {
-      if (e.target.closest('[data-action="toggle-switch"]')) {
+  }
+
+  _bindPowerBtn() {
+    const btn = this.shadowRoot.querySelector('[data-action="toggle-switch"]');
+    if (btn) {
+      btn.addEventListener('click', e => {
         e.stopPropagation();
-        const entity = this._switchEntity;
-        if (this._hass && entity) this._hass.callService('switch', 'toggle', { entity_id: entity });
-      }
-    });
+        if (this._hass && this._switchEntity)
+          this._hass.callService('switch', 'toggle', { entity_id: this._switchEntity });
+      });
+    }
   }
 
   setConfig(config) {
@@ -265,6 +269,7 @@ class GlpCard extends HTMLElement {
             </div>
           </div>
         </ha-card>`;
+      this._bindPowerBtn();
       return;
     }
 
@@ -363,6 +368,7 @@ class GlpCard extends HTMLElement {
         </div>
       </ha-card>
     `;
+    this._bindPowerBtn();
   }
 
   getCardSize() { return 3; }

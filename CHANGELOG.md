@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.3] – 2026-05-24
+### Fixed
+- Power button click not working from collapsed (machine-off) state — replaced shadow-root event delegation with direct listener bound to the button after each render; event retargeting at the `ha-card` shadow boundary caused `e.target.closest()` to resolve to `ha-card` rather than the button, silently swallowing the click
+
 ## [1.3.2] – 2026-05-24
 ### Fixed
 - Power toggle button now works when `switch_entity` is auto-detected — constructor click handler was reading `this._config?.switch_entity` (always null for auto-detected case) instead of the resolved `this._switchEntity`
