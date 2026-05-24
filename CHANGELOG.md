@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.0] – 2026-05-24
+### Added
+- Optional `switch_entity` config: power toggle button in header; card collapses to header-only when machine is off to save dashboard space; closes #5
+
 ## [1.2.0] – 2026-05-24
 ### Added
 - Preheat progress bar + countdown while machine warms up, sourced from `preheat_elapsed` / `preheat_remaining` / `preheat_ready` entities; closes #4

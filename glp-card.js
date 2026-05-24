@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.2.0';
+const GLP_CARD_VERSION = '1.3.0';
 
 const STYLES = `
   :host {
@@ -143,12 +143,35 @@ const STYLES = `
     background: linear-gradient(90deg, #f59e0b, #ef4444);
     transition: width .8s ease;
   }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .power-btn {
+    background: none;
+    border: 1px solid var(--glp-border);
+    border-radius: 6px;
+    padding: 3px 7px;
+    cursor: pointer;
+    color: var(--glp-sub);
+    display: flex; align-items: center;
+    transition: color .15s, border-color .15s;
+  }
+  .power-btn:hover { color: var(--glp-text); border-color: rgba(255,255,255,.25); }
+  .power-btn.is-on  { color: var(--glp-green); border-color: rgba(34,197,94,.3); }
+  .power-btn.is-off { color: var(--glp-sub); }
+  .off-label { font-size: .75rem; color: var(--glp-sub); letter-spacing: .02em; }
+  .card.collapsed .header { margin-bottom: 0; }
 `;
 
 class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this.shadowRoot.addEventListener('click', e => {
+      if (e.target.closest('[data-action="toggle-switch"]')) {
+        e.stopPropagation();
+        const entity = this._config?.switch_entity;
+        if (this._hass && entity) this._hass.callService('switch', 'toggle', { entity_id: entity });
+      }
+    });
   }
 
   setConfig(config) {
@@ -205,6 +228,43 @@ class GlpCard extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
 
+    const switchEntity = this._config.switch_entity || null;
+    const switchState  = switchEntity ? this._hass.states[switchEntity] : null;
+    const machineOff   = !!(switchEntity && switchState?.state === 'off');
+
+    const _powerBtn = switchEntity ? `
+      <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
+              title="${machineOff ? 'Einschalten' : 'Ausschalten'}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
+        </svg>
+      </button>` : '';
+
+    const _titleHtml = `
+      <div class="title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2 21v-2h2V3h14v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2v6h2v2H2zm4-2h8V5H6v14zm10-6h2V7h-2v6z"/>
+        </svg>
+        ${this._config.title}
+      </div>`;
+
+    if (machineOff) {
+      this.shadowRoot.innerHTML = `
+        <style>${STYLES}</style>
+        <ha-card>
+          <div class="card collapsed">
+            <div class="header">
+              ${_titleHtml}
+              <div class="header-right">
+                <span class="off-label">Aus</span>
+                ${_powerBtn}
+              </div>
+            </div>
+          </div>
+        </ha-card>`;
+      return;
+    }
+
     const status   = this._val('machine_status', null);
     const brewing  = (() => {
       const id = this._resolvePrefix().replace(/^sensor\./, 'binary_sensor.') + 'brewing';
@@ -253,13 +313,11 @@ class GlpCard extends HTMLElement {
       <ha-card>
         <div class="card">
           <div class="header">
-            <div class="title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2 21v-2h2V3h14v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2v6h2v2H2zm4-2h8V5H6v14zm10-6h2V7h-2v6z"/>
-              </svg>
-              ${this._config.title}
+            ${_titleHtml}
+            <div class="header-right">
+              <div class="status-dot ${dotClass}"></div>
+              ${_powerBtn}
             </div>
-            <div class="status-dot ${dotClass}"></div>
           </div>
 
           ${!brewing && preheatReady !== null ? `
