@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.0.1';
+const GLP_CARD_VERSION = '1.0.2';
 
 const STYLES = `
   :host {
@@ -176,7 +176,7 @@ class GlpCard extends HTMLElement {
 
     const status   = this._val('machine_status', null);
     const brewing  = (() => {
-      const id = this._config.entity_prefix.replace(/sensor\.$/, 'binary_sensor.') + 'brewing';
+      const id = this._config.entity_prefix.replace(/^sensor\./, 'binary_sensor.') + 'brewing';
       const s  = this._hass.states[id];
       return s && s.state === 'on';
     })();
