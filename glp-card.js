@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.0.0';
+const GLP_CARD_VERSION = '1.0.1';
 
 const STYLES = `
   :host {
@@ -176,7 +176,7 @@ class GlpCard extends HTMLElement {
 
     const status   = this._val('machine_status', null);
     const brewing  = (() => {
-      const id = this._config.entity_prefix.replace(/sensor\.$/, 'binary_sensor.') + 'is_brewing';
+      const id = this._config.entity_prefix.replace(/sensor\.$/, 'binary_sensor.') + 'brewing';
       const s  = this._hass.states[id];
       return s && s.state === 'on';
     })();
@@ -185,9 +185,9 @@ class GlpCard extends HTMLElement {
     const coffee   = this._val('last_shot_coffee', null);
     const score    = this._num('last_shot_score', 0, null);
     const duration = this._num('last_shot_duration', 1, null);
-    const weight   = this._num('last_shot_weight', 1, null);
-    const ratio    = this._num('last_shot_ratio', 2, null);
-    const pressure = this._num('last_shot_pressure', 2, null);
+    const weight   = this._num('last_shot_yield', 1, null);
+    const ratio    = this._num('last_shot_brew_ratio', 2, null);
+    const pressure = this._num('last_shot_avg_pressure', 2, null);
     const today    = this._val('shots_today', '—');
     const syncTime = this._reltime('last_sync');
 
