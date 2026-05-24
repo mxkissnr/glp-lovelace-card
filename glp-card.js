@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.0.2';
+const GLP_CARD_VERSION = '1.1.0';
 
 const STYLES = `
   :host {
@@ -131,7 +131,6 @@ class GlpCard extends HTMLElement {
 
   setConfig(config) {
     this._config = {
-      entity_prefix: 'sensor.gaggiuino_local_profiler_',
       glp_url: null,
       title: 'Gaggiuino',
       ...config,
@@ -143,9 +142,19 @@ class GlpCard extends HTMLElement {
     this._render();
   }
 
+  _resolvePrefix() {
+    if (this._config.entity_prefix) return this._config.entity_prefix;
+    const found = Object.keys(this._hass.states)
+      .find(id => id.endsWith('_machine_status') && this._hass.states[id].attributes.friendly_name?.toLowerCase().includes('gaggiuino'));
+    if (found) return found.replace(/machine_status$/, '');
+    // fallback: any entity ending in _machine_status (single integration assumed)
+    const fallback = Object.keys(this._hass.states).find(id => id.endsWith('_machine_status'));
+    return fallback ? fallback.replace(/machine_status$/, '') : 'sensor.gaggiuino_local_profiler_';
+  }
+
   _s(suffix) {
-    const id = this._config.entity_prefix.replace(/sensor\.$/, '') + suffix;
-    return this._hass.states[id];
+    const prefix = this._resolvePrefix();
+    return this._hass.states[prefix + suffix];
   }
 
   _val(suffix, fallback = '—') {
@@ -176,7 +185,7 @@ class GlpCard extends HTMLElement {
 
     const status   = this._val('machine_status', null);
     const brewing  = (() => {
-      const id = this._config.entity_prefix.replace(/^sensor\./, 'binary_sensor.') + 'brewing';
+      const id = this._resolvePrefix().replace(/^sensor\./, 'binary_sensor.') + 'brewing';
       const s  = this._hass.states[id];
       return s && s.state === 'on';
     })();

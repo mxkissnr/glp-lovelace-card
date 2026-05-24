@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.0] – 2026-05-24
+### Added
+- `entity_prefix` is now optional — the card auto-detects the prefix by scanning `hass.states` for a `_machine_status` entity from the GLP integration; explicit prefix still supported for edge cases; closes #3
+
 ## [1.0.2] – 2026-05-24
 ### Fixed
 - Binary sensor prefix regex was `sensor\.$` (matched end of string, never triggered) — changed to `^sensor\.` so the entity correctly resolves to `binary_sensor.…_brewing`

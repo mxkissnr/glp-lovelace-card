@@ -19,18 +19,24 @@ Displays the last espresso shot (profile, score, duration, yield, ratio, pressur
 
 ## Configuration
 
+Minimal (auto-detects the integration):
 ```yaml
 type: custom:glp-card
-entity_prefix: sensor.gaggiuino_local_profiler_   # default, adjust if your device has a different name
-glp_url: http://homeassistant.local:8099           # optional — adds "GLP öffnen" link
-title: Gaggiuino                                   # optional header title
+```
+
+Full config:
+```yaml
+type: custom:glp-card
+glp_url: http://homeassistant.local:8099   # optional — adds "GLP öffnen" link
+title: Gaggiuino                           # optional header title
+entity_prefix: sensor.gaggiuino_local_profiler_   # optional — auto-detected if omitted
 ```
 
 ### Options
 
 | Option | Description | Default |
 |---|---|---|
-| `entity_prefix` | Prefix shared by all GLP sensor entities | `sensor.gaggiuino_local_profiler_` |
+| `entity_prefix` | Prefix shared by all GLP sensor entities — auto-detected if omitted | *(auto)* |
 | `glp_url` | URL to the GLP web interface (adds an "open" link) | *(none)* |
 | `title` | Card header title | `Gaggiuino` |
 
