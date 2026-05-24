@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.1] – 2026-05-24
+### Fixed
+- `switch_entity` is now auto-detected from `machine_status` sensor attribute (set by integration v1.4.1) — no manual card config needed; explicit `switch_entity` config still supported as fallback; closes #6
+
 ## [1.3.0] – 2026-05-24
 ### Added
 - Optional `switch_entity` config: power toggle button in header; card collapses to header-only when machine is off to save dashboard space; closes #5

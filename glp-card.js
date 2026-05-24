@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.0';
+const GLP_CARD_VERSION = '1.3.1';
 
 const STYLES = `
   :host {
@@ -228,7 +228,9 @@ class GlpCard extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
 
-    const switchEntity = this._config.switch_entity || null;
+    const switchEntity = this._config.switch_entity
+      || this._s('machine_status')?.attributes?.switch_entity
+      || null;
     const switchState  = switchEntity ? this._hass.states[switchEntity] : null;
     const machineOff   = !!(switchEntity && switchState?.state === 'off');
 

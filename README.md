@@ -50,7 +50,7 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 | Option | Description | Default |
 |---|---|---|
 | `entity_prefix` | Prefix shared by all GLP sensor entities — auto-detected if omitted | *(auto)* |
-| `switch_entity` | HA switch entity ID for the smart plug — adds power toggle button; collapses card when off | *(none)* |
+| `switch_entity` | HA switch entity ID for the smart plug — auto-detected from integration v1.4.1+; only set manually if using an older integration | *(auto)* |
 | `glp_url` | URL to the GLP web interface (adds an "open" link) | *(none)* |
 | `title` | Card header title | `Gaggiuino` |
 
