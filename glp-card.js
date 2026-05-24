@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.1.0';
+const GLP_CARD_VERSION = '1.2.0';
 
 const STYLES = `
   :host {
@@ -121,6 +121,28 @@ const STYLES = `
     text-align: center;
     padding: 12px 0;
   }
+  .preheat-section {
+    margin-bottom: 12px;
+  }
+  .preheat-ready {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+    color: #22c55e; border-radius: 8px; padding: 8px 12px;
+    font-size: .85rem; font-weight: 600; letter-spacing: .03em;
+  }
+  .preheat-warming { display: flex; flex-direction: column; gap: 4px; }
+  .preheat-warming-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .75rem; color: var(--glp-sub);
+  }
+  .preheat-bar-bg {
+    height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden;
+  }
+  .preheat-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    transition: width .8s ease;
+  }
 `;
 
 class GlpCard extends HTMLElement {
@@ -200,6 +222,17 @@ class GlpCard extends HTMLElement {
     const today    = this._val('shots_today', '—');
     const syncTime = this._reltime('last_sync');
 
+    const preheatReady = (() => {
+      const id = this._resolvePrefix().replace(/^sensor\./, 'binary_sensor.') + 'preheat_ready';
+      const s  = this._hass.states[id];
+      return s ? s.state === 'on' : null;
+    })();
+    const preheatRemaining = parseFloat(this._val('preheat_remaining', null));
+    const preheatElapsed   = parseFloat(this._val('preheat_elapsed',   null));
+    const preheatTotal     = isNaN(preheatRemaining) || isNaN(preheatElapsed) ? null : preheatElapsed + preheatRemaining;
+    const preheatPct       = preheatTotal && preheatTotal > 0 ? Math.min(1, preheatElapsed / preheatTotal) : null;
+    const preheatMinLeft   = isNaN(preheatRemaining) ? null : Math.ceil(preheatRemaining / 60);
+
     const dotClass = brewing ? 'brewing' : status === 'online' ? 'online' : status === 'error' ? 'error' : '';
 
     const scoreClass = score !== null
@@ -228,6 +261,24 @@ class GlpCard extends HTMLElement {
             </div>
             <div class="status-dot ${dotClass}"></div>
           </div>
+
+          ${!brewing && preheatReady !== null ? `
+            <div class="preheat-section">
+              ${preheatReady ? `
+                <div class="preheat-ready">☕ Brühbereit</div>
+              ` : preheatPct !== null ? `
+                <div class="preheat-warming">
+                  <div class="preheat-warming-label">
+                    <span>🔥 Aufheizen …</span>
+                    <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ''}</span>
+                  </div>
+                  <div class="preheat-bar-bg">
+                    <div class="preheat-bar-fill" style="width:${Math.round(preheatPct * 100)}%"></div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
 
           ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>` : ''}
 

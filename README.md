@@ -1,10 +1,22 @@
-# GLP Shot Card
+<p align="center">
+  <img src="logo.svg" alt="GLP Shot Card" width="520"/>
+</p>
 
-![logo](logo.svg)
+<p align="center">
+  <a href="https://github.com/mxkissnr/glp-lovelace-card/releases">
+    <img src="https://img.shields.io/github/v/tag/mxkissnr/glp-lovelace-card?color=%23f59e0b&label=Version&style=flat-square" alt="Version"/>
+  </a>
+  <img src="https://img.shields.io/badge/Home%20Assistant-Lovelace%20Card-41bdf5?logo=home-assistant&style=flat-square" alt="HA Lovelace"/>
+  <img src="https://img.shields.io/badge/HACS-Custom-orange?style=flat-square" alt="HACS Custom"/>
+  <img src="https://img.shields.io/badge/Built%20with-Claude%20by%20Anthropic-D97706?style=flat-square" alt="Built with Claude"/>
+</p>
 
-Custom Lovelace card for [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler).
+<p align="center">
+  Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
+  Displays last shot, preheat progress, live brewing state and sync time — all from the <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">GLP HA Integration</a>.
+</p>
 
-Displays the last espresso shot (profile, score, duration, yield, ratio, pressure), shots today, last sync time and a live brewing indicator — all sourced from the [GLP HA Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
+---
 
 ## Prerequisites
 
@@ -43,6 +55,7 @@ entity_prefix: sensor.gaggiuino_local_profiler_   # optional — auto-detected i
 ## What it shows
 
 - Machine online / error / brewing status
+- Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
 - Live "Bezug läuft …" banner when a shot is in progress
 - Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure
 - Shots pulled today
@@ -55,7 +68,10 @@ The card reads the following entities (with default `entity_prefix`):
 | Entity | Description |
 |---|---|
 | `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state |
+| `binary_sensor.gaggiuino_local_profiler_preheat_ready` | Machine warmed up |
 | `sensor.gaggiuino_local_profiler_machine_status` | online / error |
+| `sensor.gaggiuino_local_profiler_preheat_elapsed` | Warmup elapsed (s) |
+| `sensor.gaggiuino_local_profiler_preheat_remaining` | Warmup remaining (s) |
 | `sensor.gaggiuino_local_profiler_last_shot_profile` | Profile name |
 | `sensor.gaggiuino_local_profiler_last_shot_coffee` | Coffee bean |
 | `sensor.gaggiuino_local_profiler_last_shot_score` | Shot score |
@@ -67,3 +83,7 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
 
 All entities are provided by the [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
+
+---
+
+> Built with [Claude Code](https://claude.ai/code) by Anthropic.

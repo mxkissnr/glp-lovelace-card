@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] – 2026-05-24
+### Added
+- Preheat progress bar + countdown while machine warms up, sourced from `preheat_elapsed` / `preheat_remaining` / `preheat_ready` entities; closes #4
+- README updated with add-on-style header (badges, "Built with Claude" badge) and preheat entities table
+
 ## [1.1.0] – 2026-05-24
 ### Added
 - `entity_prefix` is now optional — the card auto-detects the prefix by scanning `hass.states` for a `_machine_status` entity from the GLP integration; explicit prefix still supported for edge cases; closes #3
