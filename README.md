@@ -14,7 +14,7 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
-  Displays last shot, preheat progress, live brewing state, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">GLP HA Integration</a>.
+  Displays last shot, preheat progress, live brewing state, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
 ---
@@ -22,7 +22,7 @@
 ## Prerequisites
 
 - [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler) add-on installed
-- [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration) installed and configured
+- [GLP Integration](https://github.com/mxkissnr/glp-integration) installed and configured
 
 ## Installation via HACS
 
@@ -87,14 +87,14 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
 | `select.gaggiuino_profile` | Active brew profile — provided by the [Gaggiuino HA integration](https://github.com/ALERTua/hass-gaggiuino) *(optional)* |
 
-GLP sensor entities are provided by the [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
+GLP sensor entities are provided by the [GLP Integration](https://github.com/mxkissnr/glp-integration).
 
 ---
 
 <p align="center">
   <a href="https://github.com/mxkissnr/gaggiuino-local-profiler/wiki">📖 Documentation (Wiki)</a> ·
   <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">🔧 GLP Add-on</a> ·
-  <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">⚡ GLP Integration</a> ·
+  <a href="https://github.com/mxkissnr/glp-integration">⚡ GLP Integration</a> ·
   <a href="https://github.com/mxkissnr/glp-lovelace-card/issues">🐛 Issues</a>
 </p>
 
