@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.6] – 2026-05-25
+### Fixed
+- Card showed "Konfigurationsfehler" when machine was turned off via power socket — `machineOff` only matched `switch_entity.state === 'off'`; when the smart plug loses power from the same circuit the entity transitions to `unavailable`, which now also triggers the collapsed (off) view; closes #9
+
 ## [1.3.5] – 2026-05-24
 ### Fixed
 - Security: profile name and coffee bean injected into `innerHTML` are now HTML-escaped via `esc()` — prevents stored XSS from annotated shot data

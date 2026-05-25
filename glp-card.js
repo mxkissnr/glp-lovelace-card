@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.5';
+const GLP_CARD_VERSION = '1.3.6';
 
 function esc(s) {
   if (s == null) return '';
@@ -248,7 +248,7 @@ class GlpCard extends HTMLElement {
       || null;
     const switchEntity = this._switchEntity;
     const switchState  = switchEntity ? this._hass.states[switchEntity] : null;
-    const machineOff   = !!(switchEntity && switchState?.state === 'off');
+    const machineOff   = !!(switchEntity && (switchState?.state === 'off' || switchState?.state === 'unavailable'));
 
     const _powerBtn = switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
