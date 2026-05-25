@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.3.6';
+const GLP_CARD_VERSION = '1.4.0';
 
 function esc(s) {
   if (s == null) return '';
@@ -154,6 +154,31 @@ const STYLES = `
     background: linear-gradient(90deg, #f59e0b, #ef4444);
     transition: width .8s ease;
   }
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .profile-label {
+    font-size: .75rem;
+    color: var(--glp-sub);
+    white-space: nowrap;
+  }
+  .profile-select {
+    flex: 1;
+    min-width: 0;
+    background: var(--ha-card-background, rgba(255,255,255,.06));
+    border: 1px solid var(--glp-border);
+    border-radius: 8px;
+    color: var(--glp-text);
+    font-family: inherit;
+    font-size: .85rem;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+  .profile-select:focus { outline: none; border-color: rgba(255,255,255,.3); }
+
   .header-right { display: flex; align-items: center; gap: 8px; }
   .power-btn {
     background: none;
@@ -176,6 +201,20 @@ class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+  }
+
+  _bindProfileSelect() {
+    const sel = this.shadowRoot.querySelector('[data-action="select-profile"]');
+    if (sel) {
+      sel.addEventListener('change', e => {
+        if (this._hass) {
+          this._hass.callService('select', 'select_option', {
+            entity_id: 'select.gaggiuino_profile',
+            option: e.target.value,
+          });
+        }
+      });
+    }
   }
 
   _bindPowerBtn() {
@@ -312,6 +351,11 @@ class GlpCard extends HTMLElement {
     const preheatPct       = preheatTotal && preheatTotal > 0 ? Math.min(1, preheatElapsed / preheatTotal) : null;
     const preheatMinLeft   = isNaN(preheatRemaining) ? null : Math.ceil(preheatRemaining / 60);
 
+    const profileEntity  = this._hass.states['select.gaggiuino_profile'];
+    const profileOptions = profileEntity?.attributes?.options || null;
+    const currentProfile = profileEntity?.state || null;
+    const profileAvailable = Array.isArray(profileOptions) && profileOptions.length > 0;
+
     const dotClass = brewing ? 'brewing' : status === 'online' ? 'online' : status === 'error' ? 'error' : '';
 
     const scoreClass = score !== null
@@ -357,6 +401,15 @@ class GlpCard extends HTMLElement {
             </div>
           ` : ''}
 
+          ${!brewing && profileAvailable ? `
+            <div class="profile-row">
+              <span class="profile-label">Profil</span>
+              <select class="profile-select" data-action="select-profile">
+                ${profileOptions.map(p => `<option value="${esc(p)}"${p === currentProfile ? ' selected' : ''}>${esc(p)}</option>`).join('')}
+              </select>
+            </div>
+          ` : ''}
+
           ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>` : ''}
 
           ${profile ? `
@@ -380,6 +433,7 @@ class GlpCard extends HTMLElement {
       </ha-card>
     `;
     this._bindPowerBtn();
+    this._bindProfileSelect();
   }
 
   getCardSize() { return 3; }

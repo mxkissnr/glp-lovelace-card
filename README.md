@@ -14,7 +14,7 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
-  Displays last shot, preheat progress, live brewing state and sync time — all from the <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">GLP HA Integration</a>.
+  Displays last shot, preheat progress, live brewing state, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">GLP HA Integration</a>.
 </p>
 
 ---
@@ -60,6 +60,7 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 - Machine online / error / brewing status
 - Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
 - Live "Bezug läuft …" banner when a shot is in progress
+- **Profile selector** — dropdown to switch the active brew profile; requires `select.gaggiuino_profile` from the [Gaggiuino HA integration](https://github.com/ALERTua/hass-gaggiuino); hidden automatically when not available
 - Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure
 - Shots pulled today
 - Time since last sync with the Gaggiuino controller
@@ -84,8 +85,9 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_last_shot_avg_pressure` | Avg pressure (bar) |
 | `sensor.gaggiuino_local_profiler_shots_today` | Shots today |
 | `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
+| `select.gaggiuino_profile` | Active brew profile — provided by the [Gaggiuino HA integration](https://github.com/ALERTua/hass-gaggiuino) *(optional)* |
 
-All entities are provided by the [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
+GLP sensor entities are provided by the [GLP Integration](https://github.com/mxkissnr/gaggiuino-profiler-integration).
 
 ---
 
