@@ -88,4 +88,13 @@ All entities are provided by the [GLP Integration](https://github.com/mxkissnr/g
 
 ---
 
-> Built with [Claude Code](https://claude.ai/code) by Anthropic.
+<p align="center">
+  <a href="https://github.com/mxkissnr/gaggiuino-local-profiler/wiki">📖 Documentation (Wiki)</a> ·
+  <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">🔧 GLP Add-on</a> ·
+  <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">⚡ GLP Integration</a> ·
+  <a href="https://github.com/mxkissnr/glp-lovelace-card/issues">🐛 Issues</a>
+</p>
+
+<p align="center">
+  <sub>Built with <a href="https://claude.ai/code">Claude Code</a> by Anthropic</sub>
+</p>
