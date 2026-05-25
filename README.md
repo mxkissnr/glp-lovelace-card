@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/Home%20Assistant-Lovelace%20Card-41bdf5?logo=home-assistant&style=flat-square" alt="HA Lovelace"/>
   <img src="https://img.shields.io/badge/HACS-Custom-orange?style=flat-square" alt="HACS Custom"/>
   <img src="https://img.shields.io/badge/Built%20with-Claude%20by%20Anthropic-D97706?style=flat-square" alt="Built with Claude"/>
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License GPL-3.0"/>
 </p>
 
 <p align="center">
@@ -94,6 +95,18 @@ All entities are provided by the [GLP Integration](https://github.com/mxkissnr/g
   <a href="https://github.com/mxkissnr/gaggiuino-profiler-integration">⚡ GLP Integration</a> ·
   <a href="https://github.com/mxkissnr/glp-lovelace-card/issues">🐛 Issues</a>
 </p>
+
+---
+
+## License
+
+GPL-3.0 © 2024–2026 mxkissnr — free to use, fork and modify; any derivative work must remain open source under the same license. Commercial use is not permitted.
+
+## Acknowledgements
+
+Inspired by [BeanConqueror](https://github.com/graphefruit/beanconqueror) by graphefruit — a fantastic open-source coffee tracking app that pioneered many of the ideas around shot logging and coffee library management that influenced this project.
+
+---
 
 <p align="center">
   <sub>Built with <a href="https://claude.ai/code">Claude Code</a> by Anthropic</sub>
