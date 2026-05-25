@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.4.0';
+const GLP_CARD_VERSION = '1.4.1';
 
 function esc(s) {
   if (s == null) return '';
@@ -201,20 +201,23 @@ class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this._profileInteracting = false;
   }
 
   _bindProfileSelect() {
     const sel = this.shadowRoot.querySelector('[data-action="select-profile"]');
-    if (sel) {
-      sel.addEventListener('change', e => {
-        if (this._hass) {
-          this._hass.callService('select', 'select_option', {
-            entity_id: 'select.gaggiuino_profile',
-            option: e.target.value,
-          });
-        }
-      });
-    }
+    if (!sel) return;
+    sel.addEventListener('focus',  () => { this._profileInteracting = true; });
+    sel.addEventListener('blur',   () => { this._profileInteracting = false; });
+    sel.addEventListener('change', e => {
+      this._profileInteracting = false;
+      if (this._hass) {
+        this._hass.callService('select', 'select_option', {
+          entity_id: 'select.gaggiuino_profile',
+          option: e.target.value,
+        });
+      }
+    });
   }
 
   _bindPowerBtn() {
@@ -238,7 +241,7 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    if (!this._profileInteracting) this._render();
   }
 
   _resolvePrefix() {
