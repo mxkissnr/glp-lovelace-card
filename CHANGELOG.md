@@ -4,6 +4,14 @@
 ### Added
 - `Temp` and `Ziel` stat tiles in the stats grid — read from `machine_temperature` and `machine_target_temperature` HA sensors (glp-integration v1.8.0+); tiles are omitted automatically when the sensors are unavailable; closes #13
 
+## [1.4.1] – 2026-05-25
+### Fixed
+- Profile dropdown closed immediately on every Home Assistant state update — `set hass()` replaced `innerHTML` on each call, destroying the open `<select>`; a `_profileInteracting` flag now blocks re-renders while the select has focus and clears on blur/change; closes #12
+
+## [1.4.0] – 2026-05-25
+### Added
+- Profile selector dropdown — reads available profiles and current selection from `select.gaggiuino_profile` (provided by the GLP integration); calls `select/select_option` via `hass.callService` on change; hidden automatically when the entity is not present; closes #11
+
 ## [1.3.6] – 2026-05-25
 ### Fixed
 - Card showed "Konfigurationsfehler" when machine was turned off via power socket — `machineOff` only matched `switch_entity.state === 'off'`; when the smart plug loses power from the same circuit the entity transitions to `unavailable`, which now also triggers the collapsed (off) view; closes #9
