@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.0] – 2026-05-26
+### Added
+- `Temp` and `Ziel` stat tiles in the stats grid — read from `machine_temperature` and `machine_target_temperature` HA sensors (glp-integration v1.8.0+); tiles are omitted automatically when the sensors are unavailable; closes #13
+
 ## [1.3.6] – 2026-05-25
 ### Fixed
 - Card showed "Konfigurationsfehler" when machine was turned off via power socket — `machineOff` only matched `switch_entity.state === 'off'`; when the smart plug loses power from the same circuit the entity transitions to `unavailable`, which now also triggers the collapsed (off) view; closes #9

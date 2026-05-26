@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.4.1';
+const GLP_CARD_VERSION = '1.5.0';
 
 function esc(s) {
   if (s == null) return '';
@@ -365,11 +365,16 @@ class GlpCard extends HTMLElement {
       ? score >= 80 ? 'score-value' : score >= 60 ? 'score-value mid' : 'score-value low'
       : 'score-value';
 
+    const temp       = this._num('machine_temperature',        1, null);
+    const targetTemp = this._num('machine_target_temperature', 1, null);
+
     const stats = [
-      duration  !== null ? { v: `${duration}s`, l: 'Dauer' }   : null,
-      weight    !== null ? { v: `${weight}g`,   l: 'Ausbeute' } : null,
-      ratio     !== null ? { v: `1:${ratio}`,   l: 'Ratio' }    : null,
-      pressure  !== null ? { v: `${pressure}b`, l: 'Druck Ø' }  : null,
+      duration   !== null ? { v: `${duration}s`,   l: 'Dauer' }   : null,
+      weight     !== null ? { v: `${weight}g`,      l: 'Ausbeute' } : null,
+      ratio      !== null ? { v: `1:${ratio}`,      l: 'Ratio' }    : null,
+      pressure   !== null ? { v: `${pressure}b`,    l: 'Druck Ø' }  : null,
+      temp       !== null ? { v: `${temp}°`,        l: 'Temp' }     : null,
+      targetTemp !== null ? { v: `${targetTemp}°`,  l: 'Ziel' }     : null,
     ].filter(Boolean);
 
     const glpUrl = safeUrl(this._config.glp_url);
