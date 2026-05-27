@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.7.0';
+const GLP_CARD_VERSION = '1.7.1';
 
 function esc(s) {
   if (s == null) return '';
@@ -386,7 +386,7 @@ class GlpCard extends HTMLElement {
 
     const profile  = this._val('last_shot_profile', null);
     const coffee   = this._val('last_shot_coffee', null);
-    const score    = this._num('last_shot_score', 0, null);
+    const rating   = (() => { const v = parseInt(this._val('last_shot_rating', null)); return (!isNaN(v) && v >= 1 && v <= 5) ? v : null; })();
     const duration = this._num('last_shot_duration', 1, null);
     const weight   = this._num('last_shot_yield', 1, null);
     const ratio    = this._num('last_shot_brew_ratio', 2, null);
@@ -423,8 +423,9 @@ class GlpCard extends HTMLElement {
 
     const dotClass = brewing ? 'brewing' : status === 'online' ? 'online' : status === 'error' ? 'error' : '';
 
-    const scoreClass = score !== null
-      ? score >= 80 ? 'score-value' : score >= 60 ? 'score-value mid' : 'score-value low'
+    const ratingStars = rating !== null ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : null;
+    const ratingClass = rating !== null
+      ? rating >= 4 ? 'score-value' : rating >= 3 ? 'score-value mid' : 'score-value low'
       : 'score-value';
 
     const stats = [
@@ -503,7 +504,7 @@ class GlpCard extends HTMLElement {
 
           ${stats.length ? `
             <div class="stats">
-              ${score !== null ? `<div class="stat"><div class="stat-value ${scoreClass}">${score}</div><div class="stat-label">Score</div></div>` : ''}
+              ${ratingStars !== null ? `<div class="stat"><div class="stat-value ${ratingClass}" style="font-size:.85rem;letter-spacing:-.5px">${ratingStars}</div><div class="stat-label">Bewertung</div></div>` : ''}
               ${stats.map(s => `<div class="stat"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('')}
             </div>
           ` : ''}

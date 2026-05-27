@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.7.1] – 2026-05-27
+### Fixed
+- Star rating tile: `last_shot_score` renamed to `last_shot_rating` to match glp-integration v1.9.3; display changed from numeric score to ★★★★☆ star row (green ≥4, amber ≥3, red <3)
+
 ## [1.7.0] – 2026-05-27
 ### Fixed
 - Profile select not showing — entity ID was hardcoded to `select.gaggiuino_profiler_profile`; it is now resolved via the prefix resolver (same as brewing/preheat binary sensors), yielding the correct `select.gaggiuino_local_profiler_profile`; closes #15
