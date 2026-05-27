@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.1] – 2026-05-27
+### Fixed
+- Navigation arrows were reversed — → now goes to older shots (2/10, 3/10 …) and ← goes back to newer; closes #18
+- Shot charts were only shown during live brewing; each historical shot now renders its own pressure / temperature / weight SVG chart below the stats grid, sourced from the `dp` field in `recent_shots` (requires glp-integration v1.9.5+); closes #18
+
 ## [1.8.0] – 2026-05-27
 ### Added
 - **Shot navigation** — browse the last 10 recorded shots using ← / → buttons above the profile name; navigation resets to the newest shot automatically when a new shot arrives; a timestamp (DD.MM.YY HH:MM) is shown below the nav row when viewing a historical shot; data sourced from `recent_shots` attribute added in glp-integration v1.9.4; closes #16

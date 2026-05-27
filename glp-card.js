@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.8.0';
+const GLP_CARD_VERSION = '1.8.1';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,28 +40,40 @@ function svgPoints(arr, vmin, vmax, W, H) {
   }).join(' ');
 }
 
-/** Render live shot SVG chart from datapoints (×10 integers) */
-function buildLiveChart(dp) {
+/**
+ * Render an SVG shot chart from raw ×10-integer arrays.
+ * Works for both live datapoints and historical recent_shots.dp entries.
+ */
+function buildShotChart(pres, temp, wt) {
   const W = 300, H = 60;
-  const pres = downsample(dp.pressure              || [], 150);
-  const temp = downsample(dp.temperature           || [], 150);
-  const wt   = downsample(dp.shotWeight || dp.weight || [], 150);
+  const p = downsample(pres || [], 150);
+  const t = downsample(temp || [], 150);
+  const w = downsample(wt   || [], 150);
 
   const polyline = (pts, color) => pts
     ? `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`
     : '';
 
-  const grid = [25, 50, 75].map(p =>
-    `<line x1="0" y1="${(H * p / 100).toFixed(1)}" x2="${W}" y2="${(H * p / 100).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>`
+  const grid = [25, 50, 75].map(pct =>
+    `<line x1="0" y1="${(H * pct / 100).toFixed(1)}" x2="${W}" y2="${(H * pct / 100).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>`
   ).join('');
 
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;border-radius:6px;overflow:hidden" preserveAspectRatio="none">
     <rect width="${W}" height="${H}" fill="rgba(255,255,255,.03)"/>
     ${grid}
-    ${polyline(svgPoints(temp, 700, 1050, W, H), '#f59e0b')}
-    ${polyline(svgPoints(wt,   0,   500,  W, H), '#22c55e')}
-    ${polyline(svgPoints(pres, 0,   120,  W, H), '#ef4444')}
+    ${polyline(svgPoints(t, 700, 1050, W, H), '#f59e0b')}
+    ${polyline(svgPoints(w, 0,   500,  W, H), '#22c55e')}
+    ${polyline(svgPoints(p, 0,   120,  W, H), '#ef4444')}
   </svg>`;
+}
+
+/** Convenience wrapper for live coordinator datapoints object */
+function buildLiveChart(dp) {
+  return buildShotChart(
+    dp.pressure              || [],
+    dp.temperature           || [],
+    dp.shotWeight || dp.weight || []
+  );
 }
 
 // ─── styles ───────────────────────────────────────────────────────────────────
@@ -613,9 +625,9 @@ class GlpCard extends HTMLElement {
       }
       navHtml = `
         <div class="nav-row">
-          <button class="nav-btn" data-nav="prev"${prevDis}>←</button>
+          <button class="nav-btn" data-nav="next"${nextDis}>←</button>
           <span class="nav-label">${n} / ${m}</span>
-          <button class="nav-btn" data-nav="next"${nextDis}>→</button>
+          <button class="nav-btn" data-nav="prev"${prevDis}>→</button>
         </div>${tsLine}`;
     }
 
@@ -640,6 +652,21 @@ class GlpCard extends HTMLElement {
     const liveSvgHtml = brewing && liveDatapoints
       ? `<div class="live-chart">
           ${buildLiveChart(liveDatapoints)}
+          <div class="chart-legend">
+            <span class="l-pres">Druck</span>
+            <span class="l-temp">Temp</span>
+            <span class="l-wt">Gewicht</span>
+          </div>
+        </div>`
+      : '';
+
+    // Historical shot chart — from recent_shots[i].dp (downsampled ×10 integers)
+    const histDp = !brewing && this._recentShots.length > 0
+      ? this._recentShots[this._shotIndex]?.dp || null
+      : null;
+    const histSvgHtml = histDp
+      ? `<div class="live-chart">
+          ${buildShotChart(histDp.p || [], histDp.t || [], histDp.w || [])}
           <div class="chart-legend">
             <span class="l-pres">Druck</span>
             <span class="l-temp">Temp</span>
@@ -725,6 +752,7 @@ class GlpCard extends HTMLElement {
                   `<div class="stat"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`
                 ).join('')}
               </div>` : ''}
+            ${histSvgHtml}
           `}
 
           <div class="footer">
