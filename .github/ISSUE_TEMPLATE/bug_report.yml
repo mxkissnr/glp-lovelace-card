@@ -1,0 +1,46 @@
+name: Bug Report
+description: Something is not working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for reporting a bug!"
+
+  - type: input
+    id: card_version
+    attributes:
+      label: Card version
+      description: Visible in the browser console when HA loads (`GLP-CARD vX.Y.Z`)
+      placeholder: "e.g. 1.8.0"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: GLP Integration version
+      placeholder: "e.g. 1.9.4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Browser console output
+      description: Open DevTools (F12) → Console and paste any errors here.
+      render: text
