@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.0] – 2026-05-27
+### Changed
+- Profile selector now reads from `select.gaggiuino_profiler_profile` (created by glp-integration v1.9.0+) instead of `select.gaggiuino_profile` (ALERTua/hass-gaggiuino); same profile options, same service call; closes #14
+
 ## [1.5.0] – 2026-05-26
 ### Added
 - `Temp` and `Ziel` stat tiles in the stats grid — read from `machine_temperature` and `machine_target_temperature` HA sensors (glp-integration v1.8.0+); tiles are omitted automatically when the sensors are unavailable; closes #13

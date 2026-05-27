@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.5.0';
+const GLP_CARD_VERSION = '1.6.0';
 
 function esc(s) {
   if (s == null) return '';
@@ -213,7 +213,7 @@ class GlpCard extends HTMLElement {
       this._profileInteracting = false;
       if (this._hass) {
         this._hass.callService('select', 'select_option', {
-          entity_id: 'select.gaggiuino_profile',
+          entity_id: 'select.gaggiuino_profiler_profile',
           option: e.target.value,
         });
       }
@@ -354,7 +354,7 @@ class GlpCard extends HTMLElement {
     const preheatPct       = preheatTotal && preheatTotal > 0 ? Math.min(1, preheatElapsed / preheatTotal) : null;
     const preheatMinLeft   = isNaN(preheatRemaining) ? null : Math.ceil(preheatRemaining / 60);
 
-    const profileEntity  = this._hass.states['select.gaggiuino_profile'];
+    const profileEntity  = this._hass.states['select.gaggiuino_profiler_profile'];
     const profileOptions = profileEntity?.attributes?.options || null;
     const currentProfile = profileEntity?.state || null;
     const profileAvailable = Array.isArray(profileOptions) && profileOptions.length > 0;
