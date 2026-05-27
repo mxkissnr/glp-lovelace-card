@@ -59,9 +59,11 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 
 - Machine online / error / brewing status
 - Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
-- Live "Bezug läuft …" banner when a shot is in progress
-- **Profile selector** — dropdown to switch the active brew profile; requires `select.gaggiuino_profile` from the [Gaggiuino HA integration](https://github.com/ALERTua/hass-gaggiuino); hidden automatically when not available
-- Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure
+- **Live brewing stats** — temp, pressure, weight shown as mini-stats during a running shot (5 s updates)
+- **Profile selector** — dropdown to switch the active brew profile; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
+- **Steam mode banner** — shown automatically when steam switch is active
+- **Water level** in footer (💧 XX%); warning banner when below 20%
+- Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure, temp, target temp
 - Shots pulled today
 - Time since last sync with the Gaggiuino controller
 
@@ -73,9 +75,15 @@ The card reads the following entities (with default `entity_prefix`):
 |---|---|
 | `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state |
 | `binary_sensor.gaggiuino_local_profiler_preheat_ready` | Machine warmed up |
+| `binary_sensor.gaggiuino_local_profiler_steam_switch` | Steam mode active *(optional)* |
 | `sensor.gaggiuino_local_profiler_machine_status` | online / error |
 | `sensor.gaggiuino_local_profiler_preheat_elapsed` | Warmup elapsed (s) |
 | `sensor.gaggiuino_local_profiler_preheat_remaining` | Warmup remaining (s) |
+| `sensor.gaggiuino_local_profiler_machine_temperature` | Current boiler temperature |
+| `sensor.gaggiuino_local_profiler_machine_target_temperature` | Target temperature |
+| `sensor.gaggiuino_local_profiler_machine_live_pressure` | Live pressure (bar) — 5 s updates *(optional)* |
+| `sensor.gaggiuino_local_profiler_machine_live_weight` | Live weight (g) — 5 s updates *(optional)* |
+| `sensor.gaggiuino_local_profiler_machine_water_level` | Water reservoir level (%) *(optional)* |
 | `sensor.gaggiuino_local_profiler_last_shot_profile` | Profile name |
 | `sensor.gaggiuino_local_profiler_last_shot_coffee` | Coffee bean |
 | `sensor.gaggiuino_local_profiler_last_shot_score` | Shot score |
@@ -85,7 +93,7 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_last_shot_avg_pressure` | Avg pressure (bar) |
 | `sensor.gaggiuino_local_profiler_shots_today` | Shots today |
 | `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
-| `select.gaggiuino_profile` | Active brew profile — provided by the [Gaggiuino HA integration](https://github.com/ALERTua/hass-gaggiuino) *(optional)* |
+| `select.gaggiuino_local_profiler_profile` | Active brew profile — auto-resolved; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+ *(optional)* |
 
 GLP sensor entities are provided by the [GLP Integration](https://github.com/mxkissnr/glp-integration).
 

@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.6.0';
+const GLP_CARD_VERSION = '1.7.0';
 
 function esc(s) {
   if (s == null) return '';
@@ -107,6 +107,7 @@ const STYLES = `
     border-top: 1px solid var(--glp-border);
     padding-top: 10px;
     margin-top: 2px;
+    gap: 8px;
   }
   .footer a {
     color: var(--glp-sub);
@@ -114,6 +115,8 @@ const STYLES = `
     font-size: .75rem;
   }
   .footer a:hover { color: var(--glp-text); }
+  .footer-center { flex: 1; text-align: center; }
+
   .brewing-banner {
     background: rgba(239,68,68,.12);
     border: 1px solid rgba(239,68,68,.35);
@@ -123,9 +126,48 @@ const STYLES = `
     font-weight: 600;
     color: var(--glp-accent);
     text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: .04em;
+  }
+  .live-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .live-stat {
+    background: rgba(239,68,68,.07);
+    border: 1px solid rgba(239,68,68,.18);
+    border-radius: 8px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .live-stat .stat-value { font-size: .95rem; }
+
+  .steam-banner {
+    background: rgba(245,158,11,.1);
+    border: 1px solid rgba(245,158,11,.3);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--glp-amber);
+    text-align: center;
     margin-bottom: 12px;
     letter-spacing: .04em;
   }
+  .water-low {
+    background: rgba(239,68,68,.08);
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--glp-accent);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
   .unavailable {
     color: var(--glp-sub);
     font-size: .85rem;
@@ -212,8 +254,10 @@ class GlpCard extends HTMLElement {
     sel.addEventListener('change', e => {
       this._profileInteracting = false;
       if (this._hass) {
+        const prefix = this._resolvePrefix();
+        const entityId = prefix.replace(/^sensor\./, 'select.') + 'profile';
         this._hass.callService('select', 'select_option', {
-          entity_id: 'select.gaggiuino_profiler_profile',
+          entity_id: entityId,
           option: e.target.value,
         });
       }
@@ -326,10 +370,17 @@ class GlpCard extends HTMLElement {
       return;
     }
 
+    const prefix  = this._resolvePrefix();
+    const bsPrefix = prefix.replace(/^sensor\./, 'binary_sensor.');
+    const selPrefix = prefix.replace(/^sensor\./, 'select.');
+
     const status   = this._val('machine_status', null);
     const brewing  = (() => {
-      const id = this._resolvePrefix().replace(/^sensor\./, 'binary_sensor.') + 'brewing';
-      const s  = this._hass.states[id];
+      const s = this._hass.states[bsPrefix + 'brewing'];
+      return s && s.state === 'on';
+    })();
+    const steamOn  = (() => {
+      const s = this._hass.states[bsPrefix + 'steam_switch'];
       return s && s.state === 'on';
     })();
 
@@ -343,9 +394,19 @@ class GlpCard extends HTMLElement {
     const today    = this._val('shots_today', '—');
     const syncTime = this._reltime('last_sync');
 
+    const temp       = this._num('machine_temperature',        1, null);
+    const targetTemp = this._num('machine_target_temperature', 1, null);
+
+    // Live machine sensors (5 s — machine coordinator)
+    const livePressure = this._num('machine_live_pressure', 1, null);
+    const liveWeight   = this._num('machine_live_weight',   1, null);
+    const waterLevel   = (() => {
+      const v = parseFloat(this._val('machine_water_level', null));
+      return isNaN(v) ? null : Math.round(v);
+    })();
+
     const preheatReady = (() => {
-      const id = this._resolvePrefix().replace(/^sensor\./, 'binary_sensor.') + 'preheat_ready';
-      const s  = this._hass.states[id];
+      const s = this._hass.states[bsPrefix + 'preheat_ready'];
       return s ? s.state === 'on' : null;
     })();
     const preheatRemaining = parseFloat(this._val('preheat_remaining', null));
@@ -354,9 +415,10 @@ class GlpCard extends HTMLElement {
     const preheatPct       = preheatTotal && preheatTotal > 0 ? Math.min(1, preheatElapsed / preheatTotal) : null;
     const preheatMinLeft   = isNaN(preheatRemaining) ? null : Math.ceil(preheatRemaining / 60);
 
-    const profileEntity  = this._hass.states['select.gaggiuino_profiler_profile'];
-    const profileOptions = profileEntity?.attributes?.options || null;
-    const currentProfile = profileEntity?.state || null;
+    // Profile select — use prefix resolver, not hardcoded entity ID
+    const profileEntity   = this._hass.states[selPrefix + 'profile'];
+    const profileOptions  = profileEntity?.attributes?.options || null;
+    const currentProfile  = profileEntity?.state && profileEntity.state !== 'unavailable' ? profileEntity.state : null;
     const profileAvailable = Array.isArray(profileOptions) && profileOptions.length > 0;
 
     const dotClass = brewing ? 'brewing' : status === 'online' ? 'online' : status === 'error' ? 'error' : '';
@@ -364,9 +426,6 @@ class GlpCard extends HTMLElement {
     const scoreClass = score !== null
       ? score >= 80 ? 'score-value' : score >= 60 ? 'score-value mid' : 'score-value low'
       : 'score-value';
-
-    const temp       = this._num('machine_temperature',        1, null);
-    const targetTemp = this._num('machine_target_temperature', 1, null);
 
     const stats = [
       duration   !== null ? { v: `${duration}s`,   l: 'Dauer' }   : null,
@@ -379,6 +438,19 @@ class GlpCard extends HTMLElement {
 
     const glpUrl = safeUrl(this._config.glp_url);
 
+    // Live stats shown during brewing
+    const liveStatsHtml = brewing && (temp !== null || livePressure !== null || liveWeight !== null) ? `
+      <div class="live-stats">
+        ${temp         !== null ? `<div class="live-stat"><div class="stat-value">${temp}°</div><div class="stat-label">Temp</div></div>` : ''}
+        ${livePressure !== null ? `<div class="live-stat"><div class="stat-value">${livePressure}b</div><div class="stat-label">Druck</div></div>` : ''}
+        ${liveWeight   !== null ? `<div class="live-stat"><div class="stat-value">${liveWeight}g</div><div class="stat-label">Gewicht</div></div>` : ''}
+      </div>` : '';
+
+    // Water level footer badge
+    const waterBadge = waterLevel !== null
+      ? `<span class="footer-center">💧 ${waterLevel}%</span>`
+      : '<span class="footer-center"></span>';
+
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card>
@@ -390,6 +462,10 @@ class GlpCard extends HTMLElement {
               ${_powerBtn}
             </div>
           </div>
+
+          ${steamOn && !brewing ? `<div class="steam-banner">☁️ Dampfmodus</div>` : ''}
+
+          ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
 
           ${!brewing && preheatReady !== null ? `
             <div class="preheat-section">
@@ -418,7 +494,7 @@ class GlpCard extends HTMLElement {
             </div>
           ` : ''}
 
-          ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>` : ''}
+          ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>${liveStatsHtml}` : ''}
 
           ${profile ? `
             <div class="shot-profile">${esc(profile)}</div>
@@ -434,8 +510,11 @@ class GlpCard extends HTMLElement {
 
           <div class="footer">
             <span>Heute: ${today} Shot${today !== '1' ? 's' : ''}</span>
-            ${syncTime ? `<span>Sync ${syncTime}</span>` : ''}
-            ${glpUrl ? `<a href="${glpUrl}" target="_blank">GLP öffnen ↗</a>` : ''}
+            ${waterBadge}
+            <span style="text-align:right">
+              ${syncTime ? `Sync ${syncTime}` : ''}
+              ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${glpUrl}" target="_blank">GLP ↗</a>` : ''}
+            </span>
           </div>
         </div>
       </ha-card>

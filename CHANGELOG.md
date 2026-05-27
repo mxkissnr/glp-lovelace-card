@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.0] – 2026-05-27
+### Fixed
+- Profile select not showing — entity ID was hardcoded to `select.gaggiuino_profiler_profile`; it is now resolved via the prefix resolver (same as brewing/preheat binary sensors), yielding the correct `select.gaggiuino_local_profiler_profile`; closes #15
+### Added
+- **Live stats during brewing** — temp, live pressure, live weight shown as a compact mini-stats row below the brewing banner (updates every 5 s via machine coordinator)
+- **Water level badge** in footer — reads `machine_water_level` sensor; always visible when available
+- **Low water warning banner** — shown when water level is below 20%
+- **Steam mode banner** — shown when `binary_sensor.*_steam_switch` is on
+
 ## [1.6.0] – 2026-05-27
 ### Changed
 - Profile selector now reads from `select.gaggiuino_profiler_profile` (created by glp-integration v1.9.0+) instead of `select.gaggiuino_profile` (ALERTua/hass-gaggiuino); same profile options, same service call; closes #14
