@@ -14,7 +14,7 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
-  Displays last shot, preheat progress, live brewing state, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
+  Displays last shot with navigation, preheat progress, live SVG chart during brewing, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
 ---
@@ -59,11 +59,13 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 
 - Machine online / error / brewing status
 - Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
+- **Shot navigation** — ← / → buttons to browse the last 10 recorded shots; auto-resets to newest when a new shot arrives; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
+- **Live SVG chart during brewing** — inline pressure (red), temperature (amber) and weight (green) curves updated every 2 s; elapsed time shown in brewing banner; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
 - **Live brewing stats** — temp, pressure, weight shown as mini-stats during a running shot (5 s updates)
 - **Profile selector** — dropdown to switch the active brew profile; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
 - **Steam mode banner** — shown automatically when steam switch is active
 - **Water level** in footer (💧 XX%); warning banner when below 20%
-- Last shot: profile name, coffee bean, score, duration, yield, brew ratio, avg pressure, temp, target temp
+- Last shot: profile name, coffee bean, rating (★), duration, yield, brew ratio, avg pressure, temp, target temp
 - Shots pulled today
 - Time since last sync with the Gaggiuino controller
 
@@ -73,10 +75,9 @@ The card reads the following entities (with default `entity_prefix`):
 
 | Entity | Description |
 |---|---|
-| `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state |
+| `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state; attributes: `datapoints`, `profile_name`, `seq` during active shot (v1.9.4+) |
 | `binary_sensor.gaggiuino_local_profiler_preheat_ready` | Machine warmed up |
 | `binary_sensor.gaggiuino_local_profiler_steam_switch` | Steam mode active *(optional)* |
-| `sensor.gaggiuino_local_profiler_machine_status` | online / error |
 | `sensor.gaggiuino_local_profiler_preheat_elapsed` | Warmup elapsed (s) |
 | `sensor.gaggiuino_local_profiler_preheat_remaining` | Warmup remaining (s) |
 | `sensor.gaggiuino_local_profiler_machine_temperature` | Current boiler temperature |
@@ -86,7 +87,8 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_machine_water_level` | Water reservoir level (%) *(optional)* |
 | `sensor.gaggiuino_local_profiler_last_shot_profile` | Profile name |
 | `sensor.gaggiuino_local_profiler_last_shot_coffee` | Coffee bean |
-| `sensor.gaggiuino_local_profiler_last_shot_score` | Shot score |
+| `sensor.gaggiuino_local_profiler_last_shot_rating` | Shot rating (1–5 ★); renamed from `last_shot_score` in integration v1.9.3 |
+| `sensor.gaggiuino_local_profiler_machine_status` | online / error; attribute `recent_shots` holds last 10 shots for navigation (v1.9.4+) |
 | `sensor.gaggiuino_local_profiler_last_shot_duration` | Duration (s) |
 | `sensor.gaggiuino_local_profiler_last_shot_yield` | Yield (g) |
 | `sensor.gaggiuino_local_profiler_last_shot_brew_ratio` | Brew ratio |

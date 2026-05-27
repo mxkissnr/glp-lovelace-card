@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.0] – 2026-05-27
+### Added
+- **Shot navigation** — browse the last 10 recorded shots using ← / → buttons above the profile name; navigation resets to the newest shot automatically when a new shot arrives; a timestamp (DD.MM.YY HH:MM) is shown below the nav row when viewing a historical shot; data sourced from `recent_shots` attribute added in glp-integration v1.9.4; closes #16
+- **Live SVG chart during brewing** — while `binary_sensor.*_brewing` is `on`, a pure inline SVG polyline chart (no CDN needed) shows pressure (red), temperature (amber) and weight (green) curves updated every 2 s; elapsed seconds shown in the brewing banner; data sourced from `datapoints` attribute added in glp-integration v1.9.4; closes #16
+- Live profile name shown above the chart during an active shot (from `binary_sensor.*_brewing` `profile_name` attribute)
+
 ## [1.7.1] – 2026-05-27
 ### Fixed
 - Star rating tile: `last_shot_score` renamed to `last_shot_rating` to match glp-integration v1.9.3; display changed from numeric score to ★★★★☆ star row (green ≥4, amber ≥3, red <3)

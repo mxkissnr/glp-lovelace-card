@@ -1,4 +1,6 @@
-const GLP_CARD_VERSION = '1.7.1';
+const GLP_CARD_VERSION = '1.8.0';
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function esc(s) {
   if (s == null) return '';
@@ -11,15 +13,68 @@ function safeUrl(url) {
   catch { return null; }
 }
 
+/** Convert raw timestamp (Unix s, Unix ms, or ISO string) to Date */
+function parseTs(val) {
+  if (!val && val !== 0) return null;
+  if (typeof val === 'number') return new Date(val > 1e10 ? val : val * 1000);
+  return new Date(val);
+}
+
+/** Thin down an array to at most maxPts items (last point always kept) */
+function downsample(arr, maxPts) {
+  if (!arr || arr.length <= maxPts) return arr || [];
+  const step = Math.ceil(arr.length / maxPts);
+  const out  = arr.filter((_, i) => i % step === 0);
+  if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
+  return out;
+}
+
+/** Build an SVG <polyline> points string for a series */
+function svgPoints(arr, vmin, vmax, W, H) {
+  if (!arr || arr.length < 2) return null;
+  const range = vmax - vmin || 1;
+  return arr.map((v, i) => {
+    const x = (i / (arr.length - 1)) * W;
+    const y = H - 2 - ((Math.max(vmin, Math.min(vmax, v)) - vmin) / range) * (H - 4);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+}
+
+/** Render live shot SVG chart from datapoints (×10 integers) */
+function buildLiveChart(dp) {
+  const W = 300, H = 60;
+  const pres = downsample(dp.pressure              || [], 150);
+  const temp = downsample(dp.temperature           || [], 150);
+  const wt   = downsample(dp.shotWeight || dp.weight || [], 150);
+
+  const polyline = (pts, color) => pts
+    ? `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`
+    : '';
+
+  const grid = [25, 50, 75].map(p =>
+    `<line x1="0" y1="${(H * p / 100).toFixed(1)}" x2="${W}" y2="${(H * p / 100).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>`
+  ).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;border-radius:6px;overflow:hidden" preserveAspectRatio="none">
+    <rect width="${W}" height="${H}" fill="rgba(255,255,255,.03)"/>
+    ${grid}
+    ${polyline(svgPoints(temp, 700, 1050, W, H), '#f59e0b')}
+    ${polyline(svgPoints(wt,   0,   500,  W, H), '#22c55e')}
+    ${polyline(svgPoints(pres, 0,   120,  W, H), '#ef4444')}
+  </svg>`;
+}
+
+// ─── styles ───────────────────────────────────────────────────────────────────
+
 const STYLES = `
   :host {
-    --glp-bg:        var(--card-background-color, #1c1c1e);
-    --glp-border:    var(--divider-color, #3a3a3c);
-    --glp-text:      var(--primary-text-color, #f5f5f5);
-    --glp-sub:       var(--secondary-text-color, #8e8e93);
-    --glp-accent:    #ef4444;
-    --glp-green:     #22c55e;
-    --glp-amber:     #f59e0b;
+    --glp-bg:     var(--card-background-color, #1c1c1e);
+    --glp-border: var(--divider-color, #3a3a3c);
+    --glp-text:   var(--primary-text-color, #f5f5f5);
+    --glp-sub:    var(--secondary-text-color, #8e8e93);
+    --glp-accent: #ef4444;
+    --glp-green:  #22c55e;
+    --glp-amber:  #f59e0b;
   }
   .card {
     background: var(--glp-bg);
@@ -98,6 +153,70 @@ const STYLES = `
   .score-value.mid { color: var(--glp-amber); }
   .score-value.low { color: var(--glp-accent); }
 
+  /* ── navigation ── */
+  .nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--glp-border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    cursor: pointer;
+    color: var(--glp-text);
+    font-size: .82rem;
+    line-height: 1.7;
+    transition: border-color .15s, color .15s;
+    user-select: none;
+  }
+  .nav-btn:hover:not([disabled]) { border-color: rgba(255,255,255,.3); }
+  .nav-btn[disabled] { opacity: .25; cursor: default; pointer-events: none; }
+  .nav-label {
+    font-size: .78rem;
+    color: var(--glp-sub);
+    min-width: 44px;
+    text-align: center;
+  }
+  .nav-ts {
+    font-size: .7rem;
+    color: var(--glp-sub);
+    text-align: center;
+    margin-bottom: 6px;
+    opacity: .8;
+  }
+
+  /* ── live chart ── */
+  .live-chart { margin-bottom: 6px; }
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 3px;
+    margin-bottom: 8px;
+  }
+  .chart-legend span {
+    font-size: .67rem;
+    color: var(--glp-sub);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .chart-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+  }
+  .l-pres::before { background: #ef4444; }
+  .l-temp::before { background: #f59e0b; }
+  .l-wt::before   { background: #22c55e; }
+
+  /* ── footer ── */
   .footer {
     display: flex;
     justify-content: space-between;
@@ -117,6 +236,7 @@ const STYLES = `
   .footer a:hover { color: var(--glp-text); }
   .footer-center { flex: 1; text-align: center; }
 
+  /* ── brewing ── */
   .brewing-banner {
     background: rgba(239,68,68,.12);
     border: 1px solid rgba(239,68,68,.35);
@@ -144,6 +264,7 @@ const STYLES = `
   }
   .live-stat .stat-value { font-size: .95rem; }
 
+  /* ── banners ── */
   .steam-banner {
     background: rgba(245,158,11,.1);
     border: 1px solid rgba(245,158,11,.3);
@@ -168,15 +289,14 @@ const STYLES = `
     margin-bottom: 12px;
   }
 
+  /* ── misc ── */
   .unavailable {
     color: var(--glp-sub);
     font-size: .85rem;
     text-align: center;
     padding: 12px 0;
   }
-  .preheat-section {
-    margin-bottom: 12px;
-  }
+  .preheat-section { margin-bottom: 12px; }
   .preheat-ready {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
@@ -197,38 +317,22 @@ const STYLES = `
     transition: width .8s ease;
   }
   .profile-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
   }
-  .profile-label {
-    font-size: .75rem;
-    color: var(--glp-sub);
-    white-space: nowrap;
-  }
+  .profile-label { font-size: .75rem; color: var(--glp-sub); white-space: nowrap; }
   .profile-select {
-    flex: 1;
-    min-width: 0;
+    flex: 1; min-width: 0;
     background: var(--ha-card-background, rgba(255,255,255,.06));
-    border: 1px solid var(--glp-border);
-    border-radius: 8px;
-    color: var(--glp-text);
-    font-family: inherit;
-    font-size: .85rem;
-    padding: 5px 8px;
-    cursor: pointer;
+    border: 1px solid var(--glp-border); border-radius: 8px;
+    color: var(--glp-text); font-family: inherit; font-size: .85rem;
+    padding: 5px 8px; cursor: pointer;
   }
   .profile-select:focus { outline: none; border-color: rgba(255,255,255,.3); }
 
   .header-right { display: flex; align-items: center; gap: 8px; }
   .power-btn {
-    background: none;
-    border: 1px solid var(--glp-border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    color: var(--glp-sub);
+    background: none; border: 1px solid var(--glp-border); border-radius: 8px;
+    padding: 8px 12px; cursor: pointer; color: var(--glp-sub);
     display: flex; align-items: center;
     transition: color .15s, border-color .15s;
   }
@@ -239,30 +343,20 @@ const STYLES = `
   .card.collapsed .header { margin-bottom: 0; }
 `;
 
+// ─── card element ──────────────────────────────────────────────────────────────
+
 class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this._profileInteracting = false;
+    // shot navigation state
+    this._shotIndex    = 0;      // 0 = newest
+    this._recentShots  = [];
+    this._lastLatestId = null;
   }
 
-  _bindProfileSelect() {
-    const sel = this.shadowRoot.querySelector('[data-action="select-profile"]');
-    if (!sel) return;
-    sel.addEventListener('focus',  () => { this._profileInteracting = true; });
-    sel.addEventListener('blur',   () => { this._profileInteracting = false; });
-    sel.addEventListener('change', e => {
-      this._profileInteracting = false;
-      if (this._hass) {
-        const prefix = this._resolvePrefix();
-        const entityId = prefix.replace(/^sensor\./, 'select.') + 'profile';
-        this._hass.callService('select', 'select_option', {
-          entity_id: entityId,
-          option: e.target.value,
-        });
-      }
-    });
-  }
+  // ── event bindings ───────────────────────────────────────────────────────
 
   _bindPowerBtn() {
     const btn = this.shadowRoot.querySelector('[data-action="toggle-switch"]');
@@ -275,12 +369,44 @@ class GlpCard extends HTMLElement {
     }
   }
 
+  _bindProfileSelect() {
+    const sel = this.shadowRoot.querySelector('[data-action="select-profile"]');
+    if (!sel) return;
+    sel.addEventListener('focus',  () => { this._profileInteracting = true; });
+    sel.addEventListener('blur',   () => { this._profileInteracting = false; });
+    sel.addEventListener('change', e => {
+      this._profileInteracting = false;
+      if (this._hass) {
+        const prefix   = this._resolvePrefix();
+        const entityId = prefix.replace(/^sensor\./, 'select.') + 'profile';
+        this._hass.callService('select', 'select_option', {
+          entity_id: entityId,
+          option: e.target.value,
+        });
+      }
+    });
+  }
+
+  _bindNavBtns() {
+    this.shadowRoot.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const dir = e.currentTarget.dataset.nav;
+        const max = this._recentShots.length - 1;
+        if (dir === 'prev' && this._shotIndex < max) {
+          this._shotIndex++;
+          this._render();
+        } else if (dir === 'next' && this._shotIndex > 0) {
+          this._shotIndex--;
+          this._render();
+        }
+      });
+    });
+  }
+
+  // ── HA interface ─────────────────────────────────────────────────────────
+
   setConfig(config) {
-    this._config = {
-      glp_url: null,
-      title: 'Gaggiuino',
-      ...config,
-    };
+    this._config = { glp_url: null, title: 'Gaggiuino', ...config };
   }
 
   set hass(hass) {
@@ -288,19 +414,20 @@ class GlpCard extends HTMLElement {
     if (!this._profileInteracting) this._render();
   }
 
+  // ── entity helpers ───────────────────────────────────────────────────────
+
   _resolvePrefix() {
     if (this._config.entity_prefix) return this._config.entity_prefix;
     const found = Object.keys(this._hass.states)
-      .find(id => id.endsWith('_machine_status') && this._hass.states[id].attributes.friendly_name?.toLowerCase().includes('gaggiuino'));
+      .find(id => id.endsWith('_machine_status') &&
+        this._hass.states[id].attributes.friendly_name?.toLowerCase().includes('gaggiuino'));
     if (found) return found.replace(/machine_status$/, '');
-    // fallback: any entity ending in _machine_status (single integration assumed)
     const fallback = Object.keys(this._hass.states).find(id => id.endsWith('_machine_status'));
     return fallback ? fallback.replace(/machine_status$/, '') : 'sensor.gaggiuino_local_profiler_';
   }
 
   _s(suffix) {
-    const prefix = this._resolvePrefix();
-    return this._hass.states[prefix + suffix];
+    return this._hass.states[this._resolvePrefix() + suffix];
   }
 
   _val(suffix, fallback = '—') {
@@ -326,17 +453,23 @@ class GlpCard extends HTMLElement {
     return `vor ${Math.round(h / 24)} Tagen`;
   }
 
+  // ── render ───────────────────────────────────────────────────────────────
+
   _render() {
     if (!this._hass || !this._config) return;
 
+    const prefix    = this._resolvePrefix();
+    const bsPrefix  = prefix.replace(/^sensor\./, 'binary_sensor.');
+    const selPrefix = prefix.replace(/^sensor\./, 'select.');
+
+    // ── machine off? ──────────────────────────────────────────────────────
     this._switchEntity = this._config.switch_entity
       || this._s('machine_status')?.attributes?.switch_entity
       || null;
-    const switchEntity = this._switchEntity;
-    const switchState  = switchEntity ? this._hass.states[switchEntity] : null;
-    const machineOff   = !!(switchEntity && (switchState?.state === 'off' || switchState?.state === 'unavailable'));
+    const switchState = this._switchEntity ? this._hass.states[this._switchEntity] : null;
+    const machineOff  = !!(this._switchEntity && (switchState?.state === 'off' || switchState?.state === 'unavailable'));
 
-    const _powerBtn = switchEntity ? `
+    const _powerBtn = this._switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
               title="${machineOff ? 'Einschalten' : 'Ausschalten'}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -370,34 +503,63 @@ class GlpCard extends HTMLElement {
       return;
     }
 
-    const prefix  = this._resolvePrefix();
-    const bsPrefix = prefix.replace(/^sensor\./, 'binary_sensor.');
-    const selPrefix = prefix.replace(/^sensor\./, 'select.');
+    // ── recent shots: detect new shot and reset navigation index ──────────
+    const machineStatusEnt = this._s('machine_status');
+    const freshShots = machineStatusEnt?.attributes?.recent_shots;
+    if (Array.isArray(freshShots) && freshShots.length > 0) {
+      const latestId = freshShots[0]?.id;
+      if (latestId !== undefined && latestId !== this._lastLatestId) {
+        this._lastLatestId = latestId;
+        this._shotIndex    = 0;       // new shot → jump to newest
+      }
+      this._recentShots = freshShots;
+    }
+    // clamp index in case list shrank
+    if (this._shotIndex >= this._recentShots.length) {
+      this._shotIndex = Math.max(0, this._recentShots.length - 1);
+    }
 
-    const status   = this._val('machine_status', null);
-    const brewing  = (() => {
-      const s = this._hass.states[bsPrefix + 'brewing'];
-      return s && s.state === 'on';
-    })();
-    const steamOn  = (() => {
-      const s = this._hass.states[bsPrefix + 'steam_switch'];
-      return s && s.state === 'on';
-    })();
+    const totalShots = this._recentShots.length;
+    const shotObj    = (this._shotIndex > 0 && this._shotIndex < totalShots)
+      ? this._recentShots[this._shotIndex]
+      : null;   // null → read from HA entities (index 0)
 
-    const profile  = this._val('last_shot_profile', null);
-    const coffee   = this._val('last_shot_coffee', null);
-    const rating   = (() => { const v = parseInt(this._val('last_shot_rating', null)); return (!isNaN(v) && v >= 1 && v <= 5) ? v : null; })();
-    const duration = this._num('last_shot_duration', 1, null);
-    const weight   = this._num('last_shot_yield', 1, null);
-    const ratio    = this._num('last_shot_brew_ratio', 2, null);
-    const pressure = this._num('last_shot_avg_pressure', 2, null);
-    const today    = this._val('shots_today', '—');
-    const syncTime = this._reltime('last_sync');
+    // ── brewing ───────────────────────────────────────────────────────────
+    const brewingEnt    = this._hass.states[bsPrefix + 'brewing'];
+    const brewing       = brewingEnt?.state === 'on';
+    const liveDatapoints = brewingEnt?.attributes?.datapoints || null;
+    const liveProfile    = brewingEnt?.attributes?.profile_name || null;
 
+    const steamOn = !!(this._hass.states[bsPrefix + 'steam_switch']?.state === 'on');
+
+    // elapsed time from live datapoints
+    const tArr = liveDatapoints?.timeInShot;
+    const elapsedSec = tArr?.length ? Math.round(tArr[tArr.length - 1] / 10) : null;
+
+    // ── shot data (from nav slot or HA entities) ──────────────────────────
+    const profile  = shotObj?.profile  ?? this._val('last_shot_profile',    null);
+    const coffee   = shotObj?.coffee   ?? this._val('last_shot_coffee',     null);
+    const duration = shotObj != null
+      ? (shotObj.duration != null ? shotObj.duration.toFixed(1) : null)
+      : this._num('last_shot_duration', 1, null);
+    const weight   = shotObj != null
+      ? (shotObj.yield_g  != null ? shotObj.yield_g.toFixed(1)  : null)
+      : this._num('last_shot_yield',    1, null);
+    const ratio    = shotObj != null
+      ? (shotObj.ratio    != null ? shotObj.ratio.toFixed(2)    : null)
+      : this._num('last_shot_brew_ratio',  2, null);
+    const pressure = shotObj != null
+      ? (shotObj.pressure != null ? shotObj.pressure.toFixed(2) : null)
+      : this._num('last_shot_avg_pressure', 2, null);
+    const rating   = shotObj != null
+      ? (shotObj.rating || null)
+      : (() => { const v = parseInt(this._val('last_shot_rating', null)); return (!isNaN(v) && v >= 1 && v <= 5) ? v : null; })();
+
+    // ── temperature / target ──────────────────────────────────────────────
     const temp       = this._num('machine_temperature',        1, null);
     const targetTemp = this._num('machine_target_temperature', 1, null);
 
-    // Live machine sensors (5 s — machine coordinator)
+    // ── live machine sensors (5 s) ────────────────────────────────────────
     const livePressure = this._num('machine_live_pressure', 1, null);
     const liveWeight   = this._num('machine_live_weight',   1, null);
     const waterLevel   = (() => {
@@ -405,57 +567,107 @@ class GlpCard extends HTMLElement {
       return isNaN(v) ? null : Math.round(v);
     })();
 
-    const preheatReady = (() => {
+    // ── preheat ───────────────────────────────────────────────────────────
+    const preheatReady     = (() => {
       const s = this._hass.states[bsPrefix + 'preheat_ready'];
       return s ? s.state === 'on' : null;
     })();
     const preheatRemaining = parseFloat(this._val('preheat_remaining', null));
     const preheatElapsed   = parseFloat(this._val('preheat_elapsed',   null));
-    const preheatTotal     = isNaN(preheatRemaining) || isNaN(preheatElapsed) ? null : preheatElapsed + preheatRemaining;
-    const preheatPct       = preheatTotal && preheatTotal > 0 ? Math.min(1, preheatElapsed / preheatTotal) : null;
+    const preheatTotal     = (isNaN(preheatRemaining) || isNaN(preheatElapsed))
+      ? null : preheatElapsed + preheatRemaining;
+    const preheatPct       = (preheatTotal && preheatTotal > 0)
+      ? Math.min(1, preheatElapsed / preheatTotal) : null;
     const preheatMinLeft   = isNaN(preheatRemaining) ? null : Math.ceil(preheatRemaining / 60);
 
-    // Profile select — use prefix resolver, not hardcoded entity ID
+    // ── profile select ────────────────────────────────────────────────────
     const profileEntity   = this._hass.states[selPrefix + 'profile'];
     const profileOptions  = profileEntity?.attributes?.options || null;
-    const currentProfile  = profileEntity?.state && profileEntity.state !== 'unavailable' ? profileEntity.state : null;
+    const currentProfile  = (profileEntity?.state && profileEntity.state !== 'unavailable')
+      ? profileEntity.state : null;
     const profileAvailable = Array.isArray(profileOptions) && profileOptions.length > 0;
 
+    // ── status dot ────────────────────────────────────────────────────────
+    const status   = this._val('machine_status', null);
     const dotClass = brewing ? 'brewing' : status === 'online' ? 'online' : status === 'error' ? 'error' : '';
 
-    const ratingStars = rating !== null ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : null;
-    const ratingClass = rating !== null
-      ? rating >= 4 ? 'score-value' : rating >= 3 ? 'score-value mid' : 'score-value low'
-      : 'score-value';
+    const today    = this._val('shots_today', '—');
+    const syncTime = this._reltime('last_sync');
+    const glpUrl   = safeUrl(this._config.glp_url);
 
-    const stats = [
-      duration   !== null ? { v: `${duration}s`,   l: 'Dauer' }   : null,
-      weight     !== null ? { v: `${weight}g`,      l: 'Ausbeute' } : null,
-      ratio      !== null ? { v: `1:${ratio}`,      l: 'Ratio' }    : null,
-      pressure   !== null ? { v: `${pressure}b`,    l: 'Druck Ø' }  : null,
-      temp       !== null ? { v: `${temp}°`,        l: 'Temp' }     : null,
-      targetTemp !== null ? { v: `${targetTemp}°`,  l: 'Ziel' }     : null,
+    // ── build HTML blocks ─────────────────────────────────────────────────
+
+    // Navigation row (only when not brewing and multiple shots recorded)
+    let navHtml = '';
+    if (!brewing && totalShots > 1) {
+      const n       = this._shotIndex + 1;
+      const m       = totalShots;
+      const prevDis = this._shotIndex >= m - 1 ? ' disabled' : '';
+      const nextDis = this._shotIndex <= 0      ? ' disabled' : '';
+      let tsLine = '';
+      if (shotObj?.ts) {
+        const d = parseTs(shotObj.ts);
+        if (d && !isNaN(d)) {
+          tsLine = `<div class="nav-ts">${d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'})} ${d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})}</div>`;
+        }
+      }
+      navHtml = `
+        <div class="nav-row">
+          <button class="nav-btn" data-nav="prev"${prevDis}>←</button>
+          <span class="nav-label">${n} / ${m}</span>
+          <button class="nav-btn" data-nav="next"${nextDis}>→</button>
+        </div>${tsLine}`;
+    }
+
+    // Stats grid
+    const statTiles = [
+      duration  !== null ? { v: `${duration}s`,   l: 'Dauer' }   : null,
+      weight    !== null ? { v: `${weight}g`,      l: 'Ausbeute' } : null,
+      ratio     !== null ? { v: `1:${ratio}`,      l: 'Ratio' }   : null,
+      pressure  !== null ? { v: `${pressure}b`,    l: 'Druck Ø' } : null,
+      temp      !== null ? { v: `${temp}°`,        l: 'Temp' }    : null,
+      targetTemp !== null ? { v: `${targetTemp}°`, l: 'Ziel' }    : null,
     ].filter(Boolean);
 
-    const glpUrl = safeUrl(this._config.glp_url);
+    const ratingHtml = (() => {
+      if (!rating || rating < 1 || rating > 5) return '';
+      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+      const cls   = rating >= 4 ? 'score-value' : rating >= 3 ? 'score-value mid' : 'score-value low';
+      return `<div class="stat"><div class="stat-value ${cls}" style="font-size:.85rem;letter-spacing:-.5px">${stars}</div><div class="stat-label">Bewertung</div></div>`;
+    })();
 
-    // Live stats shown during brewing
-    const liveStatsHtml = brewing && (temp !== null || livePressure !== null || liveWeight !== null) ? `
-      <div class="live-stats">
-        ${temp         !== null ? `<div class="live-stat"><div class="stat-value">${temp}°</div><div class="stat-label">Temp</div></div>` : ''}
-        ${livePressure !== null ? `<div class="live-stat"><div class="stat-value">${livePressure}b</div><div class="stat-label">Druck</div></div>` : ''}
-        ${liveWeight   !== null ? `<div class="live-stat"><div class="stat-value">${liveWeight}g</div><div class="stat-label">Gewicht</div></div>` : ''}
-      </div>` : '';
+    // Live brewing SVG chart
+    const liveSvgHtml = brewing && liveDatapoints
+      ? `<div class="live-chart">
+          ${buildLiveChart(liveDatapoints)}
+          <div class="chart-legend">
+            <span class="l-pres">Druck</span>
+            <span class="l-temp">Temp</span>
+            <span class="l-wt">Gewicht</span>
+          </div>
+        </div>`
+      : '';
+
+    // Live stats row during brewing
+    const liveStatsHtml = brewing && (temp !== null || livePressure !== null || liveWeight !== null)
+      ? `<div class="live-stats">
+          ${temp         !== null ? `<div class="live-stat"><div class="stat-value">${temp}°</div><div class="stat-label">Temp</div></div>` : ''}
+          ${livePressure !== null ? `<div class="live-stat"><div class="stat-value">${livePressure}b</div><div class="stat-label">Druck</div></div>` : ''}
+          ${liveWeight   !== null ? `<div class="live-stat"><div class="stat-value">${liveWeight}g</div><div class="stat-label">Gewicht</div></div>` : ''}
+        </div>`
+      : '';
 
     // Water level footer badge
     const waterBadge = waterLevel !== null
       ? `<span class="footer-center">💧 ${waterLevel}%</span>`
       : '<span class="footer-center"></span>';
 
+    // ── assemble ──────────────────────────────────────────────────────────
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card>
         <div class="card">
+
           <div class="header">
             ${_titleHtml}
             <div class="header-right">
@@ -466,48 +678,54 @@ class GlpCard extends HTMLElement {
 
           ${steamOn && !brewing ? `<div class="steam-banner">☁️ Dampfmodus</div>` : ''}
 
-          ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
+          ${waterLevel !== null && waterLevel < 20
+            ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
 
           ${!brewing && preheatReady !== null ? `
             <div class="preheat-section">
-              ${preheatReady ? `
-                <div class="preheat-ready">☕ Brühbereit</div>
-              ` : preheatPct !== null ? `
-                <div class="preheat-warming">
-                  <div class="preheat-warming-label">
-                    <span>🔥 Aufheizen …</span>
-                    <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ''}</span>
-                  </div>
-                  <div class="preheat-bar-bg">
-                    <div class="preheat-bar-fill" style="width:${Math.round(preheatPct * 100)}%"></div>
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
+              ${preheatReady
+                ? `<div class="preheat-ready">☕ Brühbereit</div>`
+                : preheatPct !== null ? `
+                  <div class="preheat-warming">
+                    <div class="preheat-warming-label">
+                      <span>🔥 Aufheizen …</span>
+                      <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ''}</span>
+                    </div>
+                    <div class="preheat-bar-bg">
+                      <div class="preheat-bar-fill" style="width:${Math.round(preheatPct * 100)}%"></div>
+                    </div>
+                  </div>` : ''}
+            </div>` : ''}
 
           ${!brewing && profileAvailable ? `
             <div class="profile-row">
               <span class="profile-label">Profil</span>
               <select class="profile-select" data-action="select-profile">
-                ${profileOptions.map(p => `<option value="${esc(p)}"${p === currentProfile ? ' selected' : ''}>${esc(p)}</option>`).join('')}
+                ${profileOptions.map(p =>
+                  `<option value="${esc(p)}"${p === currentProfile ? ' selected' : ''}>${esc(p)}</option>`
+                ).join('')}
               </select>
-            </div>
-          ` : ''}
+            </div>` : ''}
 
-          ${brewing ? `<div class="brewing-banner">⏳ Bezug läuft …</div>${liveStatsHtml}` : ''}
-
-          ${profile ? `
-            <div class="shot-profile">${esc(profile)}</div>
-            ${coffee ? `<div class="shot-coffee">☕ ${esc(coffee)}</div>` : '<div style="margin-bottom:12px"></div>'}
-          ` : `<div class="unavailable">Noch kein Shot aufgezeichnet</div>`}
-
-          ${stats.length ? `
-            <div class="stats">
-              ${ratingStars !== null ? `<div class="stat"><div class="stat-value ${ratingClass}" style="font-size:.85rem;letter-spacing:-.5px">${ratingStars}</div><div class="stat-label">Bewertung</div></div>` : ''}
-              ${stats.map(s => `<div class="stat"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('')}
-            </div>
-          ` : ''}
+          ${brewing ? `
+            <div class="brewing-banner">⏳ Bezug läuft${elapsedSec !== null ? ` … ${elapsedSec}s` : ' …'}</div>
+            ${liveProfile ? `<div class="shot-profile" style="margin-bottom:8px">${esc(liveProfile)}</div>` : ''}
+            ${liveSvgHtml}
+            ${liveStatsHtml}
+          ` : `
+            ${navHtml}
+            ${profile
+              ? `<div class="shot-profile">${esc(profile)}</div>
+                 ${coffee ? `<div class="shot-coffee">☕ ${esc(coffee)}</div>` : '<div style="margin-bottom:12px"></div>'}`
+              : `<div class="unavailable">Noch kein Shot aufgezeichnet</div>`}
+            ${statTiles.length ? `
+              <div class="stats">
+                ${ratingHtml}
+                ${statTiles.map(s =>
+                  `<div class="stat"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`
+                ).join('')}
+              </div>` : ''}
+          `}
 
           <div class="footer">
             <span>Heute: ${today} Shot${today !== '1' ? 's' : ''}</span>
@@ -517,11 +735,14 @@ class GlpCard extends HTMLElement {
               ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${glpUrl}" target="_blank">GLP ↗</a>` : ''}
             </span>
           </div>
+
         </div>
       </ha-card>
     `;
+
     this._bindPowerBtn();
     this._bindProfileSelect();
+    this._bindNavBtns();
   }
 
   getCardSize() { return 3; }
