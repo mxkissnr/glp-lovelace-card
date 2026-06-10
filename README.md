@@ -40,7 +40,7 @@ type: custom:glp-card
 Full config:
 ```yaml
 type: custom:glp-card
-glp_url: http://homeassistant.local:8099          # optional — adds "GLP öffnen" link
+glp_url: http://homeassistant.local:8099          # optional — adds a "GLP ↗" link in the footer
 title: Gaggiuino                                  # optional header title
 entity_prefix: sensor.gaggiuino_local_profiler_   # optional — auto-detected if omitted
 switch_entity: switch.espresso_plug               # optional — power toggle + collapse when off
