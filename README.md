@@ -63,6 +63,7 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 - **Live SVG chart during brewing** — inline pressure (red), temperature (amber) and weight (green) curves updated every 2 s; elapsed time shown in brewing banner; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
 - **Live brewing stats** — temp, pressure, weight shown as mini-stats during a running shot (5 s updates)
 - **Profile selector** — dropdown to switch the active brew profile; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
+- **Maintenance tab** — tab bar (☕ Shot | 🔧 Wartung) appears automatically when GLP maintenance sensors exist; shows all five machine maintenance tasks plus per-grinder cleaning schedules with status pill, days/shots since last service and a colored progress bar; ⚠ on the tab label when anything is due; read-only (marking done stays in the GLP dashboard)
 - **Steam mode banner** — shown automatically when steam switch is active
 - **Water level** in footer (💧 XX%); warning banner when below 20%
 - Last shot: profile name, coffee bean, rating (★), duration, yield, brew ratio, avg pressure, temp, target temp
@@ -95,6 +96,8 @@ The card reads the following entities (with default `entity_prefix`):
 | `sensor.gaggiuino_local_profiler_last_shot_avg_pressure` | Avg pressure (bar) |
 | `sensor.gaggiuino_local_profiler_shots_today` | Shots today |
 | `sensor.gaggiuino_local_profiler_last_sync` | Last sync timestamp |
+| `sensor.gaggiuino_local_profiler_maintenance_descaling` … `_backflush`, `_group_head`, `_gaskets`, `_water_filter` | Maintenance task status (ok/soon/due/never); attributes `pct`, `days_since`, `shots_since` — feeds the Wartung tab *(optional)* |
+| `sensor.gaggiuino_local_profiler_maintenance_grinders` | Worst grinder status; attributes hold per-grinder details — feeds the Wartung tab *(optional)* |
 | `select.gaggiuino_local_profiler_profile` | Active brew profile — auto-resolved; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+ *(optional)* |
 
 GLP sensor entities are provided by the [GLP Integration](https://github.com/mxkissnr/glp-integration).

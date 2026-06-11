@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '1.8.1';
+const GLP_CARD_VERSION = '1.9.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -353,6 +353,86 @@ const STYLES = `
   .power-btn.is-off { color: var(--glp-sub); }
   .off-label { font-size: .75rem; color: var(--glp-sub); letter-spacing: .02em; }
   .card.collapsed .header { margin-bottom: 0; }
+
+  /* ── tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    background: rgba(255,255,255,.04);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 0;
+    color: var(--glp-sub);
+    font-family: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: rgba(255,255,255,.09); color: var(--glp-text); }
+
+  /* ── maintenance ── */
+  .maint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .maint-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: rgba(255,255,255,.04);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .maint-row-top { display: flex; align-items: center; gap: 7px; }
+  .maint-name {
+    flex: 1;
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .maint-pill {
+    font-size: .66rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .maint-pill.ok    { color: #22c55e; background: rgba(34,197,94,.12); }
+  .maint-pill.soon  { color: #f59e0b; background: rgba(245,158,11,.12); }
+  .maint-pill.due   { color: #ef4444; background: rgba(239,68,68,.12); }
+  .maint-pill.never { color: var(--glp-sub); background: rgba(255,255,255,.07); }
+  .maint-sub { font-size: .68rem; color: var(--glp-sub); }
+  .maint-bar-bg {
+    height: 3px;
+    background: rgba(255,255,255,.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .maint-bar { height: 100%; border-radius: 2px; }
+  .maint-bar.ok    { background: #22c55e; }
+  .maint-bar.soon  { background: #f59e0b; }
+  .maint-bar.due   { background: #ef4444; }
+  .maint-bar.never { background: rgba(255,255,255,.2); }
+  .maint-section-label {
+    font-size: .68rem;
+    color: var(--glp-sub);
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
 `;
 
 // ─── card element ──────────────────────────────────────────────────────────────
@@ -366,6 +446,7 @@ class GlpCard extends HTMLElement {
     this._shotIndex    = 0;      // 0 = newest
     this._recentShots  = [];
     this._lastLatestId = null;
+    this._activeTab    = 'shot';
   }
 
   // ── event bindings ───────────────────────────────────────────────────────
@@ -396,6 +477,18 @@ class GlpCard extends HTMLElement {
           option: e.target.value,
         });
       }
+    });
+  }
+
+  _bindTabBtns() {
+    this.shadowRoot.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const tab = e.currentTarget.dataset.tab;
+        if (tab !== this._activeTab) {
+          this._activeTab = tab;
+          this._render();
+        }
+      });
     });
   }
 
@@ -463,6 +556,68 @@ class GlpCard extends HTMLElement {
     const h = Math.round(diff / 60);
     if (h < 24) return `vor ${h} Std`;
     return `vor ${Math.round(h / 24)} Tagen`;
+  }
+
+  // ── maintenance ──────────────────────────────────────────────────────────
+
+  static MAINT_TASKS = [
+    ['maintenance_descaling',    'Entkalken',          '🧪'],
+    ['maintenance_backflush',    'Backflush',          '🔄'],
+    ['maintenance_group_head',   'Gruppenkopf',        '🚿'],
+    ['maintenance_gaskets',      'Dichtungen & Siebe', '⭕'],
+    ['maintenance_water_filter', 'Wasserfilter',       '💧'],
+  ];
+
+  _maintAvailable() {
+    return GlpCard.MAINT_TASKS.some(([suffix]) => this._s(suffix))
+      || !!this._s('maintenance_grinders');
+  }
+
+  _maintAnyDue() {
+    if (GlpCard.MAINT_TASKS.some(([suffix]) => this._s(suffix)?.state === 'due')) return true;
+    return this._s('maintenance_grinders')?.state === 'due';
+  }
+
+  _buildMaintHtml() {
+    const pills = { ok: '✓ OK', soon: 'Bald fällig', due: '⚠ Fällig', never: 'Nie erledigt' };
+    const row = (icon, name, status, pct, daysSince, shotsSince) => {
+      const cls  = pills[status] ? status : 'never';
+      const pctW = Math.max(0, Math.min(100, Math.round((parseFloat(pct) || 0) * 100)));
+      const sub  = [
+        daysSince != null ? (daysSince === 0 ? 'heute' : `vor ${daysSince} Tagen`) : null,
+        shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null,
+      ].filter(Boolean).join(' · ');
+      return `<div class="maint-row">
+        <div class="maint-row-top">
+          <span>${icon}</span>
+          <span class="maint-name">${esc(name)}</span>
+          <span class="maint-pill ${cls}">${pills[status] || '—'}</span>
+        </div>
+        ${sub ? `<div class="maint-sub">${esc(sub)}</div>` : ''}
+        <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
+      </div>`;
+    };
+
+    const rows = GlpCard.MAINT_TASKS.map(([suffix, name, icon]) => {
+      const s = this._s(suffix);
+      if (!s || s.state === 'unavailable' || s.state === 'unknown') return '';
+      const a = s.attributes || {};
+      return row(icon, name, s.state, a.pct, a.days_since, a.shots_since);
+    }).filter(Boolean);
+
+    // Grinder details: attributes dict {grinderName: {status, pct, days_since, shots_since}}
+    const gAttrs = this._s('maintenance_grinders')?.attributes || {};
+    const gRows  = Object.entries(gAttrs)
+      .filter(([, v]) => v && typeof v === 'object' && 'status' in v)
+      .map(([name, v]) => row('⚙️', name, v.status, v.pct, v.days_since, v.shots_since));
+
+    if (!rows.length && !gRows.length)
+      return `<div class="unavailable">Keine Wartungsdaten verfügbar</div>`;
+
+    return `<div class="maint-list">
+      ${rows.join('')}
+      ${gRows.length ? `<div class="maint-section-label">Mühlen</div>${gRows.join('')}` : ''}
+    </div>`;
   }
 
   // ── render ───────────────────────────────────────────────────────────────
@@ -607,6 +762,16 @@ class GlpCard extends HTMLElement {
     const syncTime = this._reltime('last_sync');
     const glpUrl   = safeUrl(this._config.glp_url);
 
+    // ── maintenance tab ───────────────────────────────────────────────────
+    const maintAvailable = this._maintAvailable();
+    if (brewing && this._activeTab === 'maint') this._activeTab = 'shot';
+    const showMaint  = maintAvailable && !brewing && this._activeTab === 'maint';
+    const tabBarHtml = maintAvailable && !brewing ? `
+      <div class="tab-bar">
+        <button class="tab-btn${!showMaint ? ' active' : ''}" data-tab="shot">☕ Shot</button>
+        <button class="tab-btn${showMaint ? ' active' : ''}" data-tab="maint">🔧 Wartung${this._maintAnyDue() ? ' ⚠' : ''}</button>
+      </div>` : '';
+
     // ── build HTML blocks ─────────────────────────────────────────────────
 
     // Navigation row (only when not brewing and multiple shots recorded)
@@ -703,12 +868,14 @@ class GlpCard extends HTMLElement {
             </div>
           </div>
 
+          ${tabBarHtml}
+
           ${steamOn && !brewing ? `<div class="steam-banner">☁️ Dampfmodus</div>` : ''}
 
           ${waterLevel !== null && waterLevel < 20
             ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
 
-          ${!brewing && preheatReady !== null ? `
+          ${!brewing && !showMaint && preheatReady !== null ? `
             <div class="preheat-section">
               ${preheatReady
                 ? `<div class="preheat-ready">☕ Brühbereit</div>`
@@ -724,7 +891,7 @@ class GlpCard extends HTMLElement {
                   </div>` : ''}
             </div>` : ''}
 
-          ${!brewing && profileAvailable ? `
+          ${!brewing && !showMaint && profileAvailable ? `
             <div class="profile-row">
               <span class="profile-label">Profil</span>
               <select class="profile-select" data-action="select-profile">
@@ -739,7 +906,7 @@ class GlpCard extends HTMLElement {
             ${liveProfile ? `<div class="shot-profile" style="margin-bottom:8px">${esc(liveProfile)}</div>` : ''}
             ${liveSvgHtml}
             ${liveStatsHtml}
-          ` : `
+          ` : showMaint ? this._buildMaintHtml() : `
             ${navHtml}
             ${profile
               ? `<div class="shot-profile">${esc(profile)}</div>
@@ -771,6 +938,7 @@ class GlpCard extends HTMLElement {
     this._bindPowerBtn();
     this._bindProfileSelect();
     this._bindNavBtns();
+    this._bindTabBtns();
   }
 
   getCardSize() { return 3; }

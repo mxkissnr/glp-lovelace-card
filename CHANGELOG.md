@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.9.0] – 2026-06-11
+### Added
+- **Maintenance tab** — a tab bar (☕ Shot | 🔧 Wartung) appears at the top of the card when GLP maintenance sensors are present; the Wartung tab shows all five machine maintenance tasks (descaling, backflush, group head, gaskets & screens, water filter) plus per-grinder cleaning schedules, each with a status pill (✓ OK / Bald fällig / ⚠ Fällig / Nie erledigt), days/shots since last service and a colored progress bar; the tab label shows ⚠ when any task is due; read-only — marking tasks done stays in the GLP dashboard; auto-hidden when no maintenance sensors exist; during brewing the card always switches to the live shot view; requires glp-integration with maintenance sensors (v1.7.0+); closes #21
+
 ## [1.8.1] – 2026-05-27
 ### Fixed
 - Navigation arrows were reversed — → now goes to older shots (2/10, 3/10 …) and ← goes back to newer; closes #18
