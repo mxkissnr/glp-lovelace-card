@@ -14,8 +14,8 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
-  Mobile-first, touch-optimised card with swipe gestures, dot navigation and a custom profile picker — one card that adapts to phone and desktop alike.<br/>
-  Displays last shot with navigation, preheat progress, live SVG chart during brewing, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
+  Premium dark card with hero metric typography, glowing shot chart and warm layered palette — feels like Decent Espresso or Apple Health, built for espresso.<br/>
+  Mobile-first with swipe gestures, dot navigation, custom profile picker and live brewing view — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
 ---

@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0] – 2026-06-16
+### Changed
+- **Premium visual redesign** — warm dark palette with layered gradient background (`#1c1b22 → #0f1012`); all borders replaced with translucency + `box-shadow`; subtle top-edge highlight on metric cards via CSS `::before`
+- **Hero metric trio** — duration, yield and ratio each get a dedicated card with 1.75 rem (1.9 rem on touch) bold number, coloured accent (`--accent` red / `--green` / default), unit in superscript and uppercase label — replacing the flat stats grid
+- **Profile name as visual anchor** — bumped to 1.45 rem / weight 800 with a tighter letter-spacing (`-.02em`), sits above the metric trio
+- **Chart taller + glowing** — SVG chart height increased to 72 px; each polyline now has a `feGaussianBlur` + merge glow filter (red / amber / green per series); subtle 1-px grid lines at ⅓ and ⅔ height; chart background is a very faint white tint for depth
+- **Status dot glow** — brewing state pulses with a red box-shadow halo; online dot has a green glow ring; machine-off state leaves no glow
+- **Brewing banner** — warm red translucent background with accent border, larger weight and spacing
+- **Tab bar** — slightly taller pill with faint shadow on active tab, letter-spacing tightened
+- **Ghost-style nav arrows** — bare text characters (`‹ / ›`), 1.35 rem, no background, low opacity at rest; active dot is an 18 px × 5 px rounded pill
+- **Profile picker** — label + current name stacked vertically in the button; opens as a pill-chip grid; active chip in red tint
+- **Secondary stats** — flat `stat-pill` with label / value side by side, replacing the previous grid tiles
+- **Star rating** — coloured per tier: green ≥ 4, amber ≥ 3, red < 3 (replaces uniform yellow)
+- **Touch targets** — all interactive elements ≥ 44 px on touch devices unchanged; metric numbers 1.9 rem on touch
+
 ## [2.0.1] – 2026-06-16
 ### Fixed
 - Card showed full content when machine was already off on page load — `machine_status` sensor attributes are empty when the sensor is unavailable (HA clears them on coordinator failure), so the switch entity was never resolved after a browser reload. Fix: `switch_entity` is now persisted in `localStorage` as soon as it is found for the first time; subsequent loads (including cold loads with machine already off) restore it immediately from storage without needing the HA attribute.
