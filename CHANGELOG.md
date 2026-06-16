@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.1] – 2026-06-16
+### Fixed
+- `ReferenceError: Cannot access 'dotClass' before initialization` — a dead `_headerHtml` template literal referenced `dotClass` before the variable was declared; this crashed `_render()` on every call, causing the card to never render
+
 ## [2.1.0] – 2026-06-16
 ### Changed
 - **Premium visual redesign** — warm dark palette with layered gradient background (`#1c1b22 → #0f1012`); all borders replaced with translucency + `box-shadow`; subtle top-edge highlight on metric cards via CSS `::before`
