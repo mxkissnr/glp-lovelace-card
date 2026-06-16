@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.2.2] – 2026-06-16
+### Fixed
+- Nav arrow taps occasionally did nothing — `click` events on mobile fire ~100–300 ms after `touchstart`; if a HA state update (`set hass()`) arrived in that window, `_render()` replaced the entire shadow DOM, destroying the button before the `click` fired; some browsers silently drop `click` events on detached elements; switched nav buttons to `pointerdown` (fires immediately on press, before any re-render) with manual `disabled` guard
+
 ## [2.2.1] – 2026-06-16
 ### Fixed
 - Navigation dot animation caused the active dot to shake/vibrate — `_render()` replaces the full `innerHTML` on every HA state update, restarting the keyframe animation every time; fix: animation only plays when `_shotIndex` actually changes (tracked via `_prevShotIndex`), not on every re-render

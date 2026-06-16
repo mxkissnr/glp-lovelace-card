@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.2.1';
+const GLP_CARD_VERSION = '2.2.2';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -568,7 +568,11 @@ class GlpCard extends HTMLElement {
 
   _bindNavBtns() {
     this.shadowRoot.querySelectorAll('[data-nav]').forEach(btn => {
-      btn.addEventListener('click', e => this._navShot(e.currentTarget.dataset.nav));
+      btn.addEventListener('pointerdown', e => {
+        if (btn.hasAttribute('disabled')) return;
+        e.preventDefault();
+        this._navShot(btn.dataset.nav);
+      });
     });
   }
 
