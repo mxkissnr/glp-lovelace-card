@@ -14,6 +14,7 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
+  Mobile-first, touch-optimised card with swipe gestures, dot navigation and a custom profile picker — one card that adapts to phone and desktop alike.<br/>
   Displays last shot with navigation, preheat progress, live SVG chart during brewing, profile selector and sync time — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
@@ -59,10 +60,10 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 
 - Machine online / error / brewing status
 - Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
-- **Shot navigation** — ← / → buttons to browse the last 10 recorded shots; auto-resets to newest when a new shot arrives; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
+- **Shot navigation** — ‹ / › arrows + **dot indicators** to browse the last 10 recorded shots; **swipe left/right** on the card to navigate on touch devices; auto-resets to newest when a new shot arrives; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
 - **Live SVG chart during brewing** — inline pressure (red), temperature (amber) and weight (green) curves updated every 2 s; elapsed time shown in brewing banner; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
 - **Live brewing stats** — temp, pressure, weight shown as mini-stats during a running shot (5 s updates)
-- **Profile selector** — dropdown to switch the active brew profile; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
+- **Profile selector** — custom pill-button picker (no native `<select>`) to switch the active brew profile; stays open across HA state updates; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
 - **Maintenance tab** — tab bar (☕ Shot | 🔧 Wartung) appears automatically when GLP maintenance sensors exist; shows all five machine maintenance tasks plus per-grinder cleaning schedules with status pill, days/shots since last service and a colored progress bar; ⚠ on the tab label when anything is due; read-only (marking done stays in the GLP dashboard)
 - **Steam mode banner** — shown automatically when steam switch is active
 - **Water level** in footer (💧 XX%); warning banner when below 20%

@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.0] – 2026-06-16
+### Changed
+- **Mobile-first redesign** — one adaptive card: `@media (pointer: coarse)` enlarges all touch targets to ≥ 44 px (arrows, tabs, profile picker, power button); desktop behaviour unchanged
+- **Swipe gestures** — swipe left/right anywhere on the card body to navigate between shots (50 px threshold, ignores near-vertical swipes and open profile picker)
+- **Dot navigation** — replaces the "X / Y" counter with a scrolling row of dots (max 10) alongside ‹ / › arrows; a timestamp line appears below when viewing a historical shot
+- **Custom profile picker** — replaces the native `<select>` with a pill-button dropdown; opens/closes with a chevron button; active profile highlighted in red; survives HA state updates without closing
+- **Visual polish** — refined tab bar (pill indicator with shadow), stat tiles with consistent rounded corners, status dot glow effect, improved color palette, smoother transitions, cleaner header layout
+- **switch_entity caching fix** — entity is now retained once resolved so the machine-off collapse no longer flickers when the attribute temporarily disappears on state updates; closes #22
+
 ## [1.9.0] – 2026-06-11
 ### Added
 - **Maintenance tab** — a tab bar (☕ Shot | 🔧 Wartung) appears at the top of the card when GLP maintenance sensors are present; the Wartung tab shows all five machine maintenance tasks (descaling, backflush, group head, gaskets & screens, water filter) plus per-grinder cleaning schedules, each with a status pill (✓ OK / Bald fällig / ⚠ Fällig / Nie erledigt), days/shots since last service and a colored progress bar; the tab label shows ⚠ when any task is due; read-only — marking tasks done stays in the GLP dashboard; auto-hidden when no maintenance sensors exist; during brewing the card always switches to the live shot view; requires glp-integration with maintenance sensors (v1.7.0+); closes #21
