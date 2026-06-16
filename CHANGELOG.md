@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.0] – 2026-06-16
+### Fixed
+- Temperature curve was invisible — the chart auto-detects the value scale now (×10 integer format vs. raw units), so the amber temp line is always rendered in the correct vertical range regardless of what format the integration sends
+- Temperature is now drawn last (on top of weight and pressure) so it can't be hidden beneath another curve
+### Changed
+- Metric cards (duration / yield / ratio) now show neutral white numbers instead of red/green — red and green imply good/bad which is misleading for neutral shot metrics; colour is reserved for status indicators (brewing banner, preheat, water level)
+- Profile picker moved to the top of the shot section (below the tab bar), before the shot history nav — it's a live machine setting, not a historical data field
+- Active navigation dot now animates with a spring-style grow keyframe (`cubic-bezier(.34,1.56,.64,1)`) instead of a static CSS transition; closes #24
+
 ## [2.1.1] – 2026-06-16
 ### Fixed
 - `ReferenceError: Cannot access 'dotClass' before initialization` — a dead `_headerHtml` template literal referenced `dotClass` before the variable was declared; this crashed `_render()` on every call, causing the card to never render

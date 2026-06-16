@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.1.0';
+const GLP_CARD_VERSION = '2.2.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -37,17 +37,27 @@ function svgPoints(arr, vmin, vmax, W, H) {
   }).join(' ');
 }
 
+function autoRange(arr, type) {
+  if (!arr || arr.length === 0) return [0, 1];
+  const max = Math.max(...arr);
+  if (type === 'temp')     return max > 200 ? [700, 1050] : [70, 105];
+  if (type === 'pressure') return max > 20  ? [0,   120]  : [0,  12];
+  return                          max > 100 ? [0,   500]  : [0,  50];
+}
+
 function buildShotChart(pres, temp, wt) {
   const W = 300, H = 72;
   const p = downsample(pres || [], 150);
   const t = downsample(temp || [], 150);
   const w = downsample(wt   || [], 150);
-  const poly = (pts, color, glow) => pts
+  const [pMin, pMax] = autoRange(p, 'pressure');
+  const [tMin, tMax] = autoRange(t, 'temp');
+  const [wMin, wMax] = autoRange(w, 'weight');
+  const poly = (pts, color) => pts
     ? `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
-        stroke-linecap="round" stroke-linejoin="round"
-        filter="${glow ? `url(#g${color.replace('#','')})` : 'none'}"/>`
+        stroke-linecap="round" stroke-linejoin="round" filter="url(#g${color.replace('#','')})"/>`
     : '';
-  const defGlow = (id, color) =>
+  const defGlow = (id) =>
     `<filter id="g${id}" x="-20%" y="-20%" width="140%" height="140%">
        <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -55,16 +65,16 @@ function buildShotChart(pres, temp, wt) {
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}"
       style="display:block;border-radius:10px;overflow:hidden" preserveAspectRatio="none">
     <defs>
-      ${defGlow('ef4444','#ef4444')}
-      ${defGlow('f59e0b','#f59e0b')}
-      ${defGlow('22c55e','#22c55e')}
+      ${defGlow('ef4444')}
+      ${defGlow('f59e0b')}
+      ${defGlow('22c55e')}
     </defs>
     <rect width="${W}" height="${H}" fill="rgba(255,255,255,.03)"/>
     <line x1="0" y1="${H*0.33}" x2="${W}" y2="${H*0.33}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/>
     <line x1="0" y1="${H*0.66}" x2="${W}" y2="${H*0.66}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/>
-    ${poly(svgPoints(t, 700, 1050, W, H), '#f59e0b', true)}
-    ${poly(svgPoints(w, 0,   500,  W, H), '#22c55e', true)}
-    ${poly(svgPoints(p, 0,   120,  W, H), '#ef4444', true)}
+    ${poly(svgPoints(w, wMin, wMax, W, H), '#22c55e')}
+    ${poly(svgPoints(p, pMin, pMax, W, H), '#ef4444')}
+    ${poly(svgPoints(t, tMin, tMax, W, H), '#f59e0b')}
   </svg>`;
 }
 
@@ -220,11 +230,16 @@ const STYLES = `
   .nav-dot {
     width: 5px; height: 5px; border-radius: 50%;
     background: rgba(255,255,255,.18);
-    transition: all .25s; flex-shrink: 0;
+    flex-shrink: 0;
   }
   .nav-dot.active {
     width: 18px; border-radius: 3px;
     background: var(--text);
+    animation: dot-grow .22s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes dot-grow {
+    from { width: 5px; border-radius: 50%; opacity: .4; }
+    to   { width: 18px; border-radius: 3px; opacity: 1; }
   }
   .nav-ts {
     font-size: .67rem; color: var(--sub);
@@ -277,9 +292,7 @@ const STYLES = `
     margin-top: 4px;
     font-weight: 500;
   }
-  .metric-card.accent .metric-num { color: var(--accent); }
-  .metric-card.green  .metric-num { color: var(--green); }
-  .metric-card.amber  .metric-num { color: var(--amber); }
+  /* no semantic color on metric numbers — all neutral white */
 
   /* secondary stats */
   .stats-secondary {
@@ -857,14 +870,14 @@ class GlpCard extends HTMLElement {
 
     const metricTrioHtml = (() => {
       const tiles = [
-        duration ? { num: duration, unit: 's',  label: 'Dauer',   cls: 'accent' } : null,
-        weight   ? { num: weight,   unit: 'g',  label: 'Ausbeute', cls: 'green' } : null,
-        ratio    ? { num: `1:${ratio}`, unit: '', label: 'Ratio',  cls: ''      } : null,
+        duration ? { num: duration,      unit: 's', label: 'Dauer'   } : null,
+        weight   ? { num: weight,        unit: 'g', label: 'Ausbeute'} : null,
+        ratio    ? { num: `1:${ratio}`,  unit: '',  label: 'Ratio'   } : null,
       ].filter(Boolean);
       if (!tiles.length) return '';
       return `<div class="metric-trio">
         ${tiles.map(t => `
-          <div class="metric-card ${t.cls}">
+          <div class="metric-card">
             <div class="metric-num">${esc(t.num)}${t.unit ? `<span class="metric-unit">${t.unit}</span>` : ''}</div>
             <div class="metric-label">${t.label}</div>
           </div>`).join('')}
@@ -927,6 +940,7 @@ class GlpCard extends HTMLElement {
 
     // ── shot section ─────────────────────────────────────────────────────────
     const shotSectionHtml = !brewing && !showMaint ? `
+      ${profilePickerHtml}
       ${navHtml}
       ${profile
         ? `<div class="shot-hero">
@@ -941,7 +955,6 @@ class GlpCard extends HTMLElement {
       ${metricTrioHtml}
       ${secondaryHtml}
       ${histSvgHtml}
-      ${profilePickerHtml}
     ` : '';
 
     // ── footer ───────────────────────────────────────────────────────────────
