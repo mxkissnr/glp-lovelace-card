@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.3.0';
+const GLP_CARD_VERSION = '2.4.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -188,6 +188,16 @@ const STYLES = `
 
   /* ── swipe target ── */
   .swipe-target { touch-action: pan-y; }
+  .swipe-target.slide-left  { animation: slide-in-left  .22s cubic-bezier(.25,.46,.45,.94) both; }
+  .swipe-target.slide-right { animation: slide-in-right .22s cubic-bezier(.25,.46,.45,.94) both; }
+  @keyframes slide-in-left {
+    from { opacity: .3; transform: translateX(32px); }
+    to   { opacity: 1;  transform: translateX(0); }
+  }
+  @keyframes slide-in-right {
+    from { opacity: .3; transform: translateX(-32px); }
+    to   { opacity: 1;  transform: translateX(0); }
+  }
 
   /* ── shot hero ── */
   .shot-hero {
@@ -527,6 +537,7 @@ class GlpCard extends HTMLElement {
     this._profileOpen  = false;
     this._shotIndex     = 0;
     this._prevShotIndex = -1;
+    this._navDir        = 0; // -1 = prev (older), +1 = next (newer)
     this._recentShots   = [];
     this._lastLatestId  = null;
     this._activeTab    = 'shot';
@@ -603,8 +614,8 @@ class GlpCard extends HTMLElement {
 
   _navShot(dir) {
     const max = this._recentShots.length - 1;
-    if (dir === 'prev' && this._shotIndex < max) { this._shotIndex++; this._render(); }
-    if (dir === 'next' && this._shotIndex > 0)   { this._shotIndex--; this._render(); }
+    if (dir === 'prev' && this._shotIndex < max) { this._navDir = -1; this._shotIndex++; this._render(); }
+    if (dir === 'next' && this._shotIndex > 0)   { this._navDir = +1; this._shotIndex--; this._render(); }
   }
 
   setConfig(config) { this._config = { title: 'Gaggiuino', ...config }; }
@@ -1017,7 +1028,7 @@ class GlpCard extends HTMLElement {
         ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
         ${preheatHtml}
 
-        <div class="swipe-target">
+        <div class="swipe-target${indexChanged && this._navDir !== 0 ? (this._navDir > 0 ? ' slide-left' : ' slide-right') : ''}">
           ${brewing ? `
             <div class="brewing-banner">⏳ Bezug läuft${elapsedSec !== null ? ` · ${elapsedSec}s` : ' …'}</div>
             ${liveProfile ? `<div class="shot-hero" style="margin-bottom:12px"><div class="shot-profile">${esc(liveProfile)}</div></div>` : ''}
@@ -1030,6 +1041,7 @@ class GlpCard extends HTMLElement {
 
       </div></ha-card>`;
 
+    this._navDir = 0;
     this._bindPowerBtn();
     this._bindProfilePicker();
     this._bindTabBtns();

@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.0] – 2026-06-16
+### Added
+- **Slide animation between shots** — tapping an arrow or swiping triggers a 220 ms slide-in from the correct direction (right → older shot slides in from the right, left → newer shot slides in from the left); animation only plays on actual navigation, not on HA state updates; closes #26
+### Fixed
+- **Drink type badge showed internal ID** (`m_1779888566035`) instead of a readable name — the card now receives the resolved display name from Integration v1.10.2 (which looks up the drink menu); requires GLP Integration v1.10.2+; closes (see integration)
+
 ## [2.3.0] – 2026-06-16
 ### Added
 - **Drink type badge** — shows the prepared drink (e.g. "Espresso", "Cappuccino") as a small pill badge next to the coffee name in the shot hero; sourced from `drink_type` in `recent_shots` (requires GLP Integration v1.10.1+); hidden when not set; closes #25
