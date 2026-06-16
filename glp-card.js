@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.2.2';
+const GLP_CARD_VERSION = '2.3.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -201,10 +201,21 @@ const STYLES = `
     margin-bottom: 3px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .shot-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .76rem; color: var(--sub);
+    overflow: hidden;
+  }
+  .shot-drink {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: .65rem; font-weight: 600;
+    letter-spacing: .04em;
+    white-space: nowrap; flex-shrink: 0;
+  }
   .shot-coffee {
-    font-size: .76rem;
-    color: var(--sub);
-    display: flex; align-items: center; gap: 4px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
@@ -765,8 +776,9 @@ class GlpCard extends HTMLElement {
     const elapsedSec     = tArr?.length ? Math.round(tArr[tArr.length - 1] / 10) : null;
 
     // ── shot values ───────────────────────────────────────────────────────────
-    const profile  = shotObj?.profile  ?? this._val('last_shot_profile', null);
-    const coffee   = shotObj?.coffee   ?? this._val('last_shot_coffee',  null);
+    const profile    = shotObj?.profile    ?? this._val('last_shot_profile', null);
+    const coffee     = shotObj?.coffee     ?? this._val('last_shot_coffee',  null);
+    const drinkType  = shotObj?.drink_type ?? null;
     const duration = shotObj != null
       ? (shotObj.duration != null ? shotObj.duration.toFixed(1) : null)
       : this._num('last_shot_duration', 1);
@@ -956,7 +968,10 @@ class GlpCard extends HTMLElement {
       ${profile
         ? `<div class="shot-hero">
             <div class="shot-profile">${esc(profile)}</div>
-            ${coffee ? `<div class="shot-coffee">☕ ${esc(coffee)}</div>` : ''}
+            <div class="shot-meta">
+              ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
+              ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>` : ''}
+            </div>
           </div>`
         : `<div class="no-shot">
             <div class="no-shot-label">Noch kein Shot aufgezeichnet</div>

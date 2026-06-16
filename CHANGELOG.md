@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.3.0] – 2026-06-16
+### Added
+- **Drink type badge** — shows the prepared drink (e.g. "Espresso", "Cappuccino") as a small pill badge next to the coffee name in the shot hero; sourced from `drink_type` in `recent_shots` (requires GLP Integration v1.10.1+); hidden when not set; closes #25
+
 ## [2.2.2] – 2026-06-16
 ### Fixed
 - Nav arrow taps occasionally did nothing — `click` events on mobile fire ~100–300 ms after `touchstart`; if a HA state update (`set hass()`) arrived in that window, `_render()` replaced the entire shadow DOM, destroying the button before the `click` fired; some browsers silently drop `click` events on detached elements; switched nav buttons to `pointerdown` (fires immediately on press, before any re-render) with manual `disabled` guard
