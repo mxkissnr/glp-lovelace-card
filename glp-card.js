@@ -696,20 +696,6 @@ class GlpCard extends HTMLElement {
         </svg>
       </button>` : '';
 
-    const _headerHtml = `
-      <div class="header">
-        <div class="title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 21v-2h2V3h14v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2v6h2v2H2zm4-2h8V5H6v14zm10-6h2V7h-2v6z"/>
-          </svg>
-          ${esc(this._config.title)}
-        </div>
-        <div class="header-right">
-          ${machineOff ? `<span class="off-label">Aus</span>` : `<div class="status-dot ${dotClass}"></div>`}
-          ${_powerBtn}
-        </div>
-      </div>`;
-
     // ── machine off ──────────────────────────────────────────────────────────
     if (machineOff) {
       this._profileOpen = false;
