@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.1] – 2026-06-16
+### Fixed
+- Card showed full content when machine was already off on page load — `machine_status` sensor attributes are empty when the sensor is unavailable (HA clears them on coordinator failure), so the switch entity was never resolved after a browser reload. Fix: `switch_entity` is now persisted in `localStorage` as soon as it is found for the first time; subsequent loads (including cold loads with machine already off) restore it immediately from storage without needing the HA attribute.
+
 ## [2.0.0] – 2026-06-16
 ### Changed
 - **Mobile-first redesign** — one adaptive card: `@media (pointer: coarse)` enlarges all touch targets to ≥ 44 px (arrows, tabs, profile picker, power button); desktop behaviour unchanged

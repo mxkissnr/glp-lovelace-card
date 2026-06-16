@@ -506,7 +506,9 @@ class GlpCard extends HTMLElement {
     this._recentShots  = [];
     this._lastLatestId = null;
     this._activeTab    = 'shot';
-    this._switchEntity = null;   // cached — never reset to null once resolved
+    // Persist switch entity across page loads — once found, keep it even when
+    // machine_status sensor goes unavailable (which clears HA attributes).
+    this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
 
   // ── event bindings ───────────────────────────────────────────────────────
@@ -702,10 +704,16 @@ class GlpCard extends HTMLElement {
     const selPrefix = prefix.replace(/^sensor\./, 'select.');
 
     // ── machine off? (cached switch entity) ──────────────────────────────
+    // machine_status attributes are empty when the sensor is unavailable,
+    // so we persist the switch entity in localStorage to survive page reloads
+    // when the machine is already off on first load.
     const resolvedSwitch = this._config.switch_entity
       || this._s('machine_status')?.attributes?.switch_entity
       || null;
-    if (resolvedSwitch) this._switchEntity = resolvedSwitch;
+    if (resolvedSwitch && resolvedSwitch !== this._switchEntity) {
+      this._switchEntity = resolvedSwitch;
+      localStorage.setItem('glp_switch_entity', resolvedSwitch);
+    }
     const switchState = this._switchEntity ? this._hass.states[this._switchEntity] : null;
     const machineOff  = !!(this._switchEntity && (switchState?.state === 'off' || switchState?.state === 'unavailable'));
 
