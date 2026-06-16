@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.2.0';
+const GLP_CARD_VERSION = '2.2.1';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -235,6 +235,8 @@ const STYLES = `
   .nav-dot.active {
     width: 18px; border-radius: 3px;
     background: var(--text);
+  }
+  .nav-dot.active.changed {
     animation: dot-grow .22s cubic-bezier(.34,1.56,.64,1) both;
   }
   @keyframes dot-grow {
@@ -512,9 +514,10 @@ class GlpCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._profileInteracting = false;
     this._profileOpen  = false;
-    this._shotIndex    = 0;
-    this._recentShots  = [];
-    this._lastLatestId = null;
+    this._shotIndex     = 0;
+    this._prevShotIndex = -1;
+    this._recentShots   = [];
+    this._lastLatestId  = null;
     this._activeTab    = 'shot';
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
@@ -821,11 +824,15 @@ class GlpCard extends HTMLElement {
       </div>` : '';
 
     // ── nav dots ──────────────────────────────────────────────────────────────
+    const indexChanged = this._shotIndex !== this._prevShotIndex;
+    this._prevShotIndex = this._shotIndex;
     const showNav = !brewing && !showMaint && totalShots > 1;
     let navHtml = '';
     if (showNav) {
-      const dots = this._recentShots.slice(0, 10).map((_, i) =>
-        `<span class="nav-dot${i === this._shotIndex ? ' active':''}"></span>`).join('');
+      const dots = this._recentShots.slice(0, 10).map((_, i) => {
+        const active = i === this._shotIndex;
+        return `<span class="nav-dot${active ? ` active${indexChanged ? ' changed' : ''}` : ''}"></span>`;
+      }).join('');
       const prevDis = this._shotIndex >= totalShots - 1 ? ' disabled' : '';
       const nextDis = this._shotIndex <= 0             ? ' disabled' : '';
       let tsLine = '';

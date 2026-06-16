@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.2.1] – 2026-06-16
+### Fixed
+- Navigation dot animation caused the active dot to shake/vibrate — `_render()` replaces the full `innerHTML` on every HA state update, restarting the keyframe animation every time; fix: animation only plays when `_shotIndex` actually changes (tracked via `_prevShotIndex`), not on every re-render
+
 ## [2.2.0] – 2026-06-16
 ### Fixed
 - Temperature curve was invisible — the chart auto-detects the value scale now (×10 integer format vs. raw units), so the amber temp line is always rendered in the correct vertical range regardless of what format the integration sends
