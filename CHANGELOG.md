@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.1] – 2026-06-17
+### Fixed
+- Tab, profile and power buttons now use `pointerdown` instead of `click` — `click` was eaten by frequent `set hass` re-renders, making the **Wartung tab switch and profile picker fire only sporadically**; closes #32
+- **Profile switch felt slow** — the picker kept showing the old profile until the machine coordinator reported back (up to 5 s); now shows the selected profile immediately (optimistic, with a "wechselt …" hint) and clears when the machine confirms (8 s safety timeout); closes #32
+- **Target temperature showed "1.0°"** for boiler-off profiles (e.g. "[UT] Boiler Off") — the live panel and the shot's Ziel pill now show "Aus" when the boiler target is effectively off; closes #32
+
 ## [2.6.0] – 2026-06-17
 ### Added
 - **Live machine panel** — a static live status row showing the machine's current boiler temperature (with target and an "Aufheizen" highlight while below target), live pressure and live scale weight; sourced from the integration's machine sensors and updated every ~5 s; shown when the machine is on and not brewing; closes #31

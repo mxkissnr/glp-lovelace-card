@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.6.0';
+const GLP_CARD_VERSION = '2.6.1';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -560,13 +560,15 @@ class GlpCard extends HTMLElement {
     this._recentShots   = [];
     this._lastLatestId  = null;
     this._activeTab    = 'shot';
+    this._pendingProfile = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
 
   _bindPowerBtn() {
     const btn = this.shadowRoot.querySelector('[data-action="toggle-switch"]');
     if (!btn) return;
-    btn.addEventListener('click', e => {
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
       e.stopPropagation();
       if (this._hass && this._switchEntity)
         this._hass.callService('switch', 'toggle', { entity_id: this._switchEntity });
@@ -576,7 +578,8 @@ class GlpCard extends HTMLElement {
   _bindProfilePicker() {
     const toggle = this.shadowRoot.querySelector('[data-action="toggle-profile"]');
     if (toggle) {
-      toggle.addEventListener('click', e => {
+      toggle.addEventListener('pointerdown', e => {
+        e.preventDefault();
         e.stopPropagation();
         this._profileOpen = !this._profileOpen;
         this._profileInteracting = this._profileOpen;
@@ -584,12 +587,16 @@ class GlpCard extends HTMLElement {
       });
     }
     this.shadowRoot.querySelectorAll('[data-profile-opt]').forEach(opt => {
-      opt.addEventListener('click', e => {
+      opt.addEventListener('pointerdown', e => {
+        e.preventDefault();
         e.stopPropagation();
         const val = e.currentTarget.dataset.profileOpt;
         if (this._hass) {
           const entityId = this._resolvePrefix().replace(/^sensor\./, 'select.') + 'profile';
           this._hass.callService('select', 'select_option', { entity_id: entityId, option: val });
+          this._pendingProfile = val;   // optimistic: show immediately until the machine confirms
+          clearTimeout(this._pendingProfileTimer);
+          this._pendingProfileTimer = setTimeout(() => { this._pendingProfile = null; this._render(); }, 8000);
         }
         this._profileOpen = false;
         this._profileInteracting = false;
@@ -600,7 +607,8 @@ class GlpCard extends HTMLElement {
 
   _bindTabBtns() {
     this.shadowRoot.querySelectorAll('[data-tab]').forEach(btn => {
-      btn.addEventListener('click', e => {
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
         const tab = e.currentTarget.dataset.tab;
         if (tab !== this._activeTab) { this._activeTab = tab; this._render(); }
       });
@@ -872,6 +880,8 @@ class GlpCard extends HTMLElement {
     const targetTemp  = this._num('machine_target_temperature', 1);
     const livePressure = this._num('machine_live_pressure', 1);
     const liveWeight   = this._num('machine_live_weight', 1);
+    // "Boiler off" profiles report a near-zero target — show "Aus" instead of a meaningless 1°
+    const boilerOff   = targetTemp !== null && parseFloat(targetTemp) < 30;
     const waterLevel   = (() => {
       const v = parseFloat(this._val('machine_water_level', null));
       return isNaN(v) ? null : Math.round(v);
@@ -889,8 +899,12 @@ class GlpCard extends HTMLElement {
     // ── profile picker ────────────────────────────────────────────────────────
     const profileEntity  = this._hass.states[selPrefix + 'profile'];
     const profileOptions = profileEntity?.attributes?.options || null;
-    const currentProfile = (profileEntity?.state && profileEntity.state !== 'unavailable')
+    const realProfile = (profileEntity?.state && profileEntity.state !== 'unavailable')
       ? profileEntity.state : null;
+    // optimistic: keep showing the just-selected profile until the machine confirms it
+    if (this._pendingProfile && realProfile === this._pendingProfile) this._pendingProfile = null;
+    const currentProfile = this._pendingProfile || realProfile;
+    const profileSwitching = !!this._pendingProfile;
     const profileAvailable = Array.isArray(profileOptions) && profileOptions.length > 0;
 
     // ── status ────────────────────────────────────────────────────────────────
@@ -943,7 +957,7 @@ class GlpCard extends HTMLElement {
         <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile">
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
             <span class="profile-label-small">Profil</span>
-            <span class="profile-current-name">${esc(currentProfile || '—')}</span>
+            <span class="profile-current-name">${esc(currentProfile || '—')}${profileSwitching ? `<span style="color:var(--amber);font-weight:500;font-size:.8em"> · wechselt …</span>` : ''}</span>
           </div>
           <span class="profile-chevron${this._profileOpen?' open':''}">▾</span>
         </button>
@@ -983,7 +997,7 @@ class GlpCard extends HTMLElement {
       const pills = [
         pressure   !== null ? { label: 'Druck Ø',  val: `${pressure} bar` }  : null,
         temp       !== null ? { label: 'Temp',      val: `${temp}°` }         : null,
-        targetTemp !== null ? { label: 'Ziel',      val: `${targetTemp}°` }   : null,
+        targetTemp !== null ? { label: 'Ziel',      val: boilerOff ? 'Aus' : `${targetTemp}°` } : null,
       ].filter(Boolean);
       if (!pills.length) return '';
       return `<div class="stats-secondary">
@@ -1021,8 +1035,8 @@ class GlpCard extends HTMLElement {
     const lmTiles = [
       temp !== null ? {
         val: temp, unit: '°',
-        lbl: targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : 'Temp',
-        warm: targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1,
+        lbl: boilerOff ? 'Temp · Boiler aus' : (targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : 'Temp'),
+        warm: !boilerOff && targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1,
       } : null,
       livePressure !== null ? { val: livePressure, unit: ' bar', lbl: 'Druck' } : null,
       liveWeight   !== null ? { val: liveWeight,   unit: ' g',   lbl: 'Waage' } : null,
