@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.1] – 2026-06-17
+### Added
+- HACS validation workflow (`.github/workflows/validate.yml`) running the official `hacs/action` (`category: plugin`) on push, PR, daily schedule and manual dispatch — required for submission to the HACS default repository; closes #27
+- Validation status badge in README
+- GitHub repository topics for discoverability (`home-assistant`, `hacs`, `lovelace`, `gaggiuino`, `espresso`)
+
 ## [2.5.0] – 2026-06-16
 ### Changed
 - **Dual-panel shot transition** — replaces the single-element CSS keyframe with a proper dual-panel JS animation: the old shot content is cloned and slides out in one direction while the new content slides in from the opposite side simultaneously (36 px offset + opacity fade, 220 ms ease-out); both panels animate independently so the transition looks like iOS/Android navigation instead of a single-element pop; the animation plays only on explicit navigation, never on HA state updates; closes #26

@@ -6,6 +6,9 @@
   <a href="https://github.com/mxkissnr/glp-lovelace-card/releases">
     <img src="https://img.shields.io/github/v/tag/mxkissnr/glp-lovelace-card?color=%23f59e0b&label=Version&style=flat-square" alt="Version"/>
   </a>
+  <a href="https://github.com/mxkissnr/glp-lovelace-card/actions/workflows/validate.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/mxkissnr/glp-lovelace-card/validate.yml?branch=main&label=Validate&style=flat-square" alt="Validate"/>
+  </a>
   <img src="https://img.shields.io/badge/Home%20Assistant-Lovelace%20Card-41bdf5?logo=home-assistant&style=flat-square" alt="HA Lovelace"/>
   <img src="https://img.shields.io/badge/HACS-Custom-orange?style=flat-square" alt="HACS Custom"/>
   <img src="https://img.shields.io/badge/Built%20with-Claude%20by%20Anthropic-D97706?style=flat-square" alt="Built with Claude"/>
