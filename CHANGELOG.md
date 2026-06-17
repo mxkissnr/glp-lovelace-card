@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.7.1] – 2026-06-17
+### Fixed
+- Shot stats showed the **live machine** Temp/target instead of the displayed shot's values — a recorded shot showed "ZIEL: Aus" when the machine was currently on a boiler-off profile; "Temp" is now derived from the shot's own temperature curve and the (live-only) "Ziel" pill was removed from the shot section (it lives in the "Maschine live" panel); closes #36
+- Maintenance confirmation prompt flickered while open because periodic `set hass` updates rebuilt the card DOM — re-renders are now suppressed while a maintenance confirm is open (same as the profile dropdown); closes #35
+
 ## [2.7.0] – 2026-06-17
 ### Added
 - **Maintenance is now actionable from the card** — tapping a task in the Wartung tab asks for confirmation ("Als erledigt markieren? ✓ Ja / ✕") and, on confirm, marks it done via the new `gaggiuino_profiler.maintenance_done` service (resets the timer). Works for the five machine tasks and per-grinder cleaning; requires GLP Integration v1.11.0+; closes #34

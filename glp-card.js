@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.7.0';
+const GLP_CARD_VERSION = '2.7.1';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -741,7 +741,7 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this._profileInteracting && !this._animating) this._render();
+    if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
   }
 
   _resolvePrefix() {
@@ -930,6 +930,13 @@ class GlpCard extends HTMLElement {
     const rating = shotObj != null
       ? (shotObj.rating || null)
       : (() => { const v = parseInt(this._val('last_shot_rating', null)); return (!isNaN(v) && v >= 1 && v <= 5) ? v : null; })();
+    // brew temperature of the *displayed shot* (avg of its temperature curve) — not the live machine value
+    const shotTemp = (() => {
+      const t = shotObj?.dp?.t;
+      if (!Array.isArray(t) || !t.length) return null;
+      const avg = t.reduce((a, b) => a + b, 0) / t.length;
+      return (avg > 200 ? avg / 10 : avg).toFixed(1);
+    })();
 
     // ── live / machine ───────────────────────────────────────────────────────
     const temp        = this._num('machine_temperature', 1);
@@ -1052,8 +1059,7 @@ class GlpCard extends HTMLElement {
     const secondaryHtml = (() => {
       const pills = [
         pressure   !== null ? { label: 'Druck Ø',  val: `${pressure} bar` }  : null,
-        temp       !== null ? { label: 'Temp',      val: `${temp}°` }         : null,
-        targetTemp !== null ? { label: 'Ziel',      val: boilerOff ? 'Aus' : `${targetTemp}°` } : null,
+        shotTemp   !== null ? { label: 'Temp',      val: `${shotTemp}°` }     : null,
       ].filter(Boolean);
       if (!pills.length) return '';
       return `<div class="stats-secondary">
