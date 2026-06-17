@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.5.1';
+const GLP_CARD_VERSION = '2.6.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -363,6 +363,34 @@ const STYLES = `
   .l-wt::before   { background: #22c55e; }
 
   /* ── profile picker ── */
+  /* live machine panel */
+  .live-machine { margin-bottom: 14px; }
+  .lm-head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .6rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--sub); margin-bottom: 6px;
+  }
+  .lm-live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 0 0 rgba(48,209,88,.55);
+    animation: lm-pulse 2s ease-out infinite;
+  }
+  @keyframes lm-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(48,209,88,.5); }
+    70%  { box-shadow: 0 0 0 6px rgba(48,209,88,0); }
+    100% { box-shadow: 0 0 0 0 rgba(48,209,88,0); }
+  }
+  .lm-tiles { display: flex; gap: 8px; }
+  .lm-tile {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 9px 6px; text-align: center;
+  }
+  .lm-tile.warming { border-color: rgba(255,214,10,.35); }
+  .lm-val { font-size: 1.4rem; font-weight: 700; color: var(--text); letter-spacing: -.02em; line-height: 1.1; }
+  .lm-tile.warming .lm-val { color: var(--amber); }
+  .lm-unit { font-size: .58rem; color: var(--sub); margin-left: 1px; font-weight: 500; }
+  .lm-lbl { font-size: .58rem; color: var(--sub); margin-top: 2px; letter-spacing: .02em; }
+
   .profile-picker { margin-bottom: 14px; }
   .profile-current-btn {
     width: 100%;
@@ -526,6 +554,7 @@ class GlpCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._profileInteracting = false;
     this._profileOpen  = false;
+    this._animating     = false;
     this._shotIndex     = 0;
     this._prevShotIndex = -1;
     this._recentShots   = [];
@@ -603,6 +632,7 @@ class GlpCard extends HTMLElement {
   }
 
   _navShot(dir) {
+    if (this._animating) return;               // ignore nav while an animation is in flight
     const max = this._recentShots.length - 1;
     if (dir === 'prev' && this._shotIndex < max) this._navShotAnimated(dir, this._shotIndex + 1);
     if (dir === 'next' && this._shotIndex > 0)   this._navShotAnimated(dir, this._shotIndex - 1);
@@ -612,13 +642,14 @@ class GlpCard extends HTMLElement {
     const oldContent = this.shadowRoot.querySelector('.swipe-content');
     const oldClone   = oldContent ? oldContent.cloneNode(true) : null;
 
+    // Guard set hass() from re-rendering (and wiping the animation) until it finishes
+    this._animating = true;
     this._shotIndex = newIndex;
     this._render();
 
-    if (!oldClone) return;
     const newSwipe   = this.shadowRoot.querySelector('.swipe-target');
     const newContent = this.shadowRoot.querySelector('.swipe-content');
-    if (!newSwipe || !newContent) return;
+    if (!oldClone || !newSwipe || !newContent) { this._animating = false; return; }
 
     // prev = going to older shot → new content enters from right, old exits left
     const enterX = dir === 'prev' ? '36px' : '-36px';
@@ -643,6 +674,7 @@ class GlpCard extends HTMLElement {
       setTimeout(() => {
         if (oldClone.parentNode) oldClone.remove();
         ['transform', 'transition', 'opacity'].forEach(p => newContent.style.removeProperty(p));
+        this._animating = false;
       }, 250);
     }));
   }
@@ -651,7 +683,7 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this._profileInteracting) this._render();
+    if (!this._profileInteracting && !this._animating) this._render();
   }
 
   _resolvePrefix() {
@@ -985,6 +1017,28 @@ class GlpCard extends HTMLElement {
           ${liveWeight   !== null ? `<div class="live-stat"><div class="metric-num">${liveWeight}<span class="metric-unit">g</span></div><div class="metric-label">Gewicht</div></div>` : ''}
         </div>` : '';
 
+    // ── live machine panel (static, shown when on & not brewing) ──────────────
+    const lmTiles = [
+      temp !== null ? {
+        val: temp, unit: '°',
+        lbl: targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : 'Temp',
+        warm: targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1,
+      } : null,
+      livePressure !== null ? { val: livePressure, unit: ' bar', lbl: 'Druck' } : null,
+      liveWeight   !== null ? { val: liveWeight,   unit: ' g',   lbl: 'Waage' } : null,
+    ].filter(Boolean);
+    const liveMachineHtml = (!brewing && !showMaint && lmTiles.length) ? `
+      <div class="live-machine">
+        <div class="lm-head"><span class="lm-live-dot"></span>Maschine live</div>
+        <div class="lm-tiles">
+          ${lmTiles.map(t => `
+            <div class="lm-tile${t.warm ? ' warming' : ''}">
+              <div class="lm-val">${esc(String(t.val))}<span class="lm-unit">${t.unit}</span></div>
+              <div class="lm-lbl">${esc(t.lbl)}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
     // ── preheat html ─────────────────────────────────────────────────────────
     const preheatHtml = !brewing && !showMaint && preheatHasEnt ? (
       preheatReady
@@ -1003,8 +1057,6 @@ class GlpCard extends HTMLElement {
 
     // ── shot section ─────────────────────────────────────────────────────────
     const shotSectionHtml = !brewing && !showMaint ? `
-      ${profilePickerHtml}
-      ${navHtml}
       ${profile
         ? `<div class="shot-hero">
             <div class="shot-profile">${esc(profile)}</div>
@@ -1056,6 +1108,9 @@ class GlpCard extends HTMLElement {
         ${steamOn && !brewing ? `<div class="steam-banner">☁️ Dampfmodus</div>` : ''}
         ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
         ${preheatHtml}
+        ${profilePickerHtml}
+        ${liveMachineHtml}
+        ${navHtml}
 
         <div class="swipe-target">
           <div class="swipe-content">

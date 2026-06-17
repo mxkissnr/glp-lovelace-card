@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0] – 2026-06-17
+### Added
+- **Live machine panel** — a static live status row showing the machine's current boiler temperature (with target and an "Aufheizen" highlight while below target), live pressure and live scale weight; sourced from the integration's machine sensors and updated every ~5 s; shown when the machine is on and not brewing; closes #31
+### Fixed
+- Shot swipe/arrow navigation: only the **first** navigation animated smoothly — a `set hass` state update (machine sensors poll every 5 s) re-rendered and wiped the in-flight animation; added an `_animating` guard so state updates don't re-render mid-animation and new navigation is ignored until the current one finishes; closes #30
+- The **profile picker** (and the shot nav row) no longer slide together with the shot content — they were inside the animated `.swipe-content`; moved out into the static card area so only the shot data swipes; closes #30
+
 ## [2.5.1] – 2026-06-17
 ### Added
 - HACS validation workflow (`.github/workflows/validate.yml`) running the official `hacs/action` (`category: plugin`) on push, PR, daily schedule and manual dispatch — required for submission to the HACS default repository; closes #27
