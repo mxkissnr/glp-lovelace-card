@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.7.0] – 2026-06-17
+### Added
+- **Maintenance is now actionable from the card** — tapping a task in the Wartung tab asks for confirmation ("Als erledigt markieren? ✓ Ja / ✕") and, on confirm, marks it done via the new `gaggiuino_profiler.maintenance_done` service (resets the timer). Works for the five machine tasks and per-grinder cleaning; requires GLP Integration v1.11.0+; closes #34
+
 ## [2.6.2] – 2026-06-17
 ### Fixed
 - Shot chart: the **temperature curve was invisible for low temperatures** (e.g. boiler-off profiles ~50°C) because the temp axis used a fixed 70–105°C range — values below it were drawn off-screen; the temperature range is now data-adaptive so the curve always shows; closes #33

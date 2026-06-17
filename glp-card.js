@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.6.2';
+const GLP_CARD_VERSION = '2.7.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -520,6 +520,17 @@ const STYLES = `
   .maint-bar.due   { background: var(--accent); }
   .maint-bar.never { background: rgba(255,255,255,.12); }
   .maint-section-label { font-size: .62rem; color: var(--sub); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+  .maint-row[role="button"] { cursor: pointer; transition: border-color .15s, background .15s; }
+  .maint-row[role="button"]:hover { border-color: rgba(255,255,255,.16); }
+  .maint-row.confirming { border-color: rgba(255,214,10,.4); background: rgba(255,214,10,.06); }
+  .maint-confirm { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .maint-confirm-q { flex: 1; font-size: .7rem; color: var(--sub); }
+  .maint-confirm-yes, .maint-confirm-no {
+    border: none; border-radius: 8px; font-family: inherit; font-weight: 700;
+    font-size: .72rem; padding: 5px 11px; cursor: pointer;
+  }
+  .maint-confirm-yes { background: var(--green); color: #06210f; }
+  .maint-confirm-no  { background: var(--surface); color: var(--sub); }
 
   /* ── footer ── */
   .footer {
@@ -568,6 +579,7 @@ class GlpCard extends HTMLElement {
     this._lastLatestId  = null;
     this._activeTab    = 'shot';
     this._pendingProfile = null;
+    this._maintConfirm = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
 
@@ -617,7 +629,38 @@ class GlpCard extends HTMLElement {
       btn.addEventListener('pointerdown', e => {
         e.preventDefault();
         const tab = e.currentTarget.dataset.tab;
-        if (tab !== this._activeTab) { this._activeTab = tab; this._render(); }
+        if (tab !== this._activeTab) { this._activeTab = tab; this._maintConfirm = null; this._render(); }
+      });
+    });
+  }
+
+  _bindMaintRows() {
+    this.shadowRoot.querySelectorAll('[data-maint-task]').forEach(el => {
+      el.addEventListener('pointerdown', e => {
+        if (e.target.closest('[data-maint-done],[data-maint-cancel]')) return;
+        e.preventDefault();
+        const task = el.dataset.maintTask;
+        this._maintConfirm = this._maintConfirm === task ? null : task;
+        this._render();
+      });
+    });
+    this.shadowRoot.querySelectorAll('[data-maint-done]').forEach(b => {
+      b.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const task = b.dataset.maintDone;
+        if (this._hass && task)
+          this._hass.callService('gaggiuino_profiler', 'maintenance_done', { task });
+        this._maintConfirm = null;
+        this._render();
+      });
+    });
+    this.shadowRoot.querySelectorAll('[data-maint-cancel]').forEach(b => {
+      b.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._maintConfirm = null;
+        this._render();
       });
     });
   }
@@ -736,11 +779,11 @@ class GlpCard extends HTMLElement {
   }
 
   static MAINT_TASKS = [
-    ['maintenance_descaling',    'Entkalken',          '🧪'],
-    ['maintenance_backflush',    'Backflush',          '🔄'],
-    ['maintenance_group_head',   'Gruppenkopf',        '🚿'],
-    ['maintenance_gaskets',      'Dichtungen & Siebe', '⭕'],
-    ['maintenance_water_filter', 'Wasserfilter',       '💧'],
+    ['maintenance_descaling',    'Entkalken',          '🧪', 'descaling'],
+    ['maintenance_backflush',    'Backflush',          '🔄', 'backflush'],
+    ['maintenance_group_head',   'Gruppenkopf',        '🚿', 'grouphead'],
+    ['maintenance_gaskets',      'Dichtungen & Siebe', '⭕', 'gaskets'],
+    ['maintenance_water_filter', 'Wasserfilter',       '💧', 'waterfilter'],
   ];
 
   _maintAvailable() {
@@ -753,14 +796,15 @@ class GlpCard extends HTMLElement {
 
   _buildMaintHtml() {
     const pills = { ok: '✓ OK', soon: 'Bald fällig', due: '⚠ Fällig', never: 'Nie erledigt' };
-    const row = (icon, name, status, pct, daysSince, shotsSince) => {
+    const row = (icon, name, status, pct, daysSince, shotsSince, task) => {
       const cls  = pills[status] ? status : 'never';
       const pctW = Math.max(0, Math.min(100, Math.round((parseFloat(pct) || 0) * 100)));
       const sub  = [
         daysSince != null ? (daysSince === 0 ? 'heute' : `vor ${daysSince} Tagen`) : null,
         shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null,
       ].filter(Boolean).join(' · ');
-      return `<div class="maint-row">
+      const confirming = task && this._maintConfirm === task;
+      return `<div class="maint-row${confirming ? ' confirming' : ''}"${task ? ` data-maint-task="${esc(task)}" role="button"` : ''}>
         <div class="maint-row-top">
           <span>${icon}</span>
           <span class="maint-name">${esc(name)}</span>
@@ -768,18 +812,23 @@ class GlpCard extends HTMLElement {
         </div>
         ${sub ? `<div class="maint-sub">${esc(sub)}</div>` : ''}
         <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
+        ${confirming ? `<div class="maint-confirm">
+          <span class="maint-confirm-q">Als erledigt markieren?</span>
+          <button class="maint-confirm-yes" data-maint-done="${esc(task)}">✓ Ja</button>
+          <button class="maint-confirm-no" data-maint-cancel="1">✕</button>
+        </div>` : ''}
       </div>`;
     };
-    const rows = GlpCard.MAINT_TASKS.map(([suffix, name, icon]) => {
+    const rows = GlpCard.MAINT_TASKS.map(([suffix, name, icon, task]) => {
       const s = this._s(suffix);
       if (!s || s.state === 'unavailable' || s.state === 'unknown') return '';
       const a = s.attributes || {};
-      return row(icon, name, s.state, a.pct, a.days_since, a.shots_since);
+      return row(icon, name, s.state, a.pct, a.days_since, a.shots_since, task);
     }).filter(Boolean);
     const gAttrs = this._s('maintenance_grinders')?.attributes || {};
     const gRows  = Object.entries(gAttrs)
       .filter(([, v]) => v && typeof v === 'object' && 'status' in v)
-      .map(([name, v]) => row('⚙️', name, v.status, v.pct, v.days_since, v.shots_since));
+      .map(([name, v]) => row('⚙️', name, v.status, v.pct, v.days_since, v.shots_since, v.task));
     if (!rows.length && !gRows.length)
       return `<div class="unavailable">Keine Wartungsdaten verfügbar</div>`;
     return `<div class="maint-list">
@@ -1151,6 +1200,7 @@ class GlpCard extends HTMLElement {
     this._bindPowerBtn();
     this._bindProfilePicker();
     this._bindTabBtns();
+    this._bindMaintRows();
     this._bindNavBtns();
     this._bindSwipe();
   }
