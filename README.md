@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="GLP Shot Card" width="520"/>
+  <img src="logo.svg" alt="GLP Shot Card" width="660"/>
 </p>
 
 <p align="center">
