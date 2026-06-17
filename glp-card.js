@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.6.1';
+const GLP_CARD_VERSION = '2.6.2';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,14 @@ function svgPoints(arr, vmin, vmax, W, H) {
 function autoRange(arr, type) {
   if (!arr || arr.length === 0) return [0, 1];
   const max = Math.max(...arr);
-  if (type === 'temp')     return max > 200 ? [700, 1050] : [70, 105];
+  if (type === 'temp') {
+    // Data-adaptive: temperature lives in a narrow band and can be low (boiler-off
+    // profiles ~50°C). A fixed range would push such curves off-screen, so derive
+    // the range from the actual values with padding.
+    const min = Math.min(...arr);
+    const pad = Math.max((max - min) * 0.2, max > 200 ? 20 : 2);
+    return [min - pad, max + pad];
+  }
   if (type === 'pressure') return max > 20  ? [0,   120]  : [0,  12];
   return                          max > 100 ? [0,   500]  : [0,  50];
 }

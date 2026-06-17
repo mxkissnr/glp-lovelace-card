@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.2] – 2026-06-17
+### Fixed
+- Shot chart: the **temperature curve was invisible for low temperatures** (e.g. boiler-off profiles ~50°C) because the temp axis used a fixed 70–105°C range — values below it were drawn off-screen; the temperature range is now data-adaptive so the curve always shows; closes #33
+
 ## [2.6.1] – 2026-06-17
 ### Fixed
 - Tab, profile and power buttons now use `pointerdown` instead of `click` — `click` was eaten by frequent `set hass` re-renders, making the **Wartung tab switch and profile picker fire only sporadically**; closes #32
