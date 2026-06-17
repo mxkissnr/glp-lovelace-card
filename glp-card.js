@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.7.1';
+const GLP_CARD_VERSION = '2.8.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -52,41 +52,126 @@ function autoRange(arr, type) {
   return                          max > 100 ? [0,   500]  : [0,  50];
 }
 
-function buildShotChart(pres, temp, wt) {
-  const W = 300, H = 72;
-  const p = downsample(pres || [], 150);
-  const t = downsample(temp || [], 150);
-  const w = downsample(wt   || [], 150);
-  const [pMin, pMax] = autoRange(p, 'pressure');
-  const [tMin, tMax] = autoRange(t, 'temp');
-  const [wMin, wMax] = autoRange(w, 'weight');
-  const poly = (pts, color) => pts
-    ? `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
-        stroke-linecap="round" stroke-linejoin="round" filter="url(#g${color.replace('#','')})"/>`
-    : '';
-  const defGlow = (id) =>
-    `<filter id="g${id}" x="-20%" y="-20%" width="140%" height="140%">
-       <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
-       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-     </filter>`;
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}"
-      style="display:block;border-radius:10px;overflow:hidden" preserveAspectRatio="none">
-    <defs>
-      ${defGlow('ef4444')}
-      ${defGlow('f59e0b')}
-      ${defGlow('22c55e')}
-    </defs>
-    <rect width="${W}" height="${H}" fill="rgba(255,255,255,.03)"/>
-    <line x1="0" y1="${H*0.33}" x2="${W}" y2="${H*0.33}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/>
-    <line x1="0" y1="${H*0.66}" x2="${W}" y2="${H*0.66}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/>
-    ${poly(svgPoints(w, wMin, wMax, W, H), '#22c55e')}
-    ${poly(svgPoints(p, pMin, pMax, W, H), '#ef4444')}
-    ${poly(svgPoints(t, tMin, tMax, W, H), '#f59e0b')}
+// Card chart series colors — match the GLP app
+const CC = { pres: '#3498db', flow: '#f39c12', temp: '#e74c3c', wt: '#2ecc71' };
+
+function _scale(arr) { return (Array.isArray(arr) && arr.length) ? arr.map(v => v / 10) : []; }
+
+function fmtClock(s) {
+  if (s == null || isNaN(s)) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+}
+
+// Preinfusion/extraction split detected from the pressure curve (same heuristic as the app)
+function detectPhases(times, pressures) {
+  if (!times?.length || !pressures || pressures.length < 5) return null;
+  const THRESH = 3.5;
+  let endIdx = -1;
+  for (let i = 0; i < pressures.length; i++) {
+    if (times[i] >= 1 && pressures[i] >= THRESH) { endIdx = i; break; }
+  }
+  if (endIdx <= 0) return null;
+  const preinfusion = times[endIdx];
+  if (preinfusion < 1.5) return null;
+  return { preinfusion, extraction: times[times.length - 1] - preinfusion };
+}
+
+// App-style labeled chart: pressure + flow on left (bar) axis, temperature + weight on
+// right axis, real time axis (s), gridlines, axis labels and preinfusion/extraction shading.
+function buildShotChart(pres, temp, wt, flow, durationSec) {
+  const W = 320, H = 150, L = 30, R = 30, TOP = 12, BOT = 24;
+  const plotW = W - L - R, plotH = H - TOP - BOT;
+  const pr = _scale(downsample(pres || [], 150));
+  const te = _scale(downsample(temp || [], 150));
+  const we = _scale(downsample(wt   || [], 150));
+  const fl = _scale(downsample(flow || [], 150));
+  const n  = Math.max(pr.length, te.length, we.length, fl.length);
+  if (n < 2) return '';
+  const dur   = durationSec && durationSec > 0 ? durationSec : (n - 1);
+  const times = Array.from({ length: n }, (_, i) => (i / (n - 1)) * dur);
+  const PMAX  = 12;
+  const rMax  = Math.max(110, Math.ceil(((te.length ? Math.max(...te) : 0) + 5) / 10) * 10);
+
+  const xAt = i => L + (i / (n - 1)) * plotW;
+  const xT  = s => L + (Math.max(0, Math.min(dur, s)) / dur) * plotW;
+  const yL  = v => TOP + plotH - (Math.max(0, Math.min(PMAX, v)) / PMAX) * plotH;
+  const yR  = v => TOP + plotH - (Math.max(0, Math.min(rMax, v)) / rMax) * plotH;
+  const line = (arr, map, color, sw) => arr.length < 2 ? '' :
+    `<polyline points="${arr.map((v, i) => `${xAt(i).toFixed(1)},${map(v).toFixed(1)}`).join(' ')}"
+      fill="none" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  const ph = detectPhases(times, pr);
+  let phases = '';
+  if (ph) {
+    const xp = xT(ph.preinfusion);
+    phases = `<rect x="${L}" y="${TOP}" width="${(xp - L).toFixed(1)}" height="${plotH}" fill="rgba(52,152,219,.13)"/>`
+           + `<rect x="${xp.toFixed(1)}" y="${TOP}" width="${(L + plotW - xp).toFixed(1)}" height="${plotH}" fill="rgba(243,156,18,.10)"/>`;
+  }
+
+  let grid = '', leftLbl = '';
+  [0, 3, 6, 9, 12].forEach(b => {
+    const y = yL(b);
+    grid    += `<line x1="${L}" y1="${y.toFixed(1)}" x2="${L + plotW}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>`;
+    leftLbl += `<text x="${L - 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="#8e8e93">${b}</text>`;
+  });
+  let rightLbl = '';
+  [0, 0.5, 1].forEach(fr => {
+    const val = Math.round(rMax * fr), y = yR(val);
+    rightLbl += `<text x="${L + plotW + 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="start" font-size="7" fill="#8e8e93">${val}</text>`;
+  });
+  const step = dur <= 15 ? 3 : dur <= 30 ? 5 : dur <= 60 ? 10 : 15;
+  let ticks = '';
+  for (let s = 0; s <= dur + 0.001; s += step) {
+    const x = xT(s);
+    ticks += `<line x1="${x.toFixed(1)}" y1="${TOP + plotH}" x2="${x.toFixed(1)}" y2="${(TOP + plotH + 3).toFixed(1)}" stroke="rgba(255,255,255,.18)" stroke-width="0.5"/>`
+           + `<text x="${x.toFixed(1)}" y="${(TOP + plotH + 13).toFixed(1)}" text-anchor="middle" font-size="7" fill="#8e8e93">${Math.round(s)}s</text>`;
+  }
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">
+    <rect x="${L}" y="${TOP}" width="${plotW}" height="${plotH}" fill="rgba(255,255,255,.02)"/>
+    ${phases}${grid}
+    <line x1="${L}" y1="${TOP + plotH}" x2="${L + plotW}" y2="${TOP + plotH}" stroke="rgba(255,255,255,.22)" stroke-width="0.6"/>
+    ${line(we, yR, CC.wt, 1.6)}
+    ${line(fl, yL, CC.flow, 1.8)}
+    ${line(pr, yL, CC.pres, 2.2)}
+    ${line(te, yR, CC.temp, 2)}
+    ${leftLbl}${rightLbl}${ticks}
+    <text x="${L - 2}" y="${TOP - 3}" text-anchor="start" font-size="6.5" fill="#8e8e93">bar</text>
+    <text x="${L + plotW + 2}" y="${TOP - 3}" text-anchor="end" font-size="6.5" fill="#8e8e93">°C · g</text>
   </svg>`;
 }
 
 function buildLiveChart(dp) {
-  return buildShotChart(dp.pressure || [], dp.temperature || [], dp.shotWeight || dp.weight || []);
+  const ti  = dp.timeInShot;
+  const dur = Array.isArray(ti) && ti.length ? ti[ti.length - 1] / 10 : null;
+  return buildShotChart(dp.pressure || [], dp.temperature || [],
+    dp.shotWeight || dp.weight || [], dp.pumpFlow || dp.weightFlow || [], dur);
+}
+
+// Legend with peak/final values + units and phase tags
+function chartLegendHtml(dp, durationSec) {
+  const p = _scale(dp.p || dp.pressure), t = _scale(dp.t || dp.temperature),
+        w = _scale(dp.w || dp.shotWeight || dp.weight), f = _scale(dp.f || dp.pumpFlow || dp.weightFlow);
+  const mx = a => a.length ? Math.max(...a) : null;
+  const last = a => a.length ? a[a.length - 1] : null;
+  const items = [
+    p.length ? { c: CC.pres, l: 'Druck',   v: `${mx(p).toFixed(1)} bar` }  : null,
+    f.length ? { c: CC.flow, l: 'Flow',    v: `${mx(f).toFixed(1)} ml/s` } : null,
+    t.length ? { c: CC.temp, l: 'Temp',    v: `${mx(t).toFixed(0)}°` }     : null,
+    w.length ? { c: CC.wt,   l: 'Gewicht', v: `${last(w).toFixed(1)} g` }  : null,
+  ].filter(Boolean);
+  let phaseTags = '';
+  if (p.length > 1) {
+    const dur = durationSec && durationSec > 0 ? durationSec : (p.length - 1);
+    const times = Array.from({ length: p.length }, (_, i) => (i / (p.length - 1)) * dur);
+    const ph = detectPhases(times, p);
+    if (ph) phaseTags = `<div class="chart-phases">
+      <span class="ph-tag ph-pre">Vorinfusion ${fmtClock(ph.preinfusion)}</span>
+      <span class="ph-tag ph-ext">Extraktion ${fmtClock(ph.extraction)}</span></div>`;
+  }
+  return `<div class="chart-legend2">${items.map(i =>
+    `<span class="cl-item"><span class="cl-dot" style="background:${i.c}"></span>${i.l} <b>${esc(i.v)}</b></span>`
+  ).join('')}</div>${phaseTags}`;
 }
 
 // ─── styles ───────────────────────────────────────────────────────────────────
@@ -368,6 +453,18 @@ const STYLES = `
   .l-pres::before { background: #ef4444; }
   .l-temp::before { background: #f59e0b; }
   .l-wt::before   { background: #22c55e; }
+
+  .chart-legend2 {
+    display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center;
+    margin-top: 8px;
+  }
+  .cl-item { font-size: .62rem; color: var(--sub); display: flex; align-items: center; gap: 5px; }
+  .cl-item b { color: var(--text); font-weight: 700; }
+  .cl-dot { width: 9px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chart-phases { display: flex; gap: 8px; justify-content: center; margin-top: 6px; margin-bottom: 10px; }
+  .ph-tag { font-size: .58rem; font-weight: 600; padding: 2px 8px; border-radius: 8px; letter-spacing: .02em; }
+  .ph-pre { color: #6cb6e6; background: rgba(52,152,219,.14); }
+  .ph-ext { color: #f0b66a; background: rgba(243,156,18,.13); }
 
   /* ── profile picker ── */
   /* live machine panel */
@@ -1072,18 +1169,14 @@ class GlpCard extends HTMLElement {
     })();
 
     // ── chart ──────────────────────────────────────────────────────────────────
-    const chartLegend = `<div class="chart-legend">
-      <span class="l-pres">Druck</span>
-      <span class="l-temp">Temp</span>
-      <span class="l-wt">Gewicht</span>
-    </div>`;
-
+    const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length
+      ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
     const liveSvgHtml = brewing && liveDatapoints
-      ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegend}` : '';
+      ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : '';
 
     const histDp = !brewing && shotObj?.dp || null;
     const histSvgHtml = histDp
-      ? `<div class="chart-wrap">${buildShotChart(histDp.p||[],histDp.t||[],histDp.w||[])}</div>${chartLegend}` : '';
+      ? `<div class="chart-wrap">${buildShotChart(histDp.p||[], histDp.t||[], histDp.w||[], histDp.f||[], shotObj?.duration)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : '';
 
     // ── live brewing stats ──────────────────────────────────────────────────
     const liveStatsHtml = brewing && (temp||livePressure||liveWeight)

@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.8.0] – 2026-06-17
+### Changed
+- **Shot chart redesigned to match the GLP app** — pressure + flow on a left bar axis (0–12), temperature + weight on a right axis, a real **time axis in seconds** with ticks, gridlines and axis labels, **preinfusion/extraction phase shading** (detected from the pressure curve like the app), and a legend showing peak/final values with units plus phase durations. App series colors (pressure blue, flow orange, temp red, weight green); requires GLP Integration v1.12.0+ for the flow line; closes #37
+
 ## [2.7.1] – 2026-06-17
 ### Fixed
 - Shot stats showed the **live machine** Temp/target instead of the displayed shot's values — a recorded shot showed "ZIEL: Aus" when the machine was currently on a boiler-off profile; "Temp" is now derived from the shot's own temperature curve and the (live-only) "Ziel" pill was removed from the shot section (it lives in the "Maschine live" panel); closes #36
