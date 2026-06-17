@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.5.0] – 2026-06-16
+### Changed
+- **Dual-panel shot transition** — replaces the single-element CSS keyframe with a proper dual-panel JS animation: the old shot content is cloned and slides out in one direction while the new content slides in from the opposite side simultaneously (36 px offset + opacity fade, 220 ms ease-out); both panels animate independently so the transition looks like iOS/Android navigation instead of a single-element pop; the animation plays only on explicit navigation, never on HA state updates; closes #26
+
 ## [2.4.0] – 2026-06-16
 ### Added
 - **Slide animation between shots** — tapping an arrow or swiping triggers a 220 ms slide-in from the correct direction (right → older shot slides in from the right, left → newer shot slides in from the left); animation only plays on actual navigation, not on HA state updates; closes #26
