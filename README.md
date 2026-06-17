@@ -25,7 +25,7 @@
 
 ## Prerequisites
 
-- [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler) add-on installed
+- [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler) app installed
 - [GLP Integration](https://github.com/mxkissnr/glp-integration) installed and configured
 
 ## Installation via HACS
@@ -110,7 +110,7 @@ GLP sensor entities are provided by the [GLP Integration](https://github.com/mxk
 
 <p align="center">
   <a href="https://github.com/mxkissnr/gaggiuino-local-profiler/wiki">📖 Documentation (Wiki)</a> ·
-  <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">🔧 GLP Add-on</a> ·
+  <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">🔧 GLP App</a> ·
   <a href="https://github.com/mxkissnr/glp-integration">⚡ GLP Integration</a> ·
   <a href="https://github.com/mxkissnr/glp-lovelace-card/issues">🐛 Issues</a>
 </p>
