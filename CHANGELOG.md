@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.9.0] – 2026-06-17
+### Added
+- **Shot score badge** — the shot score (0–100) is shown as a colored ring next to the profile name in the shot hero (green ≥80, amber ≥55, else red); sourced from `recent_shots.score`; requires GLP Integration v1.13.0+; closes #38
+
 ## [2.8.0] – 2026-06-17
 ### Changed
 - **Shot chart redesigned to match the GLP app** — pressure + flow on a left bar axis (0–12), temperature + weight on a right axis, a real **time axis in seconds** with ticks, gridlines and axis labels, **preinfusion/extraction phase shading** (detected from the pressure curve like the app), and a legend showing peak/final values with units plus phase durations. App series colors (pressure blue, flow orange, temp red, weight green); requires GLP Integration v1.12.0+ for the flow line; closes #37

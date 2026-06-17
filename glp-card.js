@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.8.0';
+const GLP_CARD_VERSION = '2.9.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -284,8 +284,23 @@ const STYLES = `
 
   /* ── shot hero ── */
   .shot-hero {
+    display: flex; align-items: center; gap: 12px;
     margin-bottom: 14px;
   }
+  .shot-hero-main { flex: 1; min-width: 0; }
+  .shot-score {
+    flex-shrink: 0; width: 54px; height: 54px; border-radius: 50%;
+    border: 2px solid var(--border); display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .shot-score-num { font-size: 1.2rem; font-weight: 800; line-height: 1; color: var(--text); }
+  .shot-score-lbl { font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); margin-top: 2px; }
+  .shot-score.high { border-color: var(--green); }
+  .shot-score.high .shot-score-num { color: var(--green); }
+  .shot-score.mid  { border-color: var(--amber); }
+  .shot-score.mid  .shot-score-num { color: var(--amber); }
+  .shot-score.low  { border-color: var(--accent); }
+  .shot-score.low  .shot-score-num { color: var(--accent); }
   .shot-profile {
     font-size: 1.45rem;
     font-weight: 800;
@@ -1225,14 +1240,23 @@ class GlpCard extends HTMLElement {
     ) : '';
 
     // ── shot section ─────────────────────────────────────────────────────────
+    const score = shotObj?.score ?? null;
+    const scoreCls = score == null ? '' : score >= 80 ? 'high' : score >= 55 ? 'mid' : 'low';
+    const scoreBadge = score != null
+      ? `<div class="shot-score ${scoreCls}"><span class="shot-score-num">${score}</span><span class="shot-score-lbl">Score</span></div>`
+      : '';
+
     const shotSectionHtml = !brewing && !showMaint ? `
       ${profile
         ? `<div class="shot-hero">
-            <div class="shot-profile">${esc(profile)}</div>
-            <div class="shot-meta">
-              ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
-              ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>` : ''}
+            <div class="shot-hero-main">
+              <div class="shot-profile">${esc(profile)}</div>
+              <div class="shot-meta">
+                ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
+                ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>` : ''}
+              </div>
             </div>
+            ${scoreBadge}
           </div>`
         : `<div class="no-shot">
             <div class="no-shot-label">Noch kein Shot aufgezeichnet</div>
