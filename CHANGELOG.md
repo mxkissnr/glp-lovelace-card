@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.11.0] – 2026-06-17
+### Added
+- **Manage orders from the card** — a 🛒 Bestellungen tab appears when there are active orders; the barista can **accept** a pending order with an ETA (3/5/8/10 min), mark an accepted order **done**, or **decline** it, directly from the shot card (via the integration's `/api/glp/orders/*` proxy). Polls every 6 s; the tab badge shows the pending count; closes #41
+
 ## [2.10.0] – 2026-06-17
 ### Added
 - **Last grind setting + grinder** shown in the shot hero (⚙️ grinder · grind) so you can quickly see your last setup; from `recent_shots.grinder/grind` (requires GLP Integration v1.14.0+); closes #39

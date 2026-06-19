@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.10.0';
+const GLP_CARD_VERSION = '2.11.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -662,6 +662,34 @@ const STYLES = `
   .maint-confirm-yes { background: var(--green); color: #06210f; }
   .maint-confirm-no  { background: var(--surface); color: var(--sub); }
 
+  /* ── orders tab ── */
+  .tab-badge {
+    display: inline-block; min-width: 16px; padding: 0 5px; margin-left: 3px;
+    font-size: .6rem; font-weight: 800; line-height: 16px; text-align: center;
+    border-radius: 8px; background: var(--accent); color: #fff;
+  }
+  .ord-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .ord-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 12px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .ord-row.pending  { border-color: rgba(255,214,10,.3); }
+  .ord-top { display: flex; align-items: baseline; gap: 8px; }
+  .ord-item { flex: 1; font-size: .9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ord-who  { font-size: .72rem; color: var(--sub); white-space: nowrap; flex-shrink: 0; }
+  .ord-note { font-size: .72rem; color: var(--sub); font-style: italic; }
+  .ord-sub  { font-size: .72rem; color: var(--green); font-weight: 600; }
+  .ord-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .ord-q { font-size: .72rem; color: var(--sub); margin-right: 2px; }
+  .ord-btn {
+    border: none; border-radius: 9px; font-family: inherit; font-weight: 700;
+    font-size: .74rem; padding: 6px 11px; cursor: pointer; min-height: 32px;
+  }
+  .ord-btn.primary { background: var(--green); color: #06210f; }
+  .ord-btn.eta     { background: rgba(255,255,255,.09); color: var(--text); }
+  .ord-btn.danger  { background: var(--accent); color: #fff; }
+  .ord-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--sub); }
+
   /* ── footer ── */
   .footer {
     display: flex; justify-content: space-between; align-items: center;
@@ -712,6 +740,11 @@ class GlpCard extends HTMLElement {
     this._maintConfirm = null;
     this._machineOnSince = null;
     this._uptimeTimer = null;
+    this._orders = [];
+    this._ordersSig = null;
+    this._ordersPoll = null;
+    this._orderEtaFor = null;
+    this._orderDeclineFor = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
 
@@ -774,8 +807,83 @@ class GlpCard extends HTMLElement {
     }, 1000);
   }
 
+  connectedCallback() { this._startOrdersPoll(); }
+
   disconnectedCallback() {
     if (this._uptimeTimer) { clearInterval(this._uptimeTimer); this._uptimeTimer = null; }
+    if (this._ordersPoll) { clearInterval(this._ordersPoll); this._ordersPoll = null; }
+  }
+
+  // ── Barista orders (via the integration REST proxy) ───────────────────────
+  _startOrdersPoll() {
+    if (this._ordersPoll || !this._hass?.fetchWithAuth) { if (!this._ordersPoll) setTimeout(() => this._startOrdersPoll(), 1500); return; }
+    this._fetchOrders(true);
+    this._ordersPoll = setInterval(() => this._fetchOrders(false), 6000);
+  }
+
+  async _fetchOrders(force) {
+    if (!this._hass?.fetchWithAuth) return;
+    let list;
+    try {
+      const r = await this._hass.fetchWithAuth('/api/glp/orders');
+      if (!r.ok) return;
+      list = await r.json();
+    } catch { return; }
+    const active = (Array.isArray(list) ? list : [])
+      .filter(o => o.status === 'pending' || o.status === 'accepted')
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    const sig = JSON.stringify(active.map(o => [o.id, o.status, o.eta, o.acceptedAt]));
+    if (!force && sig === this._ordersSig) return;
+    this._ordersSig = sig;
+    this._orders = active;
+    if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
+  }
+
+  async _orderAction(id, action, body) {
+    if (!this._hass?.fetchWithAuth || !id) return;
+    this._orderEtaFor = null;
+    this._orderDeclineFor = null;
+    try {
+      await this._hass.fetchWithAuth(`/api/glp/orders/${encodeURIComponent(id)}/${action}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+      });
+    } catch { /* ignore — next poll reconciles */ }
+    await this._fetchOrders(true);
+  }
+
+  _buildOrdersHtml() {
+    if (!this._orders.length) return `<div class="unavailable">Keine offenen Bestellungen</div>`;
+    const declineRow = id => `<div class="ord-actions"><span class="ord-q">Ablehnen?</span>
+      <button class="ord-btn danger" data-ord-decline-yes="${esc(id)}">✓ Ja</button>
+      <button class="ord-btn ghost" data-ord-cancel="1">✕</button></div>`;
+    return `<div class="ord-list">${this._orders.map(o => {
+      const label = o.variant ? `${o.item} · ${o.variant}` : o.item;
+      const head = `<div class="ord-top"><span class="ord-item">☕ ${esc(label)}</span>${o.customer ? `<span class="ord-who">${esc(o.customer)}</span>` : ''}</div>
+        ${o.note ? `<div class="ord-note">„${esc(o.note)}"</div>` : ''}`;
+      if (o.status === 'pending') {
+        const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
+          : this._orderEtaFor === o.id
+            ? `<div class="ord-actions"><span class="ord-q">Fertig in:</span>${[3,5,8,10].map(m => `<button class="ord-btn eta" data-ord-accept="${esc(o.id)}" data-eta="${m}">${m} min</button>`).join('')}<button class="ord-btn ghost" data-ord-cancel="1">✕</button></div>`
+            : `<div class="ord-actions"><button class="ord-btn primary" data-ord-eta="${esc(o.id)}">✓ Annehmen</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">Ablehnen</button></div>`;
+        return `<div class="ord-row pending">${head}${actions}</div>`;
+      }
+      const minsLeft = (o.acceptedAt && o.eta) ? Math.max(0, Math.ceil((o.acceptedAt + o.eta * 60000 - Date.now()) / 60000)) : null;
+      const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
+        : `<div class="ord-actions"><button class="ord-btn primary" data-ord-done="${esc(o.id)}">✓ Fertig</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">Ablehnen</button></div>`;
+      return `<div class="ord-row accepted">${head}
+        <div class="ord-sub">${minsLeft != null ? `fertig in ~${minsLeft} min` : 'in Zubereitung'}</div>${actions}</div>`;
+    }).join('')}</div>`;
+  }
+
+  _bindOrderBtns() {
+    const tap = (sel, fn) => this.shadowRoot.querySelectorAll(sel).forEach(b =>
+      b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(b); }));
+    tap('[data-ord-eta]',         b => { this._orderEtaFor = b.dataset.ordEta; this._render(); });
+    tap('[data-ord-accept]',      b => this._orderAction(b.dataset.ordAccept, 'accept', { eta: parseInt(b.dataset.eta) }));
+    tap('[data-ord-done]',        b => this._orderAction(b.dataset.ordDone, 'complete', {}));
+    tap('[data-ord-decline]',     b => { this._orderDeclineFor = b.dataset.ordDecline; this._render(); });
+    tap('[data-ord-decline-yes]', b => this._orderAction(b.dataset.ordDeclineYes, 'decline', {}));
+    tap('[data-ord-cancel]',      ()  => { this._orderEtaFor = null; this._orderDeclineFor = null; this._render(); });
   }
 
   _bindMaintRows() {
@@ -835,6 +943,7 @@ class GlpCard extends HTMLElement {
 
   _navShot(dir) {
     if (this._animating) return;               // ignore nav while an animation is in flight
+    if (this._activeTab !== 'shot') return;    // don't swipe-navigate shots on maint/orders tabs
     const max = this._recentShots.length - 1;
     if (dir === 'prev' && this._shotIndex < max) this._navShotAnimated(dir, this._shotIndex + 1);
     if (dir === 'next' && this._shotIndex > 0)   this._navShotAnimated(dir, this._shotIndex - 1);
@@ -1127,19 +1236,24 @@ class GlpCard extends HTMLElement {
 
     // ── maintenance ───────────────────────────────────────────────────────────
     const maintAvailable = this._maintAvailable();
-    if (brewing && this._activeTab === 'maint') this._activeTab = 'shot';
+    const ordersTabAvail = this._orders.length > 0 && !brewing;
+    if (brewing && (this._activeTab === 'maint' || this._activeTab === 'orders')) this._activeTab = 'shot';
+    if (this._activeTab === 'orders' && !ordersTabAvail) this._activeTab = 'shot';
     const showMaint  = maintAvailable && !brewing && this._activeTab === 'maint';
+    const showOrders = ordersTabAvail && this._activeTab === 'orders';
+    const pendingOrders = this._orders.filter(o => o.status === 'pending').length;
 
-    const tabBarHtml = maintAvailable && !brewing ? `
+    const tabBarHtml = (maintAvailable || ordersTabAvail) && !brewing ? `
       <div class="tab-bar">
-        <button class="tab-btn${!showMaint ? ' active':''}" data-tab="shot">☕ Shot</button>
-        <button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">🔧 Wartung${this._maintAnyDue() ? ' ⚠':''}</button>
+        <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot">☕ Shot</button>
+        ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">🛒 Bestellungen${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
+        ${maintAvailable ? `<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">🔧 Wartung${this._maintAnyDue() ? ' ⚠':''}</button>` : ''}
       </div>` : '';
 
     // ── nav dots ──────────────────────────────────────────────────────────────
     const indexChanged = this._shotIndex !== this._prevShotIndex;
     this._prevShotIndex = this._shotIndex;
-    const showNav = !brewing && !showMaint && totalShots > 1;
+    const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
     let navHtml = '';
     if (showNav) {
       const dots = this._recentShots.slice(0, 10).map((_, i) => {
@@ -1350,7 +1464,7 @@ class GlpCard extends HTMLElement {
               ${liveProfile ? `<div class="shot-hero" style="margin-bottom:12px"><div class="shot-profile">${esc(liveProfile)}</div></div>` : ''}
               ${liveSvgHtml}
               ${liveStatsHtml}
-            ` : showMaint ? this._buildMaintHtml() : shotSectionHtml}
+            ` : showMaint ? this._buildMaintHtml() : showOrders ? this._buildOrdersHtml() : shotSectionHtml}
           </div>
         </div>
 
@@ -1362,6 +1476,7 @@ class GlpCard extends HTMLElement {
     this._bindProfilePicker();
     this._bindTabBtns();
     this._bindMaintRows();
+    this._bindOrderBtns();
     this._bindNavBtns();
     this._bindSwipe();
     this._startUptimeTicker();
