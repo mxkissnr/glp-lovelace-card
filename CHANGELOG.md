@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.12.2] – 2026-06-19
+### Fixed
+- **Orders poll reliably starts on load** — `_startOrdersPoll()` was only called from `connectedCallback()`, where `this._hass` is often still null; the 1500 ms retry could be missed in certain HA lifecycle orderings leaving `this._orders` permanently empty; added a safety-net call in `set hass()` so the poll starts as soon as HA is available, regardless of element-lifecycle ordering; closes #44
+
 ## [2.12.1] – 2026-06-19
 ### Fixed
 - **Orders tab no longer disappears during brewing** — `ordersTabAvail` previously included `&& !brewing`, so the Bestellungen tab vanished whenever a shot was being pulled and the barista had to re-navigate to it after every shot; tab is now always visible whenever there are active orders; closes #43

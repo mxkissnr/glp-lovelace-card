@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.12.1';
+const GLP_CARD_VERSION = '2.12.2';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -994,6 +994,7 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (!this._ordersPoll) this._startOrdersPoll();
     if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
   }
 
