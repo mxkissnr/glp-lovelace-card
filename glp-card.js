@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.11.0';
+const GLP_CARD_VERSION = '2.12.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -1121,6 +1121,11 @@ class GlpCard extends HTMLElement {
     // ── machine off ──────────────────────────────────────────────────────────
     if (machineOff) {
       this._profileOpen = false;
+      const offOrders = this._orders.length > 0 ? `
+        <div style="padding:0 12px 12px">
+          <div class="section-label" style="margin-bottom:8px">Bestellungen</div>
+          ${this._buildOrdersHtml()}
+        </div>` : '';
       this.shadowRoot.innerHTML = `
         <style>${STYLES}</style>
         <ha-card><div class="card collapsed">
@@ -1135,8 +1140,10 @@ class GlpCard extends HTMLElement {
               <span class="off-label">Aus</span>${_powerBtn}
             </div>
           </div>
+          ${offOrders}
         </div></ha-card>`;
       this._bindPowerBtn();
+      if (this._orders.length > 0) this._bindOrderBtns();
       return;
     }
 

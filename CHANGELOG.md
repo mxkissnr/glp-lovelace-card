@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.12.0] – 2026-06-19
+### Fixed
+- **Orders visible while machine is off** — pending/accepted orders are now shown in the collapsed machine-off view, so the barista can manage the queue while the machine warms up; closes #42
+
 ## [2.11.0] – 2026-06-17
 ### Added
 - **Manage orders from the card** — a 🛒 Bestellungen tab appears when there are active orders; the barista can **accept** a pending order with an ETA (3/5/8/10 min), mark an accepted order **done**, or **decline** it, directly from the shot card (via the integration's `/api/glp/orders/*` proxy). Polls every 6 s; the tab badge shows the pending count; closes #41
