@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.12.2';
+const GLP_CARD_VERSION = '2.12.3';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -746,18 +746,19 @@ class GlpCard extends HTMLElement {
     this._orderEtaFor = null;
     this._orderDeclineFor = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
-  }
 
-  _bindPowerBtn() {
-    const btn = this.shadowRoot.querySelector('[data-action="toggle-switch"]');
-    if (!btn) return;
-    btn.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this._hass && this._switchEntity)
-        this._hass.callService('switch', 'toggle', { entity_id: this._switchEntity });
+    // Delegated power-button handler on shadowRoot — survives every innerHTML replacement
+    this.shadowRoot.addEventListener('pointerdown', e => {
+      if (e.target.closest('[data-action="toggle-switch"]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this._hass && this._switchEntity)
+          this._hass.callService('switch', 'toggle', { entity_id: this._switchEntity });
+      }
     });
   }
+
+  _bindPowerBtn() { /* no-op — handler is delegated on shadowRoot in constructor */ }
 
   _bindProfilePicker() {
     const toggle = this.shadowRoot.querySelector('[data-action="toggle-profile"]');

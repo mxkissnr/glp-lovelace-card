@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.12.3] – 2026-06-19
+### Fixed
+- **Power button now reliably responds on every tap** — the `pointerdown` listener was re-attached after each full `innerHTML` re-render; if a HA state update triggered a render mid-gesture the new button had no listener for a brief window; replaced with a single delegated listener on `this.shadowRoot` (never replaced by innerHTML) so the handler survives every render; closes #45
+
 ## [2.12.2] – 2026-06-19
 ### Fixed
 - **Orders poll reliably starts on load** — `_startOrdersPoll()` was only called from `connectedCallback()`, where `this._hass` is often still null; the 1500 ms retry could be missed in certain HA lifecycle orderings leaving `this._orders` permanently empty; added a safety-net call in `set hass()` so the poll starts as soon as HA is available, regardless of element-lifecycle ordering; closes #44
