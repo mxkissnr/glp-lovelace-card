@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.12.1] – 2026-06-19
+### Fixed
+- **Orders tab no longer disappears during brewing** — `ordersTabAvail` previously included `&& !brewing`, so the Bestellungen tab vanished whenever a shot was being pulled and the barista had to re-navigate to it after every shot; tab is now always visible whenever there are active orders; closes #43
+
 ## [2.12.0] – 2026-06-19
 ### Fixed
 - **Orders visible while machine is off** — pending/accepted orders are now shown in the collapsed machine-off view, so the barista can manage the queue while the machine warms up; closes #42

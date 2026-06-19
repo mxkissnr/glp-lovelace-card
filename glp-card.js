@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.12.0';
+const GLP_CARD_VERSION = '2.12.1';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -1243,14 +1243,14 @@ class GlpCard extends HTMLElement {
 
     // ── maintenance ───────────────────────────────────────────────────────────
     const maintAvailable = this._maintAvailable();
-    const ordersTabAvail = this._orders.length > 0 && !brewing;
-    if (brewing && (this._activeTab === 'maint' || this._activeTab === 'orders')) this._activeTab = 'shot';
+    const ordersTabAvail = this._orders.length > 0;
+    if (brewing && this._activeTab === 'maint') this._activeTab = 'shot';
     if (this._activeTab === 'orders' && !ordersTabAvail) this._activeTab = 'shot';
     const showMaint  = maintAvailable && !brewing && this._activeTab === 'maint';
     const showOrders = ordersTabAvail && this._activeTab === 'orders';
     const pendingOrders = this._orders.filter(o => o.status === 'pending').length;
 
-    const tabBarHtml = (maintAvailable || ordersTabAvail) && !brewing ? `
+    const tabBarHtml = (maintAvailable || ordersTabAvail) ? `
       <div class="tab-bar">
         <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot">☕ Shot</button>
         ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">🛒 Bestellungen${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
