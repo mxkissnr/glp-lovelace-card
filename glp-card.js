@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.9.0';
+const GLP_CARD_VERSION = '2.10.0';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,6 +60,14 @@ function _scale(arr) { return (Array.isArray(arr) && arr.length) ? arr.map(v => 
 function fmtClock(s) {
   if (s == null || isNaN(s)) return '0:00';
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+}
+
+function fmtUptime(ms) {
+  if (ms == null || ms < 0 || isNaN(ms)) return '';
+  const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    : `${m}:${String(sec).padStart(2, '0')}`;
 }
 
 // Preinfusion/extraction split detected from the pressure curve (same heuristic as the app)
@@ -221,6 +229,12 @@ const STYLES = `
   }
   .title svg { opacity: .5; flex-shrink: 0; }
   .header-right { display: flex; align-items: center; gap: 8px; }
+  .machine-uptime {
+    font-size: .62rem; font-weight: 600; color: var(--sub);
+    font-variant-numeric: tabular-nums; letter-spacing: .02em;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 2px 7px;
+  }
 
   /* status dot */
   .status-dot {
@@ -324,6 +338,10 @@ const STYLES = `
     white-space: nowrap; flex-shrink: 0;
   }
   .shot-coffee {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shot-grind {
+    margin-top: 5px; font-size: .72rem; color: var(--sub);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
@@ -692,6 +710,8 @@ class GlpCard extends HTMLElement {
     this._activeTab    = 'shot';
     this._pendingProfile = null;
     this._maintConfirm = null;
+    this._machineOnSince = null;
+    this._uptimeTimer = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
   }
 
@@ -744,6 +764,18 @@ class GlpCard extends HTMLElement {
         if (tab !== this._activeTab) { this._activeTab = tab; this._maintConfirm = null; this._render(); }
       });
     });
+  }
+
+  _startUptimeTicker() {
+    if (this._uptimeTimer) return;
+    this._uptimeTimer = setInterval(() => {
+      const el = this.shadowRoot.getElementById('glp-uptime');
+      if (el && this._machineOnSince) el.textContent = `🔌 ${fmtUptime(Date.now() - this._machineOnSince)}`;
+    }, 1000);
+  }
+
+  disconnectedCallback() {
+    if (this._uptimeTimer) { clearInterval(this._uptimeTimer); this._uptimeTimer = null; }
   }
 
   _bindMaintRows() {
@@ -964,6 +996,8 @@ class GlpCard extends HTMLElement {
       localStorage.setItem('glp_switch_entity', resolvedSwitch);
     }
     const switchState = this._switchEntity ? this._hass.states[this._switchEntity] : null;
+    this._machineOnSince = (switchState?.state === 'on' && switchState.last_changed)
+      ? Date.parse(switchState.last_changed) : null;
     const machineOff  = !!(this._switchEntity &&
       (switchState?.state === 'off' || switchState?.state === 'unavailable'));
 
@@ -1027,6 +1061,8 @@ class GlpCard extends HTMLElement {
     const profile    = shotObj?.profile    ?? this._val('last_shot_profile', null);
     const coffee     = shotObj?.coffee     ?? this._val('last_shot_coffee',  null);
     const drinkType  = shotObj?.drink_type ?? null;
+    const grinder    = shotObj?.grinder ?? null;
+    const grind      = shotObj?.grind   ?? null;
     const duration = shotObj != null
       ? (shotObj.duration != null ? shotObj.duration.toFixed(1) : null)
       : this._num('last_shot_duration', 1);
@@ -1255,6 +1291,7 @@ class GlpCard extends HTMLElement {
                 ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
                 ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>` : ''}
               </div>
+              ${(grinder || grind) ? `<div class="shot-grind">⚙️ ${esc([grinder, grind].filter(Boolean).join(' · '))}</div>` : ''}
             </div>
             ${scoreBadge}
           </div>`
@@ -1292,6 +1329,7 @@ class GlpCard extends HTMLElement {
             ${esc(this._config.title)}
           </div>
           <div class="header-right">
+            ${this._machineOnSince ? `<span class="machine-uptime" id="glp-uptime" title="Maschine an seit">🔌 ${fmtUptime(Date.now() - this._machineOnSince)}</span>` : ''}
             <div class="status-dot ${dotClass}"></div>
             ${_powerBtn}
           </div>
@@ -1326,6 +1364,7 @@ class GlpCard extends HTMLElement {
     this._bindMaintRows();
     this._bindNavBtns();
     this._bindSwipe();
+    this._startUptimeTicker();
   }
 
   getCardSize() { return 3; }

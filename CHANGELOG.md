@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.10.0] – 2026-06-17
+### Added
+- **Last grind setting + grinder** shown in the shot hero (⚙️ grinder · grind) so you can quickly see your last setup; from `recent_shots.grinder/grind` (requires GLP Integration v1.14.0+); closes #39
+- **Machine-on timer** in the card header — a live-ticking chip showing how long the machine has been switched on (from the switch entity); closes #40
+
 ## [2.9.0] – 2026-06-17
 ### Added
 - **Shot score badge** — the shot score (0–100) is shown as a colored ring next to the profile name in the shot hero (green ≥80, amber ≥55, else red); sourced from `recent_shots.score`; requires GLP Integration v1.13.0+; closes #38
