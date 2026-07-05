@@ -1,4 +1,91 @@
-const GLP_CARD_VERSION = '2.12.3';
+const GLP_CARD_VERSION = '2.13.0';
+
+// ─── i18n ────────────────────────────────────────────────────────────────────
+// DE wording is the original card text; language follows hass.language (DE/EN).
+
+const STRINGS = {
+  de: {
+    tab_orders: 'Bestellungen', tab_maint: 'Wartung',
+    orders_none: 'Keine offenen Bestellungen',
+    ord_decline_q: 'Ablehnen?', ord_done_in: 'Fertig in:', ord_yes: '✓ Ja',
+    ord_accept: '✓ Annehmen', ord_decline: 'Ablehnen', ord_done: '✓ Fertig',
+    ord_ready_in: n => `fertig in ~${n} min`, ord_preparing: 'in Zubereitung',
+    just_now: 'gerade eben', mins_ago: n => `vor ${n} Min`, hours_ago: n => `vor ${n} Std`, days_ago: n => `vor ${n} Tagen`,
+    maint_descaling: 'Entkalken', maint_backflush: 'Backflush', maint_grouphead: 'Gruppenkopf',
+    maint_gaskets: 'Dichtungen & Siebe', maint_waterfilter: 'Wasserfilter', maint_grinders: 'Mühlen',
+    pill_ok: '✓ OK', pill_soon: 'Bald fällig', pill_due: '⚠ Fällig', pill_never: 'Nie erledigt',
+    maint_today: 'heute', maint_confirm_q: 'Als erledigt markieren?',
+    maint_none: 'Keine Wartungsdaten verfügbar',
+    power_on: 'Einschalten', power_off: 'Ausschalten', off_label: 'Aus',
+    profile_label: 'Profil', profile_switching: 'wechselt …',
+    lm_live: 'Maschine live',
+    steam_mode: '☁️ Dampfmodus', water_low: p => `💧 Wasser fast leer (${p}%)`,
+    preheat_ready: '☕ Brühbereit', preheat_heating: '🔥 Aufheizen …',
+    brewing: '⏳ Bezug läuft',
+    no_shot_label: 'Noch kein Shot aufgezeichnet', no_shot_hint: 'Shots werden automatisch synchronisiert',
+    m_duration: 'Dauer', m_yield: 'Ausbeute', m_pressure: 'Druck Ø', m_temp: 'Temp',
+    leg_pressure: 'Druck', leg_flow: 'Flow', leg_temp: 'Temp', leg_weight: 'Gewicht',
+    ph_pre: 'Vorinfusion', ph_ext: 'Extraktion',
+    footer_today: n => `☕ ${n} heute`, uptime_title: 'Maschine an seit',
+    bean_roasted_ago: d => `Geröstet vor ${d} Tagen`,
+  },
+  en: {
+    tab_orders: 'Orders', tab_maint: 'Maintenance',
+    orders_none: 'No open orders',
+    ord_decline_q: 'Decline?', ord_done_in: 'Ready in:', ord_yes: '✓ Yes',
+    ord_accept: '✓ Accept', ord_decline: 'Decline', ord_done: '✓ Done',
+    ord_ready_in: n => `ready in ~${n} min`, ord_preparing: 'being prepared',
+    just_now: 'just now', mins_ago: n => `${n} min ago`, hours_ago: n => `${n} h ago`, days_ago: n => `${n} days ago`,
+    maint_descaling: 'Descaling', maint_backflush: 'Backflush', maint_grouphead: 'Group head',
+    maint_gaskets: 'Gaskets & screens', maint_waterfilter: 'Water filter', maint_grinders: 'Grinders',
+    pill_ok: '✓ OK', pill_soon: 'Due soon', pill_due: '⚠ Due', pill_never: 'Never done',
+    maint_today: 'today', maint_confirm_q: 'Mark as done?',
+    maint_none: 'No maintenance data available',
+    power_on: 'Turn on', power_off: 'Turn off', off_label: 'Off',
+    profile_label: 'Profile', profile_switching: 'switching …',
+    lm_live: 'Machine live',
+    steam_mode: '☁️ Steam mode', water_low: p => `💧 Water almost empty (${p}%)`,
+    preheat_ready: '☕ Ready to brew', preheat_heating: '🔥 Warming up …',
+    brewing: '⏳ Brewing',
+    no_shot_label: 'No shot recorded yet', no_shot_hint: 'Shots sync automatically',
+    m_duration: 'Duration', m_yield: 'Yield', m_pressure: 'Pressure Ø', m_temp: 'Temp',
+    leg_pressure: 'Pressure', leg_flow: 'Flow', leg_temp: 'Temp', leg_weight: 'Weight',
+    ph_pre: 'Preinfusion', ph_ext: 'Extraction',
+    footer_today: n => `☕ ${n} today`, uptime_title: 'Machine on since',
+    bean_roasted_ago: d => `Roasted ${d} days ago`,
+  },
+};
+
+let LANG = 'de';
+function T(key, ...args) {
+  const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+// ─── bean helpers ────────────────────────────────────────────────────────────
+
+// ISO 3166-1 alpha-2 → flag emoji (regional indicators); '' for non-codes
+function flagEmoji(code) {
+  if (typeof code !== 'string' || !/^[A-Z]{2}$/.test(code)) return '';
+  return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
+// Days since roast; accepts DD.MM.YYYY and YYYY-MM-DD (same as the GLP app)
+function roastAgeDays(str) {
+  if (!str || typeof str !== 'string') return null;
+  let d = null;
+  let m = str.trim().match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
+    d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
+  } else {
+    m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+  }
+  if (!d || isNaN(d)) return null;
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  return days >= 0 && days <= 730 ? days : null;
+}
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -163,10 +250,10 @@ function chartLegendHtml(dp, durationSec) {
   const mx = a => a.length ? Math.max(...a) : null;
   const last = a => a.length ? a[a.length - 1] : null;
   const items = [
-    p.length ? { c: CC.pres, l: 'Druck',   v: `${mx(p).toFixed(1)} bar` }  : null,
-    f.length ? { c: CC.flow, l: 'Flow',    v: `${mx(f).toFixed(1)} ml/s` } : null,
-    t.length ? { c: CC.temp, l: 'Temp',    v: `${mx(t).toFixed(0)}°` }     : null,
-    w.length ? { c: CC.wt,   l: 'Gewicht', v: `${last(w).toFixed(1)} g` }  : null,
+    p.length ? { c: CC.pres, l: T('leg_pressure'), v: `${mx(p).toFixed(1)} bar` }  : null,
+    f.length ? { c: CC.flow, l: T('leg_flow'),     v: `${mx(f).toFixed(1)} ml/s` } : null,
+    t.length ? { c: CC.temp, l: T('leg_temp'),     v: `${mx(t).toFixed(0)}°` }     : null,
+    w.length ? { c: CC.wt,   l: T('leg_weight'),   v: `${last(w).toFixed(1)} g` }  : null,
   ].filter(Boolean);
   let phaseTags = '';
   if (p.length > 1) {
@@ -174,8 +261,8 @@ function chartLegendHtml(dp, durationSec) {
     const times = Array.from({ length: p.length }, (_, i) => (i / (p.length - 1)) * dur);
     const ph = detectPhases(times, p);
     if (ph) phaseTags = `<div class="chart-phases">
-      <span class="ph-tag ph-pre">Vorinfusion ${fmtClock(ph.preinfusion)}</span>
-      <span class="ph-tag ph-ext">Extraktion ${fmtClock(ph.extraction)}</span></div>`;
+      <span class="ph-tag ph-pre">${T('ph_pre')} ${fmtClock(ph.preinfusion)}</span>
+      <span class="ph-tag ph-ext">${T('ph_ext')} ${fmtClock(ph.extraction)}</span></div>`;
   }
   return `<div class="chart-legend2">${items.map(i =>
     `<span class="cl-item"><span class="cl-dot" style="background:${i.c}"></span>${i.l} <b>${esc(i.v)}</b></span>`
@@ -339,6 +426,10 @@ const STYLES = `
   }
   .shot-coffee {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shot-bean-extra {
+    color: var(--sub); font-size: .68rem;
+    white-space: nowrap; flex-shrink: 0;
   }
   .shot-grind {
     margin-top: 5px; font-size: .72rem; color: var(--sub);
@@ -743,6 +834,9 @@ class GlpCard extends HTMLElement {
     this._orders = [];
     this._ordersSig = null;
     this._ordersPoll = null;
+    this._beansInfo = null;
+    this._beansInfoAt = 0;
+    this._beansInfoUnavailable = false;
     this._orderEtaFor = null;
     this._orderDeclineFor = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
@@ -853,9 +947,9 @@ class GlpCard extends HTMLElement {
   }
 
   _buildOrdersHtml() {
-    if (!this._orders.length) return `<div class="unavailable">Keine offenen Bestellungen</div>`;
-    const declineRow = id => `<div class="ord-actions"><span class="ord-q">Ablehnen?</span>
-      <button class="ord-btn danger" data-ord-decline-yes="${esc(id)}">✓ Ja</button>
+    if (!this._orders.length) return `<div class="unavailable">${T('orders_none')}</div>`;
+    const declineRow = id => `<div class="ord-actions"><span class="ord-q">${T('ord_decline_q')}</span>
+      <button class="ord-btn danger" data-ord-decline-yes="${esc(id)}">${T('ord_yes')}</button>
       <button class="ord-btn ghost" data-ord-cancel="1">✕</button></div>`;
     return `<div class="ord-list">${this._orders.map(o => {
       const label = o.variant ? `${o.item} · ${o.variant}` : o.item;
@@ -864,15 +958,15 @@ class GlpCard extends HTMLElement {
       if (o.status === 'pending') {
         const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
           : this._orderEtaFor === o.id
-            ? `<div class="ord-actions"><span class="ord-q">Fertig in:</span>${[3,5,8,10].map(m => `<button class="ord-btn eta" data-ord-accept="${esc(o.id)}" data-eta="${m}">${m} min</button>`).join('')}<button class="ord-btn ghost" data-ord-cancel="1">✕</button></div>`
-            : `<div class="ord-actions"><button class="ord-btn primary" data-ord-eta="${esc(o.id)}">✓ Annehmen</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">Ablehnen</button></div>`;
+            ? `<div class="ord-actions"><span class="ord-q">${T('ord_done_in')}</span>${[3,5,8,10].map(m => `<button class="ord-btn eta" data-ord-accept="${esc(o.id)}" data-eta="${m}">${m} min</button>`).join('')}<button class="ord-btn ghost" data-ord-cancel="1">✕</button></div>`
+            : `<div class="ord-actions"><button class="ord-btn primary" data-ord-eta="${esc(o.id)}">${T('ord_accept')}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T('ord_decline')}</button></div>`;
         return `<div class="ord-row pending">${head}${actions}</div>`;
       }
       const minsLeft = (o.acceptedAt && o.eta) ? Math.max(0, Math.ceil((o.acceptedAt + o.eta * 60000 - Date.now()) / 60000)) : null;
       const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
-        : `<div class="ord-actions"><button class="ord-btn primary" data-ord-done="${esc(o.id)}">✓ Fertig</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">Ablehnen</button></div>`;
+        : `<div class="ord-actions"><button class="ord-btn primary" data-ord-done="${esc(o.id)}">${T('ord_done')}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T('ord_decline')}</button></div>`;
       return `<div class="ord-row accepted">${head}
-        <div class="ord-sub">${minsLeft != null ? `fertig in ~${minsLeft} min` : 'in Zubereitung'}</div>${actions}</div>`;
+        <div class="ord-sub">${minsLeft != null ? T('ord_ready_in', minsLeft) : T('ord_preparing')}</div>${actions}</div>`;
     }).join('')}</div>`;
   }
 
@@ -995,8 +1089,39 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    LANG = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2) === 'de' ? 'de' : 'en';
     if (!this._ordersPoll) this._startOrdersPoll();
+    this._loadBeansInfo();
     if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
+  }
+
+  // ── Bean metadata (via the integration REST proxy, app >= 1.96) ───────────
+  async _loadBeansInfo() {
+    if (!this._hass?.fetchWithAuth) return;
+    if (this._beansInfoUnavailable) return;                       // proxy/app too old — feature off
+    if (this._beansInfoAt && Date.now() - this._beansInfoAt < 300000) return;
+    this._beansInfoAt = Date.now();
+    try {
+      const r = await this._hass.fetchWithAuth('/api/glp/library/beans-info');
+      if (!r.ok) { this._beansInfoUnavailable = true; return; }
+      const list = await r.json();
+      this._beansInfo = new Map((Array.isArray(list) ? list : [])
+        .map(b => [String(b.name || '').toLowerCase(), b]));
+    } catch { /* transient — retry after the cache window */ }
+  }
+
+  _beanExtraHtml(coffee) {
+    const bean = this._beansInfo?.get(String(coffee || '').toLowerCase());
+    if (!bean) return '';
+    const parts = [];
+    const fl = flagEmoji(bean.origin);
+    if (fl) parts.push(fl);
+    if (bean.variety) parts.push(esc(bean.variety));
+    const age = roastAgeDays(bean.roastDate);
+    if (age != null) parts.push(`${age}d`);
+    if (!parts.length) return '';
+    const title = age != null ? T('bean_roasted_ago', age) : '';
+    return `<span class="shot-bean-extra"${title ? ` title="${esc(title)}"` : ''}>${parts.join(' · ')}</span>`;
   }
 
   _resolvePrefix() {
@@ -1027,18 +1152,18 @@ class GlpCard extends HTMLElement {
     const s = this._s(suffix);
     if (!s || s.state === 'unknown' || s.state === 'unavailable') return null;
     const diff = Math.round((Date.now() - new Date(s.state).getTime()) / 60000);
-    if (diff < 1) return 'gerade eben';
-    if (diff < 60) return `vor ${diff} Min`;
+    if (diff < 1) return T('just_now');
+    if (diff < 60) return T('mins_ago', diff);
     const h = Math.round(diff / 60);
-    return h < 24 ? `vor ${h} Std` : `vor ${Math.round(h/24)} Tagen`;
+    return h < 24 ? T('hours_ago', h) : T('days_ago', Math.round(h / 24));
   }
 
   static MAINT_TASKS = [
-    ['maintenance_descaling',    'Entkalken',          '🧪', 'descaling'],
-    ['maintenance_backflush',    'Backflush',          '🔄', 'backflush'],
-    ['maintenance_group_head',   'Gruppenkopf',        '🚿', 'grouphead'],
-    ['maintenance_gaskets',      'Dichtungen & Siebe', '⭕', 'gaskets'],
-    ['maintenance_water_filter', 'Wasserfilter',       '💧', 'waterfilter'],
+    ['maintenance_descaling',    'maint_descaling',   '🧪', 'descaling'],
+    ['maintenance_backflush',    'maint_backflush',   '🔄', 'backflush'],
+    ['maintenance_group_head',   'maint_grouphead',   '🚿', 'grouphead'],
+    ['maintenance_gaskets',      'maint_gaskets',     '⭕', 'gaskets'],
+    ['maintenance_water_filter', 'maint_waterfilter', '💧', 'waterfilter'],
   ];
 
   _maintAvailable() {
@@ -1050,12 +1175,12 @@ class GlpCard extends HTMLElement {
   }
 
   _buildMaintHtml() {
-    const pills = { ok: '✓ OK', soon: 'Bald fällig', due: '⚠ Fällig', never: 'Nie erledigt' };
+    const pills = { ok: T('pill_ok'), soon: T('pill_soon'), due: T('pill_due'), never: T('pill_never') };
     const row = (icon, name, status, pct, daysSince, shotsSince, task) => {
       const cls  = pills[status] ? status : 'never';
       const pctW = Math.max(0, Math.min(100, Math.round((parseFloat(pct) || 0) * 100)));
       const sub  = [
-        daysSince != null ? (daysSince === 0 ? 'heute' : `vor ${daysSince} Tagen`) : null,
+        daysSince != null ? (daysSince === 0 ? T('maint_today') : T('days_ago', daysSince)) : null,
         shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null,
       ].filter(Boolean).join(' · ');
       const confirming = task && this._maintConfirm === task;
@@ -1068,27 +1193,27 @@ class GlpCard extends HTMLElement {
         ${sub ? `<div class="maint-sub">${esc(sub)}</div>` : ''}
         <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
         ${confirming ? `<div class="maint-confirm">
-          <span class="maint-confirm-q">Als erledigt markieren?</span>
-          <button class="maint-confirm-yes" data-maint-done="${esc(task)}">✓ Ja</button>
+          <span class="maint-confirm-q">${T('maint_confirm_q')}</span>
+          <button class="maint-confirm-yes" data-maint-done="${esc(task)}">${T('ord_yes')}</button>
           <button class="maint-confirm-no" data-maint-cancel="1">✕</button>
         </div>` : ''}
       </div>`;
     };
-    const rows = GlpCard.MAINT_TASKS.map(([suffix, name, icon, task]) => {
+    const rows = GlpCard.MAINT_TASKS.map(([suffix, nameKey, icon, task]) => {
       const s = this._s(suffix);
       if (!s || s.state === 'unavailable' || s.state === 'unknown') return '';
       const a = s.attributes || {};
-      return row(icon, name, s.state, a.pct, a.days_since, a.shots_since, task);
+      return row(icon, T(nameKey), s.state, a.pct, a.days_since, a.shots_since, task);
     }).filter(Boolean);
     const gAttrs = this._s('maintenance_grinders')?.attributes || {};
     const gRows  = Object.entries(gAttrs)
       .filter(([, v]) => v && typeof v === 'object' && 'status' in v)
       .map(([name, v]) => row('⚙️', name, v.status, v.pct, v.days_since, v.shots_since, v.task));
     if (!rows.length && !gRows.length)
-      return `<div class="unavailable">Keine Wartungsdaten verfügbar</div>`;
+      return `<div class="unavailable">${T('maint_none')}</div>`;
     return `<div class="maint-list">
       ${rows.join('')}
-      ${gRows.length ? `<div class="maint-section-label">Mühlen</div>${gRows.join('')}` : ''}
+      ${gRows.length ? `<div class="maint-section-label">${T('maint_grinders')}</div>${gRows.join('')}` : ''}
     </div>`;
   }
 
@@ -1114,7 +1239,7 @@ class GlpCard extends HTMLElement {
 
     const _powerBtn = this._switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
-              title="${machineOff ? 'Einschalten' : 'Ausschalten'}">
+              title="${machineOff ? T('power_on') : T('power_off')}">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
@@ -1125,7 +1250,7 @@ class GlpCard extends HTMLElement {
       this._profileOpen = false;
       const offOrders = this._orders.length > 0 ? `
         <div style="padding:0 12px 12px">
-          <div class="section-label" style="margin-bottom:8px">Bestellungen</div>
+          <div class="section-label" style="margin-bottom:8px">${T('tab_orders')}</div>
           ${this._buildOrdersHtml()}
         </div>` : '';
       this.shadowRoot.innerHTML = `
@@ -1139,7 +1264,7 @@ class GlpCard extends HTMLElement {
               ${esc(this._config.title)}
             </div>
             <div class="header-right">
-              <span class="off-label">Aus</span>${_powerBtn}
+              <span class="off-label">${T('off_label')}</span>${_powerBtn}
             </div>
           </div>
           ${offOrders}
@@ -1255,8 +1380,8 @@ class GlpCard extends HTMLElement {
     const tabBarHtml = (maintAvailable || ordersTabAvail) ? `
       <div class="tab-bar">
         <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot">☕ Shot</button>
-        ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">🛒 Bestellungen${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
-        ${maintAvailable ? `<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">🔧 Wartung${this._maintAnyDue() ? ' ⚠':''}</button>` : ''}
+        ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">🛒 ${T('tab_orders')}${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
+        ${maintAvailable ? `<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">🔧 ${T('tab_maint')}${this._maintAnyDue() ? ' ⚠':''}</button>` : ''}
       </div>` : '';
 
     // ── nav dots ──────────────────────────────────────────────────────────────
@@ -1290,8 +1415,8 @@ class GlpCard extends HTMLElement {
       <div class="profile-picker">
         <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile">
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
-            <span class="profile-label-small">Profil</span>
-            <span class="profile-current-name">${esc(currentProfile || '—')}${profileSwitching ? `<span style="color:var(--amber);font-weight:500;font-size:.8em"> · wechselt …</span>` : ''}</span>
+            <span class="profile-label-small">${T('profile_label')}</span>
+            <span class="profile-current-name">${esc(currentProfile || '—')}${profileSwitching ? `<span style="color:var(--amber);font-weight:500;font-size:.8em"> · ${T('profile_switching')}</span>` : ''}</span>
           </div>
           <span class="profile-chevron${this._profileOpen?' open':''}">▾</span>
         </button>
@@ -1313,8 +1438,8 @@ class GlpCard extends HTMLElement {
 
     const metricTrioHtml = (() => {
       const tiles = [
-        duration ? { num: duration,      unit: 's', label: 'Dauer'   } : null,
-        weight   ? { num: weight,        unit: 'g', label: 'Ausbeute'} : null,
+        duration ? { num: duration,      unit: 's', label: T('m_duration') } : null,
+        weight   ? { num: weight,        unit: 'g', label: T('m_yield')    } : null,
         ratio    ? { num: `1:${ratio}`,  unit: '',  label: 'Ratio'   } : null,
       ].filter(Boolean);
       if (!tiles.length) return '';
@@ -1329,8 +1454,8 @@ class GlpCard extends HTMLElement {
 
     const secondaryHtml = (() => {
       const pills = [
-        pressure   !== null ? { label: 'Druck Ø',  val: `${pressure} bar` }  : null,
-        shotTemp   !== null ? { label: 'Temp',      val: `${shotTemp}°` }     : null,
+        pressure   !== null ? { label: T('m_pressure'), val: `${pressure} bar` }  : null,
+        shotTemp   !== null ? { label: T('m_temp'),     val: `${shotTemp}°` }     : null,
       ].filter(Boolean);
       if (!pills.length) return '';
       return `<div class="stats-secondary">
@@ -1372,7 +1497,7 @@ class GlpCard extends HTMLElement {
     ].filter(Boolean);
     const liveMachineHtml = (!brewing && !showMaint && lmTiles.length) ? `
       <div class="live-machine">
-        <div class="lm-head"><span class="lm-live-dot"></span>Maschine live</div>
+        <div class="lm-head"><span class="lm-live-dot"></span>${T('lm_live')}</div>
         <div class="lm-tiles">
           ${lmTiles.map(t => `
             <div class="lm-tile${t.warm ? ' warming' : ''}">
@@ -1385,11 +1510,11 @@ class GlpCard extends HTMLElement {
     // ── preheat html ─────────────────────────────────────────────────────────
     const preheatHtml = !brewing && !showMaint && preheatHasEnt ? (
       preheatReady
-        ? `<div class="preheat-ready">☕ Brühbereit</div>`
+        ? `<div class="preheat-ready">${T('preheat_ready')}</div>`
         : preheatPct !== null ? `
           <div class="preheat-warming">
             <div class="preheat-warming-label">
-              <span>🔥 Aufheizen …</span>
+              <span>${T('preheat_heating')}</span>
               <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ''}</span>
             </div>
             <div class="preheat-bar-bg">
@@ -1412,15 +1537,15 @@ class GlpCard extends HTMLElement {
               <div class="shot-profile">${esc(profile)}</div>
               <div class="shot-meta">
                 ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
-                ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>` : ''}
+                ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>${this._beanExtraHtml(coffee)}` : ''}
               </div>
               ${(grinder || grind) ? `<div class="shot-grind">⚙️ ${esc([grinder, grind].filter(Boolean).join(' · '))}</div>` : ''}
             </div>
             ${scoreBadge}
           </div>`
         : `<div class="no-shot">
-            <div class="no-shot-label">Noch kein Shot aufgezeichnet</div>
-            <div class="no-shot-hint">Shots werden automatisch synchronisiert</div>
+            <div class="no-shot-label">${T('no_shot_label')}</div>
+            <div class="no-shot-hint">${T('no_shot_hint')}</div>
           </div>`}
       ${ratingHtml}
       ${metricTrioHtml}
@@ -1431,7 +1556,7 @@ class GlpCard extends HTMLElement {
     // ── footer ───────────────────────────────────────────────────────────────
     const footerHtml = `
       <div class="footer">
-        <span class="footer-item">☕ ${today} heute</span>
+        <span class="footer-item">${T('footer_today', today)}</span>
         ${waterLevel !== null ? `<span class="footer-item">💧 ${waterLevel}%</span>` : '<span></span>'}
         <span class="footer-item">
           ${syncTime ? `${syncTime}` : ''}
@@ -1452,15 +1577,15 @@ class GlpCard extends HTMLElement {
             ${esc(this._config.title)}
           </div>
           <div class="header-right">
-            ${this._machineOnSince ? `<span class="machine-uptime" id="glp-uptime" title="Maschine an seit">🔌 ${fmtUptime(Date.now() - this._machineOnSince)}</span>` : ''}
+            ${this._machineOnSince ? `<span class="machine-uptime" id="glp-uptime" title="${T('uptime_title')}">🔌 ${fmtUptime(Date.now() - this._machineOnSince)}</span>` : ''}
             <div class="status-dot ${dotClass}"></div>
             ${_powerBtn}
           </div>
         </div>
 
         ${tabBarHtml}
-        ${steamOn && !brewing ? `<div class="steam-banner">☁️ Dampfmodus</div>` : ''}
-        ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">💧 Wasser fast leer (${waterLevel}%)</div>` : ''}
+        ${steamOn && !brewing ? `<div class="steam-banner">${T('steam_mode')}</div>` : ''}
+        ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">${T('water_low', waterLevel)}</div>` : ''}
         ${preheatHtml}
         ${profilePickerHtml}
         ${liveMachineHtml}
@@ -1469,7 +1594,7 @@ class GlpCard extends HTMLElement {
         <div class="swipe-target">
           <div class="swipe-content">
             ${brewing ? `
-              <div class="brewing-banner">⏳ Bezug läuft${elapsedSec !== null ? ` · ${elapsedSec}s` : ' …'}</div>
+              <div class="brewing-banner">${T('brewing')}${elapsedSec !== null ? ` · ${elapsedSec}s` : ' …'}</div>
               ${liveProfile ? `<div class="shot-hero" style="margin-bottom:12px"><div class="shot-profile">${esc(liveProfile)}</div></div>` : ''}
               ${liveSvgHtml}
               ${liveStatsHtml}
@@ -1492,7 +1617,6 @@ class GlpCard extends HTMLElement {
   }
 
   getCardSize() { return 3; }
-  static getConfigElement() { return document.createElement('glp-card-editor'); }
   static getStubConfig() { return { entity_prefix: 'sensor.gaggiuino_local_profiler_' }; }
 }
 

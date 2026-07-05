@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.13.0] – 2026-07-05
+### Added
+- **Bean info on the shot hero** — next to the bean name the card now shows the origin country flag, variety and roast age ("🇷🇼 · Red Bourbon · 12d", tooltip with roast date wording). Data comes from the new `GET /api/glp/library/beans-info` proxy (integration ≥ 1.16.0, app ≥ 1.96.0), joined case-insensitively by bean name, cached and refreshed every 5 minutes. On older installations the endpoint is missing and the card silently hides the enrichment; closes #47
+- **DE/EN localization** — all UI strings (tabs, orders, maintenance, banners, metric labels, chart legend, tooltips) now follow `hass.language` via a STRINGS table (same pattern as the order card). German wording is unchanged; English is new; closes #47
+
+### Fixed
+- Removed `getConfigElement()` referencing the never-defined `glp-card-editor` element — the card is configured via YAML (`getStubConfig` unchanged); closes #47
+
 ## [2.12.3] – 2026-06-19
 ### Fixed
 - **Power button now reliably responds on every tap** — the `pointerdown` listener was re-attached after each full `innerHTML` re-render; if a HA state update triggered a render mid-gesture the new button had no listener for a brief window; replaced with a single delegated listener on `this.shadowRoot` (never replaced by innerHTML) so the handler survives every render; closes #45

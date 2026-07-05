@@ -72,6 +72,8 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 - **Steam mode banner** — shown automatically when steam switch is active
 - **Water level** in footer (💧 XX%); warning banner when below 20%
 - Last shot: profile name, coffee bean, rating (★), duration, yield, brew ratio, avg pressure, temp, target temp
+- **Bean info enrichment** — origin flag, variety and roast age next to the bean name, fetched from the coffee library via the integration proxy (`GET /api/glp/library/beans-info`; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.16.0+ and GLP app v1.96.0+; hidden automatically on older installations)
+- **Localized UI (DE/EN)** — follows the HA user language; German wording matches previous versions
 - Shots pulled today
 - Time since last sync with the Gaggiuino controller
 
