@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.13.0';
+const GLP_CARD_VERSION = '2.13.1';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN).
@@ -96,7 +96,10 @@ function esc(s) {
 
 function safeUrl(url) {
   if (!url) return null;
-  try { const u = new URL(url); return (u.protocol==='http:'||u.protocol==='https:') ? url : null; }
+  // Returns u.href (the normalized/re-serialized URL), not the raw input —
+  // the raw string could still contain quote/angle-bracket characters that
+  // break out of an href="..." attribute even though the protocol is fine.
+  try { const u = new URL(url); return (u.protocol==='http:'||u.protocol==='https:') ? u.href : null; }
   catch { return null; }
 }
 
@@ -1560,7 +1563,7 @@ class GlpCard extends HTMLElement {
         ${waterLevel !== null ? `<span class="footer-item">💧 ${waterLevel}%</span>` : '<span></span>'}
         <span class="footer-item">
           ${syncTime ? `${syncTime}` : ''}
-          ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${glpUrl}" target="_blank">GLP ↗</a>` : ''}
+          ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${esc(glpUrl)}" target="_blank">GLP ↗</a>` : ''}
         </span>
       </div>`;
 

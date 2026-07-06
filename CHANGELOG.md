@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.13.1] – 2026-07-06
+### Fixed
+- **Security audit finding: the GLP footer link's `href` wasn't escaped** — `safeUrl()` only checked the protocol and returned the raw config string, which could still break out of the `href="..."` attribute via a quote/angle-bracket character; it now returns the parsed `u.href` instead, and the render site also wraps it in `esc()` as a second layer. Only exploitable via the card's own YAML config (`glp_url`), not via any backend-supplied data — self-XSS at most, but fixed as defense in depth.
+
 ## [2.13.0] – 2026-07-05
 ### Added
 - **Bean info on the shot hero** — next to the bean name the card now shows the origin country flag, variety and roast age ("🇷🇼 · Red Bourbon · 12d", tooltip with roast date wording). Data comes from the new `GET /api/glp/library/beans-info` proxy (integration ≥ 1.16.0, app ≥ 1.96.0), joined case-insensitively by bean name, cached and refreshed every 5 minutes. On older installations the endpoint is missing and the card silently hides the enrichment; closes #47
