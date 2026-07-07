@@ -21,6 +21,10 @@
   Mobile-first with swipe gestures, dot navigation, custom profile picker and live brewing view — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
+<p align="center">
+  Part of the <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">GLP ecosystem</a> — requires a <a href="https://gaggiuino.github.io/">Gaggiuino</a>-modified espresso machine and the GLP App.
+</p>
+
 ---
 
 ## Prerequisites
@@ -133,5 +137,5 @@ Built on top of the [Gaggiuino](https://gaggiuino.github.io/) project and the [G
 ---
 
 <p align="center">
-  <sub>Built with <a href="https://claude.ai/code">Claude Code</a> by Anthropic</sub>
+  <sub>Built with <a href="https://claude.ai/code">Claude Code</a> by Anthropic — see <a href="https://github.com/mxkissnr/gaggiuino-local-profiler/blob/main/DEVELOPMENT.md">DEVELOPMENT.md</a> for full transparency and model stats.</sub>
 </p>
