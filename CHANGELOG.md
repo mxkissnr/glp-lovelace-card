@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Added
+- Test suite (`test/`, Node's built-in `node:test`, no new dependency) covering `esc()` and `safeUrl()` — the card's HTML-escaping and URL-scheme guards — against script/quote-injection payloads and `javascript:`/`data:` URLs. The tests load the real `glp-card.js` in a sandboxed `vm` context rather than reimplementing the logic. CI gained a `test` job (`npm test` + a syntax-check build step) in `.github/workflows/validate.yml` alongside the existing HACS validation. Closes #48
+
 ## [2.13.1] – 2026-07-06
 ### Fixed
 - **Security audit finding: the GLP footer link's `href` wasn't escaped** — `safeUrl()` only checked the protocol and returned the raw config string, which could still break out of the `href="..."` attribute via a quote/angle-bracket character; it now returns the parsed `u.href` instead, and the render site also wraps it in `esc()` as a second layer. Only exploitable via the card's own YAML config (`glp_url`), not via any backend-supplied data — self-XSS at most, but fixed as defense in depth.
