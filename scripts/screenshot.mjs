@@ -1,0 +1,178 @@
+#!/usr/bin/env node
+// Regenerates docs/screenshots/card.png for the README. Boots a throwaway
+// static file server for this repo's root (an ES module <script src="...">
+// needs http:// — file:// is blocked by module CORS rules in headless
+// Chromium), loads a minimal page that mounts <glp-card> with a realistic
+// mock `hass` object (machine on, profile selected, preheat ready, a recent
+// shot with a full pressure/flow/temp/weight curve, maintenance rows), waits
+// for the card's shadow DOM to render, then screenshots just the card
+// element at 2x scale. Run on demand: `node scripts/screenshot.mjs`.
+// Requires `npx playwright install chromium` once beforehand.
+
+import http from 'node:http';
+import path from 'node:path';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot  = path.join(__dirname, '..');
+const outDir    = path.join(repoRoot, 'docs', 'screenshots');
+const outFile   = path.join(outDir, 'card.png');
+const PORT      = 8321;
+
+mkdirSync(outDir, { recursive: true });
+
+// ── Synthetic espresso shot curve (28s, 0.1s resolution, x10-scaled like real datapoints) ──
+function makeShotDp() {
+    const t = [], p = [], f = [], w = [];
+    for (let i = 0; i <= 280; i++) {
+        const s = i / 10; // seconds
+        const pres = s < 5 ? (s / 5) * 3 : s < 8 ? 3 + ((s - 5) / 3) * 6 : 9 - Math.max(0, s - 20) * 0.15;
+        p.push(Math.round(pres * 10));
+        f.push(Math.round((s < 8 ? 1.5 : 2.2 + Math.sin(s) * 0.2) * 10));
+        w.push(Math.round(Math.max(0, (s - 8) / 20 * 36) * 10));
+        t.push(Math.round((93 + Math.sin(s / 3)) * 10));
+    }
+    return { p, t, w, f };
+}
+
+const PREFIX = 'sensor.gaggiuino_local_profiler_';
+const bsPrefix  = 'binary_sensor.gaggiuino_local_profiler_';
+const selPrefix = 'select.gaggiuino_local_profiler_';
+const now = Date.now();
+
+const recentShot = {
+    id: 42,
+    ts: new Date(now - 18 * 60 * 1000).toISOString(),
+    profile: 'Standard Espresso',
+    coffee: 'Bombe',
+    drink_type: 'Espresso',
+    grinder: 'Niche Zero',
+    grind: '23 Klicks',
+    duration: 28.4,
+    yield_g: 36.2,
+    ratio: 2.07,
+    pressure: 9.1,
+    rating: 4,
+    score: 87,
+    dp: makeShotDp(),
+};
+
+const mockStates = {
+    [PREFIX + 'machine_status']: {
+        state: 'online',
+        attributes: {
+            friendly_name: 'Gaggiuino Machine Status',
+            switch_entity: 'switch.gaggiuino_local_profiler_machine',
+            recent_shots: [recentShot],
+        },
+    },
+    'switch.gaggiuino_local_profiler_machine': {
+        state: 'on',
+        last_changed: new Date(now - 2 * 3600 * 1000).toISOString(),
+        attributes: { friendly_name: 'Gaggiuino Machine' },
+    },
+    [bsPrefix + 'brewing']:       { state: 'off', attributes: {} },
+    [bsPrefix + 'steam_switch']:  { state: 'off', attributes: {} },
+    [bsPrefix + 'preheat_ready']: { state: 'on',  attributes: {} },
+    [PREFIX + 'preheat_remaining']: { state: '0', attributes: {} },
+    [PREFIX + 'preheat_elapsed']:   { state: '420', attributes: {} },
+    [PREFIX + 'machine_temperature']:        { state: '93.4', attributes: {} },
+    [PREFIX + 'machine_target_temperature']: { state: '93.0', attributes: {} },
+    [PREFIX + 'machine_live_pressure']: { state: '0.0', attributes: {} },
+    [PREFIX + 'machine_live_weight']:   { state: '0.0', attributes: {} },
+    [PREFIX + 'machine_water_level']:   { state: '82', attributes: {} },
+    [selPrefix + 'profile']: {
+        state: 'Standard Espresso',
+        attributes: { friendly_name: 'Gaggiuino Profile', options: ['Standard Espresso', 'Blooming Shot', 'Ristretto', 'Filter'] },
+    },
+    [PREFIX + 'shots_today']: { state: '7', attributes: {} },
+    [PREFIX + 'last_sync']:   { state: new Date(now - 3 * 60 * 1000).toISOString(), attributes: {} },
+    [PREFIX + 'maintenance_descaling']: {
+        state: 'ok', attributes: { pct: 0.32, days_since: 14, shots_since: 41 },
+    },
+    [PREFIX + 'maintenance_backflush']: {
+        state: 'soon', attributes: { pct: 0.78, days_since: 5, shots_since: 22 },
+    },
+    [PREFIX + 'maintenance_group_head']: {
+        state: 'ok', attributes: { pct: 0.15, days_since: 2, shots_since: 6 },
+    },
+    [PREFIX + 'maintenance_gaskets']: {
+        state: 'due', attributes: { pct: 1, days_since: 210, shots_since: 640 },
+    },
+    [PREFIX + 'maintenance_water_filter']: {
+        state: 'ok', attributes: { pct: 0.4, days_since: 30, shots_since: 90 },
+    },
+    [PREFIX + 'maintenance_grinders']: {
+        state: 'ok',
+        attributes: {
+            'Niche Zero': { status: 'ok', pct: 0.2, days_since: 3, shots_since: 12, task: 'grinder-niche-zero' },
+        },
+    },
+};
+
+const PAGE_HTML = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #0b0b0d; }
+  #wrap { max-width: 420px; margin: 0 auto; padding: 32px 20px; }
+</style>
+<script type="module" src="/glp-card.js"></script>
+</head>
+<body>
+  <div id="wrap"><glp-card id="card"></glp-card></div>
+  <script type="module">
+    const mockStates = ${JSON.stringify(mockStates)};
+    const card = document.getElementById('card');
+    card.setConfig({ title: 'Gaggiuino', entity_prefix: '${PREFIX}' });
+    card.hass = {
+      language: 'de',
+      states: mockStates,
+      callService: () => {},
+    };
+  </script>
+</body>
+</html>`;
+
+function startServer() {
+    return new Promise(resolve => {
+        const server = http.createServer((req, res) => {
+            if (req.url === '/' || req.url === '/index.html') {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(PAGE_HTML);
+                return;
+            }
+            if (req.url === '/glp-card.js') {
+                res.writeHead(200, { 'Content-Type': 'text/javascript' });
+                res.end(readFileSync(path.join(repoRoot, 'glp-card.js'), 'utf8'));
+                return;
+            }
+            res.writeHead(404);
+            res.end();
+        });
+        server.listen(PORT, () => resolve(server));
+    });
+}
+
+async function main() {
+    const server = await startServer();
+    const browser = await chromium.launch();
+    try {
+        const page = await browser.newPage({ deviceScaleFactor: 2, viewport: { width: 460, height: 900 } });
+        await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });
+        await page.waitForTimeout(500);
+        const card = page.locator('#card');
+        await card.waitFor({ state: 'attached' });
+        await page.waitForTimeout(300);
+        await card.screenshot({ path: outFile });
+        console.log(`Saved screenshot to ${path.relative(repoRoot, outFile)}`);
+    } finally {
+        await browser.close();
+        server.close();
+    }
+}
+
+main().catch(err => { console.error(err); process.exit(1); });

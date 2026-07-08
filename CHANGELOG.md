@@ -3,6 +3,7 @@
 ## Unreleased
 ### Added
 - Test suite (`test/`, Node's built-in `node:test`, no new dependency) covering `esc()` and `safeUrl()` — the card's HTML-escaping and URL-scheme guards — against script/quote-injection payloads and `javascript:`/`data:` URLs. The tests load the real `glp-card.js` in a sandboxed `vm` context rather than reimplementing the logic. CI gained a `test` job (`npm test` + a syntax-check build step) in `.github/workflows/validate.yml` alongside the existing HACS validation. Closes #48
+- **README hero screenshot + screenshot tooling** — `scripts/screenshot.mjs` (new `playwright` devDependency) boots a throwaway static server for this repo, mounts `<glp-card>` with a realistic mock `hass` (machine on, preheat ready, a selected profile, a recent shot with a full pressure/flow/temp/weight curve, maintenance rows) and screenshots the rendered card to `docs/screenshots/card.png` at 2x scale; run via `npm run screenshot`. README now shows this screenshot near the top, ahead of the public HACS/Reddit launch.
 
 ## [2.13.1] – 2026-07-06
 ### Fixed

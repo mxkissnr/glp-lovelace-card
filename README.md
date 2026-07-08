@@ -25,6 +25,10 @@
   Part of the <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">GLP ecosystem</a> — requires a <a href="https://gaggiuino.github.io/">Gaggiuino</a>-modified espresso machine and the GLP App.
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/card.png" alt="GLP Shot Card showing a preheated Gaggiuino, the current profile, live machine tiles, the last shot's metrics and its pressure/flow/temperature/weight curve" width="420"/>
+</p>
+
 ---
 
 ## Prerequisites

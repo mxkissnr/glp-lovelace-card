@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "test": "node --test",
-    "build": "node --check glp-card.js"
+    "build": "node --check glp-card.js",
+    "screenshot": "node scripts/screenshot.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }
