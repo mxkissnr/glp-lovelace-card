@@ -2,7 +2,7 @@
   "name": "glp-lovelace-card",
   "private": true,
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test",
     "build": "node --check glp-card.js"
   }
 }
