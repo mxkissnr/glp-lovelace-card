@@ -1,7 +1,7 @@
-const GLP_CARD_VERSION = '2.13.1';
+const GLP_CARD_VERSION = '2.14.0';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
-// DE wording is the original card text; language follows hass.language (DE/EN).
+// DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
 
 const STRINGS = {
   de: {
@@ -54,8 +54,109 @@ const STRINGS = {
     footer_today: n => `☕ ${n} today`, uptime_title: 'Machine on since',
     bean_roasted_ago: d => `Roasted ${d} days ago`,
   },
+  it: {
+    tab_orders: 'Ordini', tab_maint: 'Manutenzione',
+    orders_none: 'Nessun ordine aperto',
+    ord_decline_q: 'Rifiutare?', ord_done_in: 'Pronto tra:', ord_yes: '✓ Sì',
+    ord_accept: '✓ Accetta', ord_decline: 'Rifiuta', ord_done: '✓ Fatto',
+    ord_ready_in: n => `pronto tra ~${n} min`, ord_preparing: 'in preparazione',
+    just_now: 'proprio ora', mins_ago: n => `${n} min fa`, hours_ago: n => `${n} h fa`, days_ago: n => `${n} giorni fa`,
+    maint_descaling: 'Decalcificazione', maint_backflush: 'Backflush', maint_grouphead: 'Gruppo erogazione',
+    maint_gaskets: 'Guarnizioni & filtri', maint_waterfilter: 'Filtro acqua', maint_grinders: 'Macinacaffè',
+    pill_ok: '✓ OK', pill_soon: 'In scadenza', pill_due: '⚠ Scaduto', pill_never: 'Mai fatto',
+    maint_today: 'oggi', maint_confirm_q: 'Segnare come fatto?',
+    maint_none: 'Nessun dato di manutenzione disponibile',
+    power_on: 'Accendi', power_off: 'Spegni', off_label: 'Spento',
+    profile_label: 'Profilo', profile_switching: 'cambio in corso …',
+    lm_live: 'Macchina in diretta',
+    steam_mode: '☁️ Modalità vapore', water_low: p => `💧 Acqua quasi esaurita (${p}%)`,
+    preheat_ready: '☕ Pronto per l\'estrazione', preheat_heating: '🔥 Riscaldamento …',
+    brewing: '⏳ Estrazione in corso',
+    no_shot_label: 'Nessuno shot ancora registrato', no_shot_hint: 'Gli shot si sincronizzano automaticamente',
+    m_duration: 'Durata', m_yield: 'Resa', m_pressure: 'Pressione Ø', m_temp: 'Temp',
+    leg_pressure: 'Pressione', leg_flow: 'Flusso', leg_temp: 'Temp', leg_weight: 'Peso',
+    ph_pre: 'Preinfusione', ph_ext: 'Estrazione',
+    footer_today: n => `☕ ${n} oggi`, uptime_title: 'Macchina accesa da',
+    bean_roasted_ago: d => `Tostato ${d} giorni fa`,
+  },
+  fr: {
+    tab_orders: 'Commandes', tab_maint: 'Entretien',
+    orders_none: 'Aucune commande en cours',
+    ord_decline_q: 'Refuser ?', ord_done_in: 'Prêt dans :', ord_yes: '✓ Oui',
+    ord_accept: '✓ Accepter', ord_decline: 'Refuser', ord_done: '✓ Terminé',
+    ord_ready_in: n => `prêt dans ~${n} min`, ord_preparing: 'en préparation',
+    just_now: 'à l\'instant', mins_ago: n => `il y a ${n} min`, hours_ago: n => `il y a ${n} h`, days_ago: n => `il y a ${n} jours`,
+    maint_descaling: 'Détartrage', maint_backflush: 'Backflush', maint_grouphead: 'Groupe de percolation',
+    maint_gaskets: 'Joints & tamis', maint_waterfilter: 'Filtre à eau', maint_grinders: 'Moulins',
+    pill_ok: '✓ OK', pill_soon: 'Bientôt requis', pill_due: '⚠ Requis', pill_never: 'Jamais fait',
+    maint_today: 'aujourd\'hui', maint_confirm_q: 'Marquer comme fait ?',
+    maint_none: 'Aucune donnée d\'entretien disponible',
+    power_on: 'Allumer', power_off: 'Éteindre', off_label: 'Éteint',
+    profile_label: 'Profil', profile_switching: 'changement …',
+    lm_live: 'Machine en direct',
+    steam_mode: '☁️ Mode vapeur', water_low: p => `💧 Eau presque vide (${p}%)`,
+    preheat_ready: '☕ Prêt à infuser', preheat_heating: '🔥 Chauffage …',
+    brewing: '⏳ Extraction en cours',
+    no_shot_label: 'Aucun shot enregistré pour l\'instant', no_shot_hint: 'Les shots se synchronisent automatiquement',
+    m_duration: 'Durée', m_yield: 'Rendement', m_pressure: 'Pression Ø', m_temp: 'Temp',
+    leg_pressure: 'Pression', leg_flow: 'Débit', leg_temp: 'Temp', leg_weight: 'Poids',
+    ph_pre: 'Préinfusion', ph_ext: 'Extraction',
+    footer_today: n => `☕ ${n} aujourd'hui`, uptime_title: 'Machine allumée depuis',
+    bean_roasted_ago: d => `Torréfié il y a ${d} jours`,
+  },
+  es: {
+    tab_orders: 'Pedidos', tab_maint: 'Mantenimiento',
+    orders_none: 'No hay pedidos abiertos',
+    ord_decline_q: '¿Rechazar?', ord_done_in: 'Listo en:', ord_yes: '✓ Sí',
+    ord_accept: '✓ Aceptar', ord_decline: 'Rechazar', ord_done: '✓ Listo',
+    ord_ready_in: n => `listo en ~${n} min`, ord_preparing: 'en preparación',
+    just_now: 'justo ahora', mins_ago: n => `hace ${n} min`, hours_ago: n => `hace ${n} h`, days_ago: n => `hace ${n} días`,
+    maint_descaling: 'Descalcificación', maint_backflush: 'Backflush', maint_grouphead: 'Grupo de erogación',
+    maint_gaskets: 'Juntas y filtros', maint_waterfilter: 'Filtro de agua', maint_grinders: 'Molinillos',
+    pill_ok: '✓ OK', pill_soon: 'Próximo', pill_due: '⚠ Pendiente', pill_never: 'Nunca hecho',
+    maint_today: 'hoy', maint_confirm_q: '¿Marcar como hecho?',
+    maint_none: 'No hay datos de mantenimiento disponibles',
+    power_on: 'Encender', power_off: 'Apagar', off_label: 'Apagado',
+    profile_label: 'Perfil', profile_switching: 'cambiando …',
+    lm_live: 'Máquina en directo',
+    steam_mode: '☁️ Modo vapor', water_low: p => `💧 Agua casi vacía (${p}%)`,
+    preheat_ready: '☕ Listo para extraer', preheat_heating: '🔥 Calentando …',
+    brewing: '⏳ Extracción en curso',
+    no_shot_label: 'Aún no se ha registrado ningún shot', no_shot_hint: 'Los shots se sincronizan automáticamente',
+    m_duration: 'Duración', m_yield: 'Rendimiento', m_pressure: 'Presión Ø', m_temp: 'Temp',
+    leg_pressure: 'Presión', leg_flow: 'Flujo', leg_temp: 'Temp', leg_weight: 'Peso',
+    ph_pre: 'Preinfusión', ph_ext: 'Extracción',
+    footer_today: n => `☕ ${n} hoy`, uptime_title: 'Máquina encendida desde',
+    bean_roasted_ago: d => `Tostado hace ${d} días`,
+  },
+  nl: {
+    tab_orders: 'Bestellingen', tab_maint: 'Onderhoud',
+    orders_none: 'Geen openstaande bestellingen',
+    ord_decline_q: 'Afwijzen?', ord_done_in: 'Klaar over:', ord_yes: '✓ Ja',
+    ord_accept: '✓ Accepteren', ord_decline: 'Afwijzen', ord_done: '✓ Klaar',
+    ord_ready_in: n => `klaar over ~${n} min`, ord_preparing: 'in bereiding',
+    just_now: 'zojuist', mins_ago: n => `${n} min geleden`, hours_ago: n => `${n} u geleden`, days_ago: n => `${n} dagen geleden`,
+    maint_descaling: 'Ontkalken', maint_backflush: 'Backflush', maint_grouphead: 'Groepkop',
+    maint_gaskets: 'Afdichtingen & zeven', maint_waterfilter: 'Waterfilter', maint_grinders: 'Molens',
+    pill_ok: '✓ OK', pill_soon: 'Binnenkort nodig', pill_due: '⚠ Nodig', pill_never: 'Nooit gedaan',
+    maint_today: 'vandaag', maint_confirm_q: 'Als voltooid markeren?',
+    maint_none: 'Geen onderhoudsgegevens beschikbaar',
+    power_on: 'Inschakelen', power_off: 'Uitschakelen', off_label: 'Uit',
+    profile_label: 'Profiel', profile_switching: 'wisselt …',
+    lm_live: 'Machine live',
+    steam_mode: '☁️ Stoommodus', water_low: p => `💧 Water bijna leeg (${p}%)`,
+    preheat_ready: '☕ Klaar om te zetten', preheat_heating: '🔥 Opwarmen …',
+    brewing: '⏳ Bereiden',
+    no_shot_label: 'Nog geen shot geregistreerd', no_shot_hint: 'Shots synchroniseren automatisch',
+    m_duration: 'Duur', m_yield: 'Opbrengst', m_pressure: 'Druk Ø', m_temp: 'Temp',
+    leg_pressure: 'Druk', leg_flow: 'Flow', leg_temp: 'Temp', leg_weight: 'Gewicht',
+    ph_pre: 'Voorinfusie', ph_ext: 'Extractie',
+    footer_today: n => `☕ ${n} vandaag`, uptime_title: 'Machine aan sinds',
+    bean_roasted_ago: d => `${d} dagen geleden gebrand`,
+  },
 };
 
+const SUPPORTED_LANGS = ['de', 'en', 'it', 'fr', 'es', 'nl'];
 let LANG = 'de';
 function T(key, ...args) {
   const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
@@ -1092,7 +1193,7 @@ class GlpCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    LANG = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2) === 'de' ? 'de' : 'en';
+    { const l = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2).toLowerCase(); LANG = SUPPORTED_LANGS.includes(l) ? l : 'en'; }
     if (!this._ordersPoll) this._startOrdersPoll();
     this._loadBeansInfo();
     if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
