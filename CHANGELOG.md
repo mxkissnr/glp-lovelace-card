@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [2.14.0] – 2026-07-10
 ### Added
 - **IT/FR/ES/NL translations.** The STRINGS-based i18n table (introduced in v2.13.0 for DE/EN) now covers all 6 GLP UI languages; `hass.language` falls back to English for anything unsupported instead of the old binary DE/EN check. `glp-card.js`. Closes #49
 - Test suite (`test/`, Node's built-in `node:test`, no new dependency) covering `esc()` and `safeUrl()` — the card's HTML-escaping and URL-scheme guards — against script/quote-injection payloads and `javascript:`/`data:` URLs. The tests load the real `glp-card.js` in a sandboxed `vm` context rather than reimplementing the logic. CI gained a `test` job (`npm test` + a syntax-check build step) in `.github/workflows/validate.yml` alongside the existing HACS validation. Closes #48
