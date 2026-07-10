@@ -138,6 +138,10 @@ Inspired by [BeanConqueror](https://github.com/graphefruit/beanconqueror) by gra
 
 Built on top of the [Gaggiuino](https://gaggiuino.github.io/) project and the [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler) app.
 
+## Disclaimer
+
+GLP Shot Card is an independent, community-built companion project. It is not officially affiliated with, endorsed by, or supported by the [Gaggiuino](https://gaggiuino.github.io/) firmware project or its maintainers.
+
 ---
 
 <p align="center">
