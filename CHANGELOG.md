@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.15.0] – 2026-07-13
+### Added
+- **`machine` config option for multi-machine setups** (companion to app v2.0.0's multi-machine mode, GLP #317). When set, `_resolvePrefix()` matches the `*_machine_status` entity whose `friendly_name`/`entity_id` references the configured name/slug, before falling back to the existing "first Gaggiuino-named entity, else any" heuristic — cards without this option (still the vast majority, single-machine setups) behave exactly as before. The switch-entity `localStorage` key is also machine-scoped (`glp_switch_entity_<slug>`) when `machine` is set, so two cards for two machines on the same dashboard no longer share/collide on the same stored switch entity. No visual config editor exists for this card yet, so `machine` is YAML-only for now. `glp-card.js`, `test/machine-config.test.js` (new, 6 tests). Closes #50
+
 ## [2.14.0] – 2026-07-10
 ### Added
 - **IT/FR/ES/NL translations.** The STRINGS-based i18n table (introduced in v2.13.0 for DE/EN) now covers all 6 GLP UI languages; `hass.language` falls back to English for anything unsupported instead of the old binary DE/EN check. `glp-card.js`. Closes #49
