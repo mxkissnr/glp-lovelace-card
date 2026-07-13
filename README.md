@@ -56,6 +56,7 @@ glp_url: http://homeassistant.local:8099          # optional — adds a "GLP ↗
 title: Gaggiuino                                  # optional header title
 entity_prefix: sensor.gaggiuino_local_profiler_   # optional — auto-detected if omitted
 switch_entity: switch.espresso_plug               # optional — power toggle + collapse when off
+machine: Kitchen GaggiMate                        # optional — multi-machine setups only, see below
 ```
 
 ### Options
@@ -66,6 +67,7 @@ switch_entity: switch.espresso_plug               # optional — power toggle + 
 | `switch_entity` | HA switch entity ID for the smart plug — auto-detected from integration v1.4.1+; only set manually if using an older integration | *(auto)* |
 | `glp_url` | URL to the GLP web interface (adds an "open" link) | *(none)* |
 | `title` | Card header title | `Gaggiuino` |
+| `machine` | Name/slug of a specific machine, for setups with more than one GLP machine (the app's multi-machine mode) — matches the `*_machine_status` entity whose name references it, and scopes the switch-entity `localStorage` key so multiple cards don't collide. Ignored if `entity_prefix` is also set. | *(auto — first Gaggiuino-named entity)* |
 
 ## What it shows
 

@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.14.0';
+const GLP_CARD_VERSION = '2.15.0';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
@@ -1189,7 +1189,14 @@ class GlpCard extends HTMLElement {
     }));
   }
 
-  setConfig(config) { this._config = { title: 'Gaggiuino', ...config }; }
+  setConfig(config) {
+    this._config = { title: 'Gaggiuino', ...config };
+    // Re-resolve the switch entity from the machine-scoped storage key now
+    // that `machine` (if any) is known — the constructor ran before
+    // setConfig() and could only read the unscoped global key.
+    this._switchEntity = localStorage.getItem(this._switchStorageKey())
+      || localStorage.getItem('glp_switch_entity') || null;
+  }
 
   set hass(hass) {
     this._hass = hass;
@@ -1228,14 +1235,40 @@ class GlpCard extends HTMLElement {
     return `<span class="shot-bean-extra"${title ? ` title="${esc(title)}"` : ''}>${parts.join(' · ')}</span>`;
   }
 
+  // machine (#50): optional config option naming/slugging a specific
+  // machine, for setups with more than one GLP machine device (see the app's
+  // multi-machine mode, GLP #317, and glp-integration #47's forthcoming
+  // per-machine devices). When set, matches a *_machine_status entity whose
+  // friendly_name or entity_id references it, before falling back to the
+  // existing "first Gaggiuino-named entity, else any" heuristic — so cards
+  // without this option (the vast majority today, single-machine setups)
+  // behave exactly as before.
   _resolvePrefix() {
     if (this._config.entity_prefix) return this._config.entity_prefix;
-    const found = Object.keys(this._hass.states)
-      .find(id => id.endsWith('_machine_status') &&
-        this._hass.states[id].attributes.friendly_name?.toLowerCase().includes('gaggiuino'));
+    const candidates = Object.keys(this._hass.states).filter(id => id.endsWith('_machine_status'));
+    if (this._config.machine) {
+      const needle = String(this._config.machine).toLowerCase();
+      const needleSlug = needle.replace(/\s+/g, '_');
+      const matched = candidates.find(id =>
+        this._hass.states[id].attributes.friendly_name?.toLowerCase().includes(needle) ||
+        id.toLowerCase().includes(needleSlug));
+      if (matched) return matched.replace(/machine_status$/, '');
+    }
+    const found = candidates.find(id =>
+      this._hass.states[id].attributes.friendly_name?.toLowerCase().includes('gaggiuino'));
     if (found) return found.replace(/machine_status$/, '');
-    const fallback = Object.keys(this._hass.states).find(id => id.endsWith('_machine_status'));
+    const fallback = candidates[0];
     return fallback ? fallback.replace(/machine_status$/, '') : 'sensor.gaggiuino_local_profiler_';
+  }
+
+  // Machine-scoped localStorage key (#50) so the switch entity choice for
+  // one machine's card doesn't collide with another's on the same
+  // dashboard. Falls back to the original global key when `machine` isn't
+  // configured — unchanged behavior for existing single-machine cards.
+  _switchStorageKey() {
+    const machine = this._config?.machine;
+    if (!machine) return 'glp_switch_entity';
+    return `glp_switch_entity_${String(machine).toLowerCase().replace(/\s+/g, '_')}`;
   }
 
   _s(suffix) { return this._hass.states[this._resolvePrefix() + suffix]; }
@@ -1333,7 +1366,7 @@ class GlpCard extends HTMLElement {
       || this._s('machine_status')?.attributes?.switch_entity || null;
     if (resolvedSwitch && resolvedSwitch !== this._switchEntity) {
       this._switchEntity = resolvedSwitch;
-      localStorage.setItem('glp_switch_entity', resolvedSwitch);
+      localStorage.setItem(this._switchStorageKey(), resolvedSwitch);
     }
     const switchState = this._switchEntity ? this._hass.states[this._switchEntity] : null;
     this._machineOnSince = (switchState?.state === 'on' && switchState.last_changed)
