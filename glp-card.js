@@ -387,6 +387,34 @@ const STYLES = `
     --glp-text:    var(--primary-text-color, #e4e4e7);
     --glp-sub:     var(--secondary-text-color, #a1a1aa);
     --glp-accent:  var(--primary-color, #f59e0b);
+    /* --glp-accent-text: the readable-on-accent text/icon color, for
+       anything rendering directly on a full-strength --glp-accent fill (e.g.
+       glp-order-card.js's .order-btn). --glp-accent can be ANY HA theme's
+       --primary-color — GLP's own defaults are light/medium amber, but a
+       common theme primary like Material "Indigo 900" #1a237e is dark
+       (luminance .029), and black text on it measures ~1.1:1 (unreadable) —
+       this card previously hardcoded dark text unconditionally, safe only by
+       coincidence with GLP's own amber defaults. --glp-accent-text is instead
+       picked at runtime by _applySemanticColorContrast() from the LUMINANCE
+       OF THE RESOLVED --glp-accent itself (a separate, independent input
+       from --glp-bg's luminance, which drives --glp-ok/--glp-warn/--glp-err
+       above — theme darkness and accent darkness are orthogonal). Uses pure
+       #000/#fff with the same 0.179 WCAG flip-point threshold: at that exact
+       crossover luminance, black and white text both measure ~4.58:1 against
+       it, and either color's contrast only increases moving away from that
+       point — so, unlike --glp-ok/--glp-warn/--glp-err (which had to be
+       checked against specific known theme values), #000/#fff at the 0.179
+       split is a mathematical guarantee of >=4.58:1 against ANY possible
+       accent color. Verified against real-world values: GLP Dark #f59e0b
+       (black text 9.78:1), GLP Light #d97706 (6.59:1), HA frontend default
+       #03a9f4 (7.99:1) all correctly pick black; Material Indigo 900
+       #1a237e correctly picks white (13.24:1) instead of the old hardcoded
+       dark text's 1.13:1. glp-card.js has no full-strength accent fill with
+       text on it today (--glp-accent is only a progress-bar fill), so this
+       token is unused here — kept in sync anyway so the shared block doesn't
+       drift, and so _applySemanticColorContrast() stays identical in both
+       files. */
+    --glp-accent-text: #000;
     /* --glp-ok/--glp-warn/--glp-err deliberately do NOT chain through HA's
        own --success-color/--warning-color/--error-color. Checked both HA
        frontend's own out-of-the-box defaults (same for light AND dark mode —
@@ -1401,39 +1429,59 @@ class GlpCard extends HTMLElement {
     </div>`;
   }
 
-  // Picks the contrast-safe --glp-ok/--glp-warn/--glp-err variant by the
-  // LUMINANCE OF THE CARD'S OWN RESOLVED --glp-bg, not prefers-color-scheme —
-  // OS/browser color scheme can mismatch the actual active HA theme (dark
-  // system + light HA theme is common), and this card has no data-theme
-  // attribute to key off instead. See the long comment in the GLP-TOKENS
-  // block above for the measured contrast ratios behind these two constant
-  // sets. Sets the winning values as an inline style on the host, which
-  // always outranks the plain :host declarations in STYLES regardless of
-  // any stylesheet/media-query state. Called from _render() right after the
-  // shadow DOM (and its :host rules) are rebuilt.
-  _applySemanticColorContrast() {
+  // Resolves the relative luminance of a CSS color string by normalizing it
+  // through a scratch element's computed style (handles hex/rgb/named/etc —
+  // whatever the real cascade actually resolved a custom property to).
+  // Returns null if it can't be determined (no DOM, unset value, ...).
+  _luminanceOf(cssColor) {
+    if (!cssColor) return null;
     let rgb;
     try {
-      const bg = getComputedStyle(this).getPropertyValue('--glp-bg').trim();
-      if (!bg) return;
       const probe = document.createElement('span');
       probe.style.cssText = 'display:none';
-      probe.style.color = bg;
+      probe.style.color = cssColor;
       this.shadowRoot.appendChild(probe);
       rgb = getComputedStyle(probe).color;
       probe.remove();
-    } catch { return; }
+    } catch { return null; }
     const m = rgb && rgb.match(/[\d.]+/g);
-    if (!m || m.length < 3) return;
+    if (!m || m.length < 3) return null;
     const [r, g, b] = m.map(Number);
     const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
-    const luminance = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-    // 0.179 is the standard WCAG "flip point": the background luminance above
-    // which a darker foreground becomes the higher-contrast choice.
-    const light = luminance > 0.179;
-    this.style.setProperty('--glp-ok',   light ? '#15803d' : '#22c55e');
-    this.style.setProperty('--glp-warn', light ? '#a16207' : '#eab308');
-    this.style.setProperty('--glp-err',  light ? '#dc2626' : '#ef4444');
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  // Picks the contrast-safe --glp-ok/--glp-warn/--glp-err/--glp-accent-text
+  // variants at runtime, each keyed off the LUMINANCE OF THE ACTUAL RESOLVED
+  // COLOR they need to read against — not prefers-color-scheme. OS/browser
+  // color scheme can mismatch the actual active HA theme (dark system +
+  // light HA theme is common), and this card has no data-theme attribute to
+  // key off instead. --glp-ok/--glp-warn/--glp-err key off --glp-bg's
+  // luminance; --glp-accent-text keys off --glp-accent's luminance
+  // separately (theme darkness and accent darkness are orthogonal — see the
+  // long comments in the GLP-TOKENS block above for the measured contrast
+  // ratios behind all four). Sets the winning values as an inline style on
+  // the host, which always outranks the plain :host declarations in STYLES
+  // regardless of any stylesheet/media-query state. Called from _render()
+  // right after the shadow DOM (and its :host rules) are rebuilt.
+  _applySemanticColorContrast() {
+    const bgLuminance = this._luminanceOf(getComputedStyle(this).getPropertyValue('--glp-bg').trim());
+    if (bgLuminance != null) {
+      // 0.179 is the standard WCAG "flip point": the background luminance
+      // above which a darker foreground becomes the higher-contrast choice.
+      const light = bgLuminance > 0.179;
+      this.style.setProperty('--glp-ok',   light ? '#15803d' : '#22c55e');
+      this.style.setProperty('--glp-warn', light ? '#a16207' : '#eab308');
+      this.style.setProperty('--glp-err',  light ? '#dc2626' : '#ef4444');
+    }
+    const accentLuminance = this._luminanceOf(getComputedStyle(this).getPropertyValue('--glp-accent').trim());
+    if (accentLuminance != null) {
+      // Pure #000/#fff at the same 0.179 split is a mathematical guarantee
+      // of >=4.58:1 against ANY accent color (both text colors measure
+      // exactly that at the crossover luminance, and only gain contrast
+      // moving away from it) — no need to check specific theme values here.
+      this.style.setProperty('--glp-accent-text', accentLuminance > 0.179 ? '#000' : '#fff');
+    }
   }
 
   _render() {
