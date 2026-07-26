@@ -179,7 +179,14 @@ async function main() {
     const server = await startServer();
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage({ deviceScaleFactor: 2, viewport: { width: 460, height: 900 } });
+        // colorScheme drives prefers-color-scheme, which the card's GLP-TOKENS
+        // light/dark --glp-ok/--glp-warn override depends on (no data-theme
+        // attribute is available on a Lovelace custom element to key off instead).
+        const page = await browser.newPage({
+            deviceScaleFactor: 2,
+            viewport: { width: 460, height: 900 },
+            colorScheme: LIGHT ? 'light' : 'dark',
+        });
         await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });
         await page.waitForTimeout(500);
         const card = page.locator('#card');

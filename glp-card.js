@@ -387,6 +387,30 @@ const STYLES = `
     --glp-text:    var(--primary-text-color, #e4e4e7);
     --glp-sub:     var(--secondary-text-color, #a1a1aa);
     --glp-accent:  var(--primary-color, #f59e0b);
+    /* --glp-ok/--glp-warn deliberately do NOT chain through HA's own
+       --success-color/--warning-color the way --glp-err chains through
+       --error-color below: glp-ha-theme.yaml's own "GLP Light" theme sets
+       success-color #16a34a (3.30:1 on white) and warning-color #d97706
+       (3.19:1) — both below the 4.5:1 AA floor this card's small/bold
+       badge, banner and star-rating text needs, so trusting an arbitrary
+       theme's value here would still ship a contrast failure even under
+       Max's own theme. No data-theme attribute exists on this custom
+       element (unlike the web app's own [data-theme="light"] override in
+       public-src/style.css:44-58), so prefers-color-scheme is the closest
+       available signal — imperfect (it reflects OS/browser preference, not
+       the HA theme actually selected), but the only one on offer. Measured
+       (WCAG relative-luminance contrast, background is this card's own
+       --glp-bg, i.e. near-white in light / near-black in dark):
+         --glp-ok   dark #22c55e vs dark bg (#18181b): 7.78:1
+         --glp-warn dark #eab308 vs dark bg (#18181b): 9.24:1
+         --glp-ok   light override #15803d vs white:   5.02:1
+           (darker than the web app's own light --ok #16a34a, which only
+           clears 3.30:1 — insufficient for this card's smaller/bolder text)
+         --glp-warn light override #a16207 vs white:    4.92:1
+           (same value the web app uses for its light --warn)
+       --glp-sub (var(--secondary-text-color)) needed no change — it's
+       already HA's own theme var: dark fallback #a1a1aa vs dark bg 6.91:1;
+       GLP Light's secondary-text-color #52525b vs white 7.73:1. */
     --glp-ok:      #22c55e;
     --glp-warn:    #eab308;
     --glp-err:     var(--error-color, #ef4444);
@@ -394,6 +418,12 @@ const STYLES = `
     --glp-series-flow:   #c77000;
     --glp-series-temp:   #c0392b;
     --glp-series-weight: #009e73;
+  }
+  @media (prefers-color-scheme: light) {
+    :host {
+      --glp-ok:   #15803d;
+      --glp-warn: #a16207;
+    }
   }
   /* /GLP-TOKENS v1 */
 
