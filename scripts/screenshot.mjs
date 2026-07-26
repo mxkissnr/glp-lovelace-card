@@ -7,6 +7,9 @@
 // shot with a full pressure/flow/temp/weight curve, maintenance rows), waits
 // for the card's shadow DOM to render, then screenshots just the card
 // element at 2x scale. Run on demand: `node scripts/screenshot.mjs`.
+// Pass `--light` (or set GLP_SCREENSHOT_THEME=light) to render against the
+// "GLP Light" HA theme values (glp-ha-theme.yaml) instead of the dark
+// defaults — writes to docs/screenshots/card-light.png.
 // Requires `npx playwright install chromium` once beforehand.
 
 import http from 'node:http';
@@ -18,8 +21,21 @@ import { chromium } from 'playwright';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot  = path.join(__dirname, '..');
 const outDir    = path.join(repoRoot, 'docs', 'screenshots');
-const outFile   = path.join(outDir, 'card.png');
+const LIGHT     = process.argv.includes('--light') || process.env.GLP_SCREENSHOT_THEME === 'light';
+const outFile   = path.join(outDir, LIGHT ? 'card-light.png' : 'card.png');
 const PORT      = 8321;
+
+// HA theme CSS variables the card reads via the GLP-TOKENS fallback chain.
+// Values match the "GLP Light" theme in glp-ha-theme.yaml; omitted entirely
+// for the dark run so the card falls back to its own built-in dark defaults.
+const THEME_VARS = LIGHT ? `
+    --card-background-color: #ffffff;
+    --primary-text-color: #18181b;
+    --secondary-text-color: #52525b;
+    --divider-color: #f4f4f5;
+    --primary-color: #d97706;
+    --secondary-background-color: #ffffff;
+` : '';
 
 mkdirSync(outDir, { recursive: true });
 
@@ -117,8 +133,10 @@ const PAGE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <style>
-  html, body { margin: 0; padding: 0; background: #0b0b0d; }
-  #wrap { max-width: 420px; margin: 0 auto; padding: 32px 20px; }
+  html, body { margin: 0; padding: 0; background: ${LIGHT ? '#fafafa' : '#0b0b0d'}; }
+  #wrap {
+    max-width: 420px; margin: 0 auto; padding: 32px 20px;
+${THEME_VARS}  }
 </style>
 <script type="module" src="/glp-card.js"></script>
 </head>
