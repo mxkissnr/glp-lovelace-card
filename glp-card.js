@@ -175,7 +175,7 @@ function flagEmoji(code) {
 function roastAgeDays(str) {
   if (!str || typeof str !== 'string') return null;
   let d = null;
-  let m = str.trim().match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+  let m = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
   if (m) {
     const y = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
     d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
@@ -216,31 +216,6 @@ function downsample(arr, maxPts) {
   const out  = arr.filter((_, i) => i % step === 0);
   if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
   return out;
-}
-
-function svgPoints(arr, vmin, vmax, W, H) {
-  if (!arr || arr.length < 2) return null;
-  const range = vmax - vmin || 1;
-  return arr.map((v, i) => {
-    const x = (i / (arr.length - 1)) * W;
-    const y = H - 3 - ((Math.max(vmin, Math.min(vmax, v)) - vmin) / range) * (H - 6);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-}
-
-function autoRange(arr, type) {
-  if (!arr || arr.length === 0) return [0, 1];
-  const max = Math.max(...arr);
-  if (type === 'temp') {
-    // Data-adaptive: temperature lives in a narrow band and can be low (boiler-off
-    // profiles ~50°C). A fixed range would push such curves off-screen, so derive
-    // the range from the actual values with padding.
-    const min = Math.min(...arr);
-    const pad = Math.max((max - min) * 0.2, max > 200 ? 20 : 2);
-    return [min - pad, max + pad];
-  }
-  if (type === 'pressure') return max > 20  ? [0,   120]  : [0,  12];
-  return                          max > 100 ? [0,   500]  : [0,  50];
 }
 
 // Card chart series colors — GLP-series palette, kept in sync with the GLP-TOKENS
