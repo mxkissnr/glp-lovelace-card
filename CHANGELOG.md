@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.16.0] – 2026-07-26
 ### Changed
 - **Flat HA-theme redesign — hybrid tokens, decorative glow removed.** Purely visual/theming, no behavior change (one small bugfix called out below). Closes #56
   - Added a `GLP-TOKENS v1` block (`--glp-radius`, `--glp-radius-sm`, `--glp-bg`, `--glp-surface`, `--glp-border`, `--glp-text`, `--glp-sub`, `--glp-accent`, `--glp-ok`, `--glp-warn`, `--glp-err`, plus the 4 chart series tokens) that reads Home Assistant's own theme CSS variables first (`--ha-card-background`, `--primary-text-color`, `--divider-color`, `--primary-color`, `--error-color`, etc.) and only falls back to the old standalone Apple-iOS palette values when a theme doesn't set them. This exact block is the shared contract with `glp-order-card` (new test `test/token-sync.test.js`, skips cleanly when the neighbor repo/block isn't present locally). No new YAML config option — no `theme:` switch, HA's active theme always wins.
