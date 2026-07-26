@@ -377,7 +377,7 @@ function chartLegendHtml(dp, durationSec) {
 // ─── styles ───────────────────────────────────────────────────────────────────
 
 const STYLES = `
-  /* GLP-TOKENS v1 — keep in sync with glp-order-card.js */
+  /* GLP-TOKENS v1 — shared contract between glp-card.js and glp-order-card.js, keep byte-identical */
   :host {
     --glp-radius:    var(--ha-card-border-radius, 12px);
     --glp-radius-sm: 8px;

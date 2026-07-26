@@ -11,7 +11,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const START = '/* GLP-TOKENS v1 — keep in sync with glp-order-card.js */';
+// Anchor on the short, stable prefix rather than the full marker sentence —
+// the marker's wording (currently naming both files) is itself part of the
+// compared block and must stay identical too, but the search anchor
+// shouldn't break if that wording is ever tweaked in lockstep on both sides.
+const START = '/* GLP-TOKENS v1';
 const END = '/* /GLP-TOKENS v1 */';
 
 function extractTokenBlock(src) {
