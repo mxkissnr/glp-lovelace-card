@@ -387,43 +387,52 @@ const STYLES = `
     --glp-text:    var(--primary-text-color, #e4e4e7);
     --glp-sub:     var(--secondary-text-color, #a1a1aa);
     --glp-accent:  var(--primary-color, #f59e0b);
-    /* --glp-ok/--glp-warn deliberately do NOT chain through HA's own
-       --success-color/--warning-color the way --glp-err chains through
-       --error-color below: glp-ha-theme.yaml's own "GLP Light" theme sets
-       success-color #16a34a (3.30:1 on white) and warning-color #d97706
-       (3.19:1) — both below the 4.5:1 AA floor this card's small/bold
-       badge, banner and star-rating text needs, so trusting an arbitrary
-       theme's value here would still ship a contrast failure even under
-       Max's own theme. No data-theme attribute exists on this custom
-       element (unlike the web app's own [data-theme="light"] override in
-       public-src/style.css:44-58), so prefers-color-scheme is the closest
-       available signal — imperfect (it reflects OS/browser preference, not
-       the HA theme actually selected), but the only one on offer. Measured
-       (WCAG relative-luminance contrast, background is this card's own
-       --glp-bg, i.e. near-white in light / near-black in dark):
-         --glp-ok   dark #22c55e vs dark bg (#18181b): 7.78:1
-         --glp-warn dark #eab308 vs dark bg (#18181b): 9.24:1
-         --glp-ok   light override #15803d vs white:   5.02:1
-           (darker than the web app's own light --ok #16a34a, which only
-           clears 3.30:1 — insufficient for this card's smaller/bolder text)
-         --glp-warn light override #a16207 vs white:    4.92:1
-           (same value the web app uses for its light --warn)
-       --glp-sub (var(--secondary-text-color)) needed no change — it's
-       already HA's own theme var: dark fallback #a1a1aa vs dark bg 6.91:1;
-       GLP Light's secondary-text-color #52525b vs white 7.73:1. */
+    /* --glp-ok/--glp-warn/--glp-err deliberately do NOT chain through HA's
+       own --success-color/--warning-color/--error-color. Checked both HA
+       frontend's own out-of-the-box defaults (same for light AND dark mode —
+       home-assistant/frontend src/resources/theme/color/color.globals.ts)
+       and glp-ha-theme.yaml's "GLP Light" theme; neither reliably clears the
+       4.5:1 WCAG AA floor this card's small/bold badge, banner and
+       star-rating text needs against a light background. Measured (relative
+       luminance contrast) vs white:
+         HA frontend default success-color #43a047: 3.30:1 (fails)
+         HA frontend default warning-color #ffa600: 1.96:1 (fails badly)
+         HA frontend default error-color   #db4437: 4.29:1 (fails, barely)
+         glp-ha-theme.yaml "GLP Light" success-color #16a34a: 3.30:1 (fails)
+         glp-ha-theme.yaml "GLP Light" warning-color #d97706: 3.19:1 (fails)
+         glp-ha-theme.yaml "GLP Light" error-color   #dc2626: 4.83:1 (passes,
+           but the point stands — the fallback chain isn't the guarantee)
+       Trusting an arbitrary theme's value would still ship a contrast
+       failure under HA's own vanilla defaults, so all three are fixed,
+       self-controlled constants, applied by JS based on the LUMINANCE OF
+       THE CARD'S OWN RESOLVED --glp-bg (_applySemanticColorContrast(),
+       called from _render() right after the shadow DOM is (re)built) —
+       not by prefers-color-scheme/OS preference and not by a data-theme
+       attribute. Neither exists reliably for a Lovelace custom element, and
+       OS preference can flatly mismatch the active HA theme (dark OS +
+       light HA theme, or vice versa) — exactly the case this needs to get
+       right, since that's the actual bug being fixed here. The dark values
+       below are the pre-JS declared defaults; _applySemanticColorContrast()
+       overwrites them as an inline style on the host, which always wins
+       over these stylesheet declarations regardless of media query state.
+       Measured:
+         --glp-ok   dark  #22c55e vs dark bg (#18181b): 7.78:1
+         --glp-warn dark  #eab308 vs dark bg (#18181b): 9.24:1
+         --glp-err  dark  #ef4444 vs dark bg (#18181b): 4.71:1
+         --glp-ok   light #15803d vs white:             5.02:1
+         --glp-warn light #a16207 vs white:             4.92:1
+         --glp-err  light #dc2626 vs white:             4.83:1
+       --glp-sub (var(--secondary-text-color)) needed no such handling — it's
+       already HA's own theme var and measured fine both ways: dark fallback
+       #a1a1aa vs dark bg 6.91:1; GLP Light's secondary-text-color #52525b
+       vs white 7.73:1. */
     --glp-ok:      #22c55e;
     --glp-warn:    #eab308;
-    --glp-err:     var(--error-color, #ef4444);
+    --glp-err:     #ef4444;
     --glp-series-pres:   #0072b2;
     --glp-series-flow:   #c77000;
     --glp-series-temp:   #c0392b;
     --glp-series-weight: #009e73;
-  }
-  @media (prefers-color-scheme: light) {
-    :host {
-      --glp-ok:   #15803d;
-      --glp-warn: #a16207;
-    }
   }
   /* /GLP-TOKENS v1 */
 
@@ -1392,6 +1401,41 @@ class GlpCard extends HTMLElement {
     </div>`;
   }
 
+  // Picks the contrast-safe --glp-ok/--glp-warn/--glp-err variant by the
+  // LUMINANCE OF THE CARD'S OWN RESOLVED --glp-bg, not prefers-color-scheme —
+  // OS/browser color scheme can mismatch the actual active HA theme (dark
+  // system + light HA theme is common), and this card has no data-theme
+  // attribute to key off instead. See the long comment in the GLP-TOKENS
+  // block above for the measured contrast ratios behind these two constant
+  // sets. Sets the winning values as an inline style on the host, which
+  // always outranks the plain :host declarations in STYLES regardless of
+  // any stylesheet/media-query state. Called from _render() right after the
+  // shadow DOM (and its :host rules) are rebuilt.
+  _applySemanticColorContrast() {
+    let rgb;
+    try {
+      const bg = getComputedStyle(this).getPropertyValue('--glp-bg').trim();
+      if (!bg) return;
+      const probe = document.createElement('span');
+      probe.style.cssText = 'display:none';
+      probe.style.color = bg;
+      this.shadowRoot.appendChild(probe);
+      rgb = getComputedStyle(probe).color;
+      probe.remove();
+    } catch { return; }
+    const m = rgb && rgb.match(/[\d.]+/g);
+    if (!m || m.length < 3) return;
+    const [r, g, b] = m.map(Number);
+    const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const luminance = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    // 0.179 is the standard WCAG "flip point": the background luminance above
+    // which a darker foreground becomes the higher-contrast choice.
+    const light = luminance > 0.179;
+    this.style.setProperty('--glp-ok',   light ? '#15803d' : '#22c55e');
+    this.style.setProperty('--glp-warn', light ? '#a16207' : '#eab308');
+    this.style.setProperty('--glp-err',  light ? '#dc2626' : '#ef4444');
+  }
+
   _render() {
     if (!this._hass || !this._config) return;
 
@@ -1444,6 +1488,7 @@ class GlpCard extends HTMLElement {
           </div>
           ${offOrders}
         </div></ha-card>`;
+      this._applySemanticColorContrast();
       this._bindPowerBtn();
       if (this._orders.length > 0) this._bindOrderBtns();
       return;
@@ -1781,6 +1826,7 @@ class GlpCard extends HTMLElement {
 
       </div></ha-card>`;
 
+    this._applySemanticColorContrast();
     this._bindPowerBtn();
     this._bindProfilePicker();
     this._bindTabBtns();

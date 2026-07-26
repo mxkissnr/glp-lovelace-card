@@ -7,9 +7,22 @@
 // shot with a full pressure/flow/temp/weight curve, maintenance rows), waits
 // for the card's shadow DOM to render, then screenshots just the card
 // element at 2x scale. Run on demand: `node scripts/screenshot.mjs`.
-// Pass `--light` (or set GLP_SCREENSHOT_THEME=light) to render against the
-// "GLP Light" HA theme values (glp-ha-theme.yaml) instead of the dark
-// defaults — writes to docs/screenshots/card-light.png.
+//
+// Two independent axes (deliberately decoupled — the card's contrast fix for
+// --glp-ok/--glp-warn/--glp-err keys off the ACTUAL resolved --glp-bg via
+// getComputedStyle, not off prefers-color-scheme, precisely because HA theme
+// choice and OS/browser color-scheme preference can disagree):
+//   --ha-theme=light|dark   (or GLP_HA_THEME env) — which HA theme CSS
+//                           variables (glp-ha-theme.yaml values) the mock
+//                           page exposes to the card. Default: dark.
+//   --os-scheme=light|dark (or GLP_OS_SCHEME env) — Playwright's emulated
+//                           prefers-color-scheme. Default: mirrors --ha-theme
+//                           (the common case). Set it independently to
+//                           reproduce a mismatch, e.g. dark OS + light HA
+//                           theme.
+// `--light` is shorthand for `--ha-theme=light --os-scheme=light`.
+// `--out=<path>` overrides the output file (default docs/screenshots/card.png,
+// or card-light.png when --ha-theme=light).
 // Requires `npx playwright install chromium` once beforehand.
 
 import http from 'node:http';
@@ -18,24 +31,39 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
+function flag(name, envVar, fallback) {
+    const eq = process.argv.find(a => a.startsWith(`--${name}=`));
+    if (eq) return eq.split('=')[1];
+    if (process.env[envVar]) return process.env[envVar];
+    return fallback;
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot  = path.join(__dirname, '..');
 const outDir    = path.join(repoRoot, 'docs', 'screenshots');
-const LIGHT     = process.argv.includes('--light') || process.env.GLP_SCREENSHOT_THEME === 'light';
-const outFile   = path.join(outDir, LIGHT ? 'card-light.png' : 'card.png');
+const LIGHT_SHORTHAND = process.argv.includes('--light');
+const HA_THEME  = flag('ha-theme', 'GLP_HA_THEME', LIGHT_SHORTHAND ? 'light' : 'dark');
+const OS_SCHEME = flag('os-scheme', 'GLP_OS_SCHEME', LIGHT_SHORTHAND ? 'light' : HA_THEME);
+const outFile   = flag('out', '', path.join(outDir, HA_THEME === 'light' ? 'card-light.png' : 'card.png'));
 const PORT      = 8321;
 
 // HA theme CSS variables the card reads via the GLP-TOKENS fallback chain.
-// Values match the "GLP Light" theme in glp-ha-theme.yaml; omitted entirely
-// for the dark run so the card falls back to its own built-in dark defaults.
-const THEME_VARS = LIGHT ? `
+// Values match the "GLP Light"/"GLP Dark" themes in glp-ha-theme.yaml.
+const THEME_VARS = HA_THEME === 'light' ? `
     --card-background-color: #ffffff;
     --primary-text-color: #18181b;
     --secondary-text-color: #52525b;
     --divider-color: #f4f4f5;
     --primary-color: #d97706;
     --secondary-background-color: #ffffff;
-` : '';
+` : `
+    --card-background-color: #18181b;
+    --primary-text-color: #e4e4e7;
+    --secondary-text-color: #a1a1aa;
+    --divider-color: #27272a;
+    --primary-color: #f59e0b;
+    --secondary-background-color: #18181b;
+`;
 
 mkdirSync(outDir, { recursive: true });
 
@@ -133,7 +161,7 @@ const PAGE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <style>
-  html, body { margin: 0; padding: 0; background: ${LIGHT ? '#fafafa' : '#0b0b0d'}; }
+  html, body { margin: 0; padding: 0; background: ${HA_THEME === 'light' ? '#fafafa' : '#0b0b0d'}; }
   #wrap {
     max-width: 420px; margin: 0 auto; padding: 32px 20px;
 ${THEME_VARS}  }
@@ -179,13 +207,15 @@ async function main() {
     const server = await startServer();
     const browser = await chromium.launch();
     try {
-        // colorScheme drives prefers-color-scheme, which the card's GLP-TOKENS
-        // light/dark --glp-ok/--glp-warn override depends on (no data-theme
-        // attribute is available on a Lovelace custom element to key off instead).
+        // colorScheme is intentionally independent from HA_THEME/THEME_VARS —
+        // the card's --glp-ok/--glp-warn/--glp-err fix keys off the card's own
+        // resolved --glp-bg (getComputedStyle), not prefers-color-scheme, so
+        // this axis exists here only to prove that OS/HA-theme mismatches
+        // (e.g. dark OS + light HA theme) render correctly too.
         const page = await browser.newPage({
             deviceScaleFactor: 2,
             viewport: { width: 460, height: 900 },
-            colorScheme: LIGHT ? 'light' : 'dark',
+            colorScheme: OS_SCHEME === 'light' ? 'light' : 'dark',
         });
         await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });
         await page.waitForTimeout(500);
@@ -193,7 +223,7 @@ async function main() {
         await card.waitFor({ state: 'attached' });
         await page.waitForTimeout(300);
         await card.screenshot({ path: outFile });
-        console.log(`Saved screenshot to ${path.relative(repoRoot, outFile)}`);
+        console.log(`Saved screenshot to ${path.relative(repoRoot, outFile)} (ha-theme=${HA_THEME}, os-scheme=${OS_SCHEME})`);
     } finally {
         await browser.close();
         server.close();
