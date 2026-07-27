@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.17.0';
+const GLP_CARD_VERSION = '2.17.1';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
@@ -897,7 +897,8 @@ const STYLES = `
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--glp-radius); padding: 10px 14px; margin-bottom: 14px;
   }
-  .ready-by-picker { flex-wrap: wrap; }
+  .ready-by-picker { flex-direction: column; align-items: stretch; gap: 8px; }
+  .ready-by-picker-row { display: flex; align-items: center; gap: 8px; }
   .ready-by-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .ready-by-label { font-size: .72rem; color: var(--sub); font-weight: 500; }
   .ready-by-set .ready-by-label { color: var(--text); font-size: .82rem; font-weight: 700; }
@@ -905,14 +906,14 @@ const STYLES = `
   .ready-by-time-input {
     background: var(--s2); border: 1px solid var(--border); border-radius: var(--glp-radius-sm);
     color: var(--text); font-family: inherit; font-size: .82rem; padding: 6px 8px;
-    min-height: 34px;
+    min-height: 34px; flex: 1; min-width: 0;
   }
   .ready-by-btn {
     border: none; border-radius: var(--glp-radius-sm); font-family: inherit; font-weight: 700;
     font-size: .74rem; padding: 7px 12px; cursor: pointer; min-height: 34px;
     touch-action: manipulation; white-space: nowrap;
   }
-  .ready-by-btn.primary { background: var(--glp-accent); color: var(--glp-accent-text); }
+  .ready-by-btn.primary { background: var(--green); color: #06210f; }
   .ready-by-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--sub); }
 
   /* ── maintenance ── */
@@ -1016,6 +1017,7 @@ class GlpCard extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._profileInteracting = false;
+    this._readyByInteracting = false;
     this._profileOpen  = false;
     this._animating     = false;
     this._shotIndex     = 0;
@@ -1105,6 +1107,13 @@ class GlpCard extends HTMLElement {
     });
   }
 
+  _bindReadyByPicker() {
+    const input = this.shadowRoot.getElementById('glp-readyby-input');
+    if (!input) return;
+    input.addEventListener('focus', () => { this._readyByInteracting = true; });
+    input.addEventListener('blur', () => { this._readyByInteracting = false; });
+  }
+
   _bindTabBtns() {
     this.shadowRoot.querySelectorAll('[data-tab]').forEach(btn => {
       btn.addEventListener('pointerdown', e => {
@@ -1190,8 +1199,10 @@ class GlpCard extends HTMLElement {
     }
     return `<div class="ready-by ready-by-picker">
       <span class="ready-by-label">${T('ready_by_set_label')}</span>
-      <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
-      <button class="ready-by-btn primary" data-action="set-ready-by">${T('ready_by_set')}</button>
+      <div class="ready-by-picker-row">
+        <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
+        <button class="ready-by-btn primary" data-action="set-ready-by">${T('ready_by_set')}</button>
+      </div>
     </div>`;
   }
 
@@ -1217,7 +1228,7 @@ class GlpCard extends HTMLElement {
     if (!force && sig === this._ordersSig) return;
     this._ordersSig = sig;
     this._orders = active;
-    if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
+    if (!this._profileInteracting && !this._animating && !this._maintConfirm && !this._readyByInteracting) this._render();
   }
 
   async _orderAction(id, action, body) {
@@ -1385,7 +1396,7 @@ class GlpCard extends HTMLElement {
     { const l = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2).toLowerCase(); LANG = SUPPORTED_LANGS.includes(l) ? l : 'en'; }
     if (!this._ordersPoll) this._startOrdersPoll();
     this._loadBeansInfo();
-    if (!this._profileInteracting && !this._animating && !this._maintConfirm) this._render();
+    if (!this._profileInteracting && !this._animating && !this._maintConfirm && !this._readyByInteracting) this._render();
   }
 
   // ── Bean metadata (via the integration REST proxy, app >= 1.96) ───────────
@@ -1653,6 +1664,7 @@ class GlpCard extends HTMLElement {
         </div></ha-card>`;
       this._applySemanticColorContrast();
       this._bindPowerBtn();
+      this._bindReadyByPicker();
       this._startReadyByTicker();
       if (this._orders.length > 0) this._bindOrderBtns();
       return;
