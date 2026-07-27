@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.17.0] – 2026-07-27
+### Added
+- **"Ready by" preheat scheduler** (part 3/3 of #61, companion to the app's `POST /api/preheat/ready-by` and glp-integration's `gaggiuino_profiler.set_ready_by` service + `preheat_ready_by_target_at`/`preheat_planned_switch_on_at` sensors). While the machine is off, the collapsed card now shows a native `<input type="time">` picker + "Set" button; picking a time already passed today rolls over to tomorrow (`_resolveReadyByTarget()`, unit-tested). Once a target is set, the picker is replaced by "Ready by HH:MM · switching on in Xm" (or "switching on now" once the planned time has passed) with a live per-second countdown (`_startReadyByTicker()`, same text-node-update pattern as the existing uptime ticker) and a Cancel button. Hidden entirely once the machine is on/warming/ready, since ready-by is moot at that point. `data-action="set-ready-by"`/`"cancel-ready-by"` are handled by the existing delegated shadowRoot `pointerdown` listener, matching the `toggle-switch` pattern; both calls conditionally include `machine` in the service-call payload when the `machine` config option is set. New CSS (`.ready-by*`), 6-language strings, `test/ready-by.test.js` (9 new tests). Requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.22.0+ (not yet released as of this writing — the feature merged to glp-integration's `main` after its v1.21.0 release cut; confirm the exact version number once glp-integration's next release ships). `glp-card.js`, `README.md`, `test/ready-by.test.js`. Closes #61
+
 ## [2.16.0] – 2026-07-26
 ### Changed
 - **Flat HA-theme redesign — hybrid tokens, decorative glow removed.** Purely visual/theming, no behavior change (one small bugfix called out below). Closes #56

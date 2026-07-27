@@ -74,6 +74,7 @@ machine: Kitchen GaggiMate                        # optional — multi-machine s
 
 - Machine online / error / brewing status
 - Preheat progress bar + countdown while machine warms up; "Brühbereit ☕" badge when ready
+- **"Ready by" preheat scheduler** — while the machine is off, pick a time-of-day (native time picker) to have it switch on automatically so preheat finishes by then; shows a live "Ready by HH:MM · switching on in Xm" countdown and a Cancel button once set; picking a time already passed today schedules it for tomorrow. Requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.22.0+ (`gaggiuino_profiler.set_ready_by` service + `preheat_ready_by_target_at`/`preheat_planned_switch_on_at` sensors — not yet released as of this writing, confirm the exact version once glp-integration cuts its next release)
 - **Shot navigation** — ‹ / › arrows + **dot indicators** to browse the last 10 recorded shots; **swipe left/right** on the card to navigate on touch devices; auto-resets to newest when a new shot arrives; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.4+
 - **App-style shot chart** — pressure + flow on a left bar axis, temperature + weight on a right axis, a real time axis (seconds), gridlines + axis labels, preinfusion/extraction phase shading and a legend with peak/final values; for both recorded and live shots; flow line requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.12.0+
 - **Live machine panel** — static live status row with current boiler temperature (plus target, highlighted while heating up), live pressure and live scale weight; updates every ~5 s when the machine is on and idle; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+
@@ -99,6 +100,8 @@ The card reads the following entities (with default `entity_prefix`):
 | `binary_sensor.gaggiuino_local_profiler_steam_switch` | Steam mode active *(optional)* |
 | `sensor.gaggiuino_local_profiler_preheat_elapsed` | Warmup elapsed (s) |
 | `sensor.gaggiuino_local_profiler_preheat_remaining` | Warmup remaining (s) |
+| `sensor.gaggiuino_local_profiler_preheat_ready_by_target_at` | "Ready by" scheduler target time (ISO datetime, `unknown` when nothing scheduled); requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.22.0+ *(optional)* |
+| `sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at` | Planned auto switch-on time for the ready-by scheduler (ISO datetime, `unknown` when nothing scheduled); requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.22.0+ *(optional)* |
 | `sensor.gaggiuino_local_profiler_machine_temperature` | Current boiler temperature |
 | `sensor.gaggiuino_local_profiler_machine_target_temperature` | Target temperature |
 | `sensor.gaggiuino_local_profiler_machine_live_pressure` | Live pressure (bar) — 5 s updates *(optional)* |
