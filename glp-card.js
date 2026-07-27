@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.16.0';
+const GLP_CARD_VERSION = '2.17.0';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
@@ -21,6 +21,9 @@ const STRINGS = {
     lm_live: 'Maschine live',
     steam_mode: '☁️ Dampfmodus', water_low: p => `💧 Wasser fast leer (${p}%)`,
     preheat_ready: '☕ Brühbereit', preheat_heating: '🔥 Aufheizen …',
+    ready_by_set_label: 'Brühbereit bis', ready_by_set: 'Setzen',
+    ready_by_target: hhmm => `Brühbereit bis ${hhmm}`, ready_by_cancel: 'Abbrechen',
+    ready_by_switching_in: n => `schaltet in ${n} Min ein`, ready_by_switching_now: 'schaltet jetzt ein',
     brewing: '⏳ Bezug läuft',
     no_shot_label: 'Noch kein Shot aufgezeichnet', no_shot_hint: 'Shots werden automatisch synchronisiert',
     m_duration: 'Dauer', m_yield: 'Ausbeute', m_pressure: 'Druck Ø', m_temp: 'Temp',
@@ -46,6 +49,9 @@ const STRINGS = {
     lm_live: 'Machine live',
     steam_mode: '☁️ Steam mode', water_low: p => `💧 Water almost empty (${p}%)`,
     preheat_ready: '☕ Ready to brew', preheat_heating: '🔥 Warming up …',
+    ready_by_set_label: 'Ready by', ready_by_set: 'Set',
+    ready_by_target: hhmm => `Ready by ${hhmm}`, ready_by_cancel: 'Cancel',
+    ready_by_switching_in: n => `switching on in ${n}m`, ready_by_switching_now: 'switching on now',
     brewing: '⏳ Brewing',
     no_shot_label: 'No shot recorded yet', no_shot_hint: 'Shots sync automatically',
     m_duration: 'Duration', m_yield: 'Yield', m_pressure: 'Pressure Ø', m_temp: 'Temp',
@@ -71,6 +77,9 @@ const STRINGS = {
     lm_live: 'Macchina in diretta',
     steam_mode: '☁️ Modalità vapore', water_low: p => `💧 Acqua quasi esaurita (${p}%)`,
     preheat_ready: '☕ Pronto per l\'estrazione', preheat_heating: '🔥 Riscaldamento …',
+    ready_by_set_label: 'Pronto entro', ready_by_set: 'Imposta',
+    ready_by_target: hhmm => `Pronto entro le ${hhmm}`, ready_by_cancel: 'Annulla',
+    ready_by_switching_in: n => `si accende tra ${n} min`, ready_by_switching_now: 'si accende ora',
     brewing: '⏳ Estrazione in corso',
     no_shot_label: 'Nessuno shot ancora registrato', no_shot_hint: 'Gli shot si sincronizzano automaticamente',
     m_duration: 'Durata', m_yield: 'Resa', m_pressure: 'Pressione Ø', m_temp: 'Temp',
@@ -96,6 +105,9 @@ const STRINGS = {
     lm_live: 'Machine en direct',
     steam_mode: '☁️ Mode vapeur', water_low: p => `💧 Eau presque vide (${p}%)`,
     preheat_ready: '☕ Prêt à infuser', preheat_heating: '🔥 Chauffage …',
+    ready_by_set_label: 'Prêt avant', ready_by_set: 'Définir',
+    ready_by_target: hhmm => `Prêt avant ${hhmm}`, ready_by_cancel: 'Annuler',
+    ready_by_switching_in: n => `s'allume dans ${n} min`, ready_by_switching_now: "s'allume maintenant",
     brewing: '⏳ Extraction en cours',
     no_shot_label: 'Aucun shot enregistré pour l\'instant', no_shot_hint: 'Les shots se synchronisent automatiquement',
     m_duration: 'Durée', m_yield: 'Rendement', m_pressure: 'Pression Ø', m_temp: 'Temp',
@@ -121,6 +133,9 @@ const STRINGS = {
     lm_live: 'Máquina en directo',
     steam_mode: '☁️ Modo vapor', water_low: p => `💧 Agua casi vacía (${p}%)`,
     preheat_ready: '☕ Listo para extraer', preheat_heating: '🔥 Calentando …',
+    ready_by_set_label: 'Listo antes de', ready_by_set: 'Fijar',
+    ready_by_target: hhmm => `Listo antes de las ${hhmm}`, ready_by_cancel: 'Cancelar',
+    ready_by_switching_in: n => `se enciende en ${n} min`, ready_by_switching_now: 'se enciende ahora',
     brewing: '⏳ Extracción en curso',
     no_shot_label: 'Aún no se ha registrado ningún shot', no_shot_hint: 'Los shots se sincronizan automáticamente',
     m_duration: 'Duración', m_yield: 'Rendimiento', m_pressure: 'Presión Ø', m_temp: 'Temp',
@@ -146,6 +161,9 @@ const STRINGS = {
     lm_live: 'Machine live',
     steam_mode: '☁️ Stoommodus', water_low: p => `💧 Water bijna leeg (${p}%)`,
     preheat_ready: '☕ Klaar om te zetten', preheat_heating: '🔥 Opwarmen …',
+    ready_by_set_label: 'Klaar voor', ready_by_set: 'Instellen',
+    ready_by_target: hhmm => `Klaar voor ${hhmm}`, ready_by_cancel: 'Annuleren',
+    ready_by_switching_in: n => `schakelt in over ${n} min`, ready_by_switching_now: 'schakelt nu in',
     brewing: '⏳ Bereiden',
     no_shot_label: 'Nog geen shot geregistreerd', no_shot_hint: 'Shots synchroniseren automatisch',
     m_duration: 'Duur', m_yield: 'Opbrengst', m_pressure: 'Druk Ø', m_temp: 'Temp',
@@ -873,6 +891,30 @@ const STYLES = `
     transition: width .8s ease;
   }
 
+  /* ── ready-by preheat scheduler (#61) ── */
+  .ready-by {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--glp-radius); padding: 10px 14px; margin-bottom: 14px;
+  }
+  .ready-by-picker { flex-wrap: wrap; }
+  .ready-by-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ready-by-label { font-size: .72rem; color: var(--sub); font-weight: 500; }
+  .ready-by-set .ready-by-label { color: var(--text); font-size: .82rem; font-weight: 700; }
+  .ready-by-countdown { font-size: .68rem; color: var(--sub); }
+  .ready-by-time-input {
+    background: var(--s2); border: 1px solid var(--border); border-radius: var(--glp-radius-sm);
+    color: var(--text); font-family: inherit; font-size: .82rem; padding: 6px 8px;
+    min-height: 34px;
+  }
+  .ready-by-btn {
+    border: none; border-radius: var(--glp-radius-sm); font-family: inherit; font-weight: 700;
+    font-size: .74rem; padding: 7px 12px; cursor: pointer; min-height: 34px;
+    touch-action: manipulation; white-space: nowrap;
+  }
+  .ready-by-btn.primary { background: var(--glp-accent); color: var(--glp-accent-text); }
+  .ready-by-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--sub); }
+
   /* ── maintenance ── */
   .maint-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
   .maint-row {
@@ -994,14 +1036,39 @@ class GlpCard extends HTMLElement {
     this._orderEtaFor = null;
     this._orderDeclineFor = null;
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
+    this._readyByTimer = null;
+    this._readyByPlannedAt = null;
 
-    // Delegated power-button handler on shadowRoot — survives every innerHTML replacement
+    // Delegated power-button/ready-by handlers on shadowRoot — survive every innerHTML replacement
     this.shadowRoot.addEventListener('pointerdown', e => {
       if (e.target.closest('[data-action="toggle-switch"]')) {
         e.preventDefault();
         e.stopPropagation();
         if (this._hass && this._switchEntity)
           this._hass.callService('switch', 'toggle', { entity_id: this._switchEntity });
+        return;
+      }
+      if (e.target.closest('[data-action="set-ready-by"]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const input = this.shadowRoot.getElementById('glp-readyby-input');
+        const target = this._resolveReadyByTarget(input?.value, new Date());
+        if (this._hass && target) {
+          this._hass.callService('gaggiuino_profiler', 'set_ready_by', {
+            target_time: target.toISOString(),
+            ...(this._config?.machine != null ? { machine: this._config.machine } : {}),
+          });
+        }
+        return;
+      }
+      if (e.target.closest('[data-action="cancel-ready-by"]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this._hass) {
+          this._hass.callService('gaggiuino_profiler', 'set_ready_by', {
+            ...(this._config?.machine != null ? { machine: this._config.machine } : {}),
+          });
+        }
       }
     });
   }
@@ -1056,11 +1123,76 @@ class GlpCard extends HTMLElement {
     }, 1000);
   }
 
+  _startReadyByTicker() {
+    if (this._readyByTimer) return;
+    this._readyByTimer = setInterval(() => {
+      const el = this.shadowRoot.getElementById('glp-readyby-countdown');
+      if (el) el.textContent = this._readyByCountdownText(this._readyByPlannedAt);
+    }, 1000);
+  }
+
   connectedCallback() { this._startOrdersPoll(); }
 
   disconnectedCallback() {
     if (this._uptimeTimer) { clearInterval(this._uptimeTimer); this._uptimeTimer = null; }
     if (this._ordersPoll) { clearInterval(this._ordersPoll); this._ordersPoll = null; }
+    if (this._readyByTimer) { clearInterval(this._readyByTimer); this._readyByTimer = null; }
+  }
+
+  // ── ready-by preheat scheduler (#61) ───────────────────────────────────────
+  // Reads sensor.<prefix>preheat_ready_by_target_at / _planned_switch_on_at
+  // (integration >= 1.22.0 — see README); both are ISO-datetime-string
+  // sensors, 'unknown' when nothing is scheduled.
+  _readReadyBy() {
+    const parse = suffix => {
+      const s = this._s(suffix);
+      if (!s || s.state === 'unknown' || s.state === 'unavailable') return null;
+      const d = new Date(s.state);
+      return isNaN(d.getTime()) ? null : d;
+    };
+    return {
+      targetAt:  parse('preheat_ready_by_target_at'),
+      plannedAt: parse('preheat_planned_switch_on_at'),
+    };
+  }
+
+  // Combines a picked "HH:MM" time-of-day with a reference `now` into a
+  // concrete Date: today if that time hasn't passed yet, tomorrow if it has
+  // (a "ready by 07:00" picked at 22:00 means tomorrow 07:00). Pure/testable
+  // on purpose — no DOM/hass access.
+  _resolveReadyByTarget(timeString, now = new Date()) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(timeString || '').trim());
+    if (!m) return null;
+    const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (hh > 23 || mm > 59) return null;
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+    return target;
+  }
+
+  _readyByCountdownText(plannedAt) {
+    if (!plannedAt) return '';
+    const diffMs = plannedAt.getTime() - Date.now();
+    if (diffMs <= 0) return T('ready_by_switching_now');
+    return T('ready_by_switching_in', Math.ceil(diffMs / 60000));
+  }
+
+  _buildReadyByHtml(targetAt, plannedAt) {
+    if (targetAt) {
+      const hhmm = targetAt.toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' });
+      return `<div class="ready-by ready-by-set">
+        <div class="ready-by-info">
+          <span class="ready-by-label">${T('ready_by_target', esc(hhmm))}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown">${esc(this._readyByCountdownText(plannedAt))}</span>
+        </div>
+        <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T('ready_by_cancel')}</button>
+      </div>`;
+    }
+    return `<div class="ready-by ready-by-picker">
+      <span class="ready-by-label">${T('ready_by_set_label')}</span>
+      <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
+      <button class="ready-by-btn primary" data-action="set-ready-by">${T('ready_by_set')}</button>
+    </div>`;
   }
 
   // ── Barista orders (via the integration REST proxy) ───────────────────────
@@ -1479,6 +1611,12 @@ class GlpCard extends HTMLElement {
     const machineOff  = !!(this._switchEntity &&
       (switchState?.state === 'off' || switchState?.state === 'unavailable'));
 
+    // ready-by preheat scheduler (#61) — only meaningful while the machine is
+    // off; moot once it's on/warming/ready, so it's only rendered below in
+    // the machineOff branch, but read here so both branches share one source.
+    const { targetAt: readyByTargetAt, plannedAt: readyByPlannedAt } = this._readReadyBy();
+    this._readyByPlannedAt = readyByPlannedAt;
+
     const _powerBtn = this._switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
               title="${machineOff ? T('power_on') : T('power_off')}">
@@ -1490,6 +1628,7 @@ class GlpCard extends HTMLElement {
     // ── machine off ──────────────────────────────────────────────────────────
     if (machineOff) {
       this._profileOpen = false;
+      const readyByHtml = this._buildReadyByHtml(readyByTargetAt, readyByPlannedAt);
       const offOrders = this._orders.length > 0 ? `
         <div style="padding:0 12px 12px">
           <div class="section-label" style="margin-bottom:8px">${T('tab_orders')}</div>
@@ -1509,10 +1648,12 @@ class GlpCard extends HTMLElement {
               <span class="off-label">${T('off_label')}</span>${_powerBtn}
             </div>
           </div>
+          ${readyByHtml}
           ${offOrders}
         </div></ha-card>`;
       this._applySemanticColorContrast();
       this._bindPowerBtn();
+      this._startReadyByTicker();
       if (this._orders.length > 0) this._bindOrderBtns();
       return;
     }
