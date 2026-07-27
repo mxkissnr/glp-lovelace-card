@@ -21,7 +21,7 @@ function loadGlpCard() {
   );
 
   class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {} }, window: {}, console, URL };
+  const context = { HTMLElement, customElements: { define() {} }, window: {}, console, URL, setTimeout, clearTimeout };
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(src, context, { filename: 'glp-card.js' });
@@ -117,11 +117,87 @@ test('_readReadyBy() returns null when the sensor entities do not exist at all',
   assert.equal(plannedAt, null);
 });
 
+// ── _readReadyBy() optimistic pending override (#66) ───────────────────────
+// Same shape as the pre-existing _pendingProfile pattern: a pending value set
+// right after the "Set"/"Cancel" service calls is preferred over the live
+// sensor read until the sensor confirms it.
+
+test('_readReadyBy() prefers a pending Set target over a still-stale (unknown) sensor', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: 'unknown' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: 'unknown' },
+    },
+  });
+  const pending = new Date(2026, 6, 28, 7, 0, 0);
+  inst._pendingReadyByTargetAt = pending;
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt, pending);
+  assert.equal(plannedAt, null);
+  // still pending — the sensor hasn't confirmed yet
+  assert.equal(inst._pendingReadyByTargetAt, pending);
+});
+
+test('_readReadyBy() clears the pending Set override once the sensor reports a real targetAt', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+  inst._pendingReadyByTargetAt = new Date(2026, 6, 28, 7, 0, 0);
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
+  assert.equal(plannedAt.toISOString(), '2026-07-28T06:40:00.000Z');
+  // resolved — pending override cleared so future renders read the sensor
+  assert.equal(inst._pendingReadyByTargetAt, null);
+});
+
+test('_readReadyBy() prefers a pending Cancel (targetAt=null) over a still-stale (set) sensor', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+  inst._pendingReadyByTargetAt = false;
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt, null);
+  assert.equal(plannedAt, null);
+  assert.equal(inst._pendingReadyByTargetAt, false);
+});
+
+test('_readReadyBy() clears the pending Cancel override once the sensor reports no target', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: 'unknown' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: 'unknown' },
+    },
+  });
+  inst._pendingReadyByTargetAt = false;
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt, null);
+  assert.equal(plannedAt, null);
+  assert.equal(inst._pendingReadyByTargetAt, null);
+});
+
 // ── _readyByCountdownText() ─────────────────────────────────────────────────
 
-test('_readyByCountdownText() returns empty string when nothing is planned', () => {
+test('_readyByCountdownText() returns empty string when nothing is planned or pending', () => {
   const inst = makeInstance();
   assert.equal(inst._readyByCountdownText(null), '');
+});
+
+test('_readyByCountdownText() returns the scheduling placeholder when a target is set but plannedAt is not known yet', () => {
+  // LANG defaults to 'de' at module load until _render() sets it from
+  // hass.language — this suite never calls _render(), so the German string
+  // is what T() resolves to here.
+  const inst = makeInstance();
+  assert.equal(inst._readyByCountdownText(null, new Date()), 'Wird geplant …');
 });
 
 // ── _bindReadyByPicker() / _readyByInteracting guard (#64) ─────────────────
