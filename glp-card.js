@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.17.1';
+const GLP_CARD_VERSION = '2.17.2';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
@@ -24,6 +24,7 @@ const STRINGS = {
     ready_by_set_label: 'Brühbereit bis', ready_by_set: 'Setzen',
     ready_by_target: hhmm => `Brühbereit bis ${hhmm}`, ready_by_cancel: 'Abbrechen',
     ready_by_switching_in: n => `schaltet in ${n} Min ein`, ready_by_switching_now: 'schaltet jetzt ein',
+    ready_by_scheduling: 'Wird geplant …',
     brewing: '⏳ Bezug läuft',
     no_shot_label: 'Noch kein Shot aufgezeichnet', no_shot_hint: 'Shots werden automatisch synchronisiert',
     m_duration: 'Dauer', m_yield: 'Ausbeute', m_pressure: 'Druck Ø', m_temp: 'Temp',
@@ -52,6 +53,7 @@ const STRINGS = {
     ready_by_set_label: 'Ready by', ready_by_set: 'Set',
     ready_by_target: hhmm => `Ready by ${hhmm}`, ready_by_cancel: 'Cancel',
     ready_by_switching_in: n => `switching on in ${n}m`, ready_by_switching_now: 'switching on now',
+    ready_by_scheduling: 'Scheduling…',
     brewing: '⏳ Brewing',
     no_shot_label: 'No shot recorded yet', no_shot_hint: 'Shots sync automatically',
     m_duration: 'Duration', m_yield: 'Yield', m_pressure: 'Pressure Ø', m_temp: 'Temp',
@@ -80,6 +82,7 @@ const STRINGS = {
     ready_by_set_label: 'Pronto entro', ready_by_set: 'Imposta',
     ready_by_target: hhmm => `Pronto entro le ${hhmm}`, ready_by_cancel: 'Annulla',
     ready_by_switching_in: n => `si accende tra ${n} min`, ready_by_switching_now: 'si accende ora',
+    ready_by_scheduling: 'Pianificazione …',
     brewing: '⏳ Estrazione in corso',
     no_shot_label: 'Nessuno shot ancora registrato', no_shot_hint: 'Gli shot si sincronizzano automaticamente',
     m_duration: 'Durata', m_yield: 'Resa', m_pressure: 'Pressione Ø', m_temp: 'Temp',
@@ -108,6 +111,7 @@ const STRINGS = {
     ready_by_set_label: 'Prêt avant', ready_by_set: 'Définir',
     ready_by_target: hhmm => `Prêt avant ${hhmm}`, ready_by_cancel: 'Annuler',
     ready_by_switching_in: n => `s'allume dans ${n} min`, ready_by_switching_now: "s'allume maintenant",
+    ready_by_scheduling: 'Planification …',
     brewing: '⏳ Extraction en cours',
     no_shot_label: 'Aucun shot enregistré pour l\'instant', no_shot_hint: 'Les shots se synchronisent automatiquement',
     m_duration: 'Durée', m_yield: 'Rendement', m_pressure: 'Pression Ø', m_temp: 'Temp',
@@ -136,6 +140,7 @@ const STRINGS = {
     ready_by_set_label: 'Listo antes de', ready_by_set: 'Fijar',
     ready_by_target: hhmm => `Listo antes de las ${hhmm}`, ready_by_cancel: 'Cancelar',
     ready_by_switching_in: n => `se enciende en ${n} min`, ready_by_switching_now: 'se enciende ahora',
+    ready_by_scheduling: 'Programando …',
     brewing: '⏳ Extracción en curso',
     no_shot_label: 'Aún no se ha registrado ningún shot', no_shot_hint: 'Los shots se sincronizan automáticamente',
     m_duration: 'Duración', m_yield: 'Rendimiento', m_pressure: 'Presión Ø', m_temp: 'Temp',
@@ -164,6 +169,7 @@ const STRINGS = {
     ready_by_set_label: 'Klaar voor', ready_by_set: 'Instellen',
     ready_by_target: hhmm => `Klaar voor ${hhmm}`, ready_by_cancel: 'Annuleren',
     ready_by_switching_in: n => `schakelt in over ${n} min`, ready_by_switching_now: 'schakelt nu in',
+    ready_by_scheduling: 'Wordt gepland …',
     brewing: '⏳ Bereiden',
     no_shot_label: 'Nog geen shot geregistreerd', no_shot_hint: 'Shots synchroniseren automatisch',
     m_duration: 'Duur', m_yield: 'Opbrengst', m_pressure: 'Druk Ø', m_temp: 'Temp',
@@ -895,7 +901,7 @@ const STYLES = `
   .ready-by {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--glp-radius); padding: 10px 14px; margin-bottom: 14px;
+    border-radius: var(--glp-radius); padding: 10px 14px; margin-top: 12px; margin-bottom: 14px;
   }
   .ready-by-picker { flex-direction: column; align-items: stretch; gap: 8px; }
   .ready-by-picker-row { display: flex; align-items: center; gap: 8px; }
@@ -1040,6 +1046,12 @@ class GlpCard extends HTMLElement {
     this._switchEntity = localStorage.getItem('glp_switch_entity') || null;
     this._readyByTimer = null;
     this._readyByPlannedAt = null;
+    this._readyByTargetAt = null;
+    // optimistic ready-by state (#66): a Date while a "Set" is pending
+    // confirmation, `false` while a "Cancel" is pending confirmation, `null`
+    // when nothing is pending — see _readReadyBy().
+    this._pendingReadyByTargetAt = null;
+    this._pendingReadyByTimer = null;
 
     // Delegated power-button/ready-by handlers on shadowRoot — survive every innerHTML replacement
     this.shadowRoot.addEventListener('pointerdown', e => {
@@ -1060,6 +1072,10 @@ class GlpCard extends HTMLElement {
             target_time: target.toISOString(),
             ...(this._config?.machine != null ? { machine: this._config.machine } : {}),
           });
+          this._pendingReadyByTargetAt = target;   // optimistic: show immediately until the sensor confirms
+          clearTimeout(this._pendingReadyByTimer);
+          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, 8000);
+          this._render();
         }
         return;
       }
@@ -1070,6 +1086,10 @@ class GlpCard extends HTMLElement {
           this._hass.callService('gaggiuino_profiler', 'set_ready_by', {
             ...(this._config?.machine != null ? { machine: this._config.machine } : {}),
           });
+          this._pendingReadyByTargetAt = false;   // optimistic: show the picker immediately until the sensor confirms
+          clearTimeout(this._pendingReadyByTimer);
+          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, 8000);
+          this._render();
         }
       }
     });
@@ -1136,7 +1156,7 @@ class GlpCard extends HTMLElement {
     if (this._readyByTimer) return;
     this._readyByTimer = setInterval(() => {
       const el = this.shadowRoot.getElementById('glp-readyby-countdown');
-      if (el) el.textContent = this._readyByCountdownText(this._readyByPlannedAt);
+      if (el) el.textContent = this._readyByCountdownText(this._readyByPlannedAt, this._readyByTargetAt);
     }, 1000);
   }
 
@@ -1159,10 +1179,21 @@ class GlpCard extends HTMLElement {
       const d = new Date(s.state);
       return isNaN(d.getTime()) ? null : d;
     };
-    return {
-      targetAt:  parse('preheat_ready_by_target_at'),
-      plannedAt: parse('preheat_planned_switch_on_at'),
-    };
+    const realTargetAt  = parse('preheat_ready_by_target_at');
+    const realPlannedAt = parse('preheat_planned_switch_on_at');
+
+    // Optimistic override (#66): prefer the just-picked/just-cancelled value
+    // over the live sensor read until the sensor confirms it (or a timeout
+    // gives up) — same pattern as _pendingProfile. `_pendingReadyByTargetAt`
+    // is a Date while "Set" is pending, `false` while "Cancel" is pending.
+    if (this._pendingReadyByTargetAt === false) {
+      if (!realTargetAt) { clearTimeout(this._pendingReadyByTimer); this._pendingReadyByTargetAt = null; }
+      else return { targetAt: null, plannedAt: null };
+    } else if (this._pendingReadyByTargetAt) {
+      if (realTargetAt) { clearTimeout(this._pendingReadyByTimer); this._pendingReadyByTargetAt = null; }
+      else return { targetAt: this._pendingReadyByTargetAt, plannedAt: null };
+    }
+    return { targetAt: realTargetAt, plannedAt: realPlannedAt };
   }
 
   // Combines a picked "HH:MM" time-of-day with a reference `now` into a
@@ -1179,8 +1210,11 @@ class GlpCard extends HTMLElement {
     return target;
   }
 
-  _readyByCountdownText(plannedAt) {
-    if (!plannedAt) return '';
+  // `targetAt` is only needed to distinguish "nothing scheduled" (blank) from
+  // "target set but the server hasn't reported plannedAt yet" (e.g. right
+  // after an optimistic Set click, #66) — shown as a neutral "scheduling…".
+  _readyByCountdownText(plannedAt, targetAt) {
+    if (!plannedAt) return targetAt ? T('ready_by_scheduling') : '';
     const diffMs = plannedAt.getTime() - Date.now();
     if (diffMs <= 0) return T('ready_by_switching_now');
     return T('ready_by_switching_in', Math.ceil(diffMs / 60000));
@@ -1192,7 +1226,7 @@ class GlpCard extends HTMLElement {
       return `<div class="ready-by ready-by-set">
         <div class="ready-by-info">
           <span class="ready-by-label">${T('ready_by_target', esc(hhmm))}</span>
-          <span class="ready-by-countdown" id="glp-readyby-countdown">${esc(this._readyByCountdownText(plannedAt))}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown">${esc(this._readyByCountdownText(plannedAt, targetAt))}</span>
         </div>
         <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T('ready_by_cancel')}</button>
       </div>`;
@@ -1627,6 +1661,7 @@ class GlpCard extends HTMLElement {
     // the machineOff branch, but read here so both branches share one source.
     const { targetAt: readyByTargetAt, plannedAt: readyByPlannedAt } = this._readReadyBy();
     this._readyByPlannedAt = readyByPlannedAt;
+    this._readyByTargetAt = readyByTargetAt;
 
     const _powerBtn = this._switchEntity ? `
       <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
