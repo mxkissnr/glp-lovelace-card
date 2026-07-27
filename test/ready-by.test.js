@@ -117,6 +117,85 @@ test('_readReadyBy() returns null when the sensor entities do not exist at all',
   assert.equal(plannedAt, null);
 });
 
+// ── _readReadyBy() 'unavailable' vs 'unknown' (#68) ─────────────────────────
+// 'unavailable' is a transient connectivity blip (coordinator poll failure,
+// integration reload, ...) and must NOT be read as "nothing scheduled" — the
+// card should keep showing the last successfully-parsed value. Only a
+// genuine 'unknown' state (or the entity being missing) is a real "nothing
+// scheduled" signal and should clear the display.
+
+test('_readReadyBy() keeps showing the last-known-good target/planned across a transient "unavailable" blip', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+
+  // 1) real value — establishes the last-known-good cache
+  const first = inst._readReadyBy();
+  assert.equal(first.targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
+  assert.equal(first.plannedAt.toISOString(), '2026-07-28T06:40:00.000Z');
+
+  // 2) transient 'unavailable' blip — must NOT drop to null, falls back to cache
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_ready_by_target_at'] = { state: 'unavailable' };
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at'] = { state: 'unavailable' };
+  const duringBlip = inst._readReadyBy();
+  assert.equal(duringBlip.targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
+  assert.equal(duringBlip.plannedAt.toISOString(), '2026-07-28T06:40:00.000Z');
+
+  // 3) sensor recovers with a real value again
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_ready_by_target_at'] = { state: '2026-07-28T07:30:00.000Z' };
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at'] = { state: '2026-07-28T07:10:00.000Z' };
+  const after = inst._readReadyBy();
+  assert.equal(after.targetAt.toISOString(), '2026-07-28T07:30:00.000Z');
+  assert.equal(after.plannedAt.toISOString(), '2026-07-28T07:10:00.000Z');
+});
+
+test('_readReadyBy() clears to null on a genuine "unknown" (real cancel/completion, not a blip)', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+
+  // 1) real value — establishes the last-known-good cache
+  const first = inst._readReadyBy();
+  assert.equal(first.targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
+
+  // 2) genuine 'unknown' — a real clear, must drop to null (not fall back to cache)
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_ready_by_target_at'] = { state: 'unknown' };
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at'] = { state: 'unknown' };
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt, null);
+  assert.equal(plannedAt, null);
+
+  // 3) and a later 'unavailable' blip has nothing to fall back to anymore
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_ready_by_target_at'] = { state: 'unavailable' };
+  const afterBlip = inst._readReadyBy();
+  assert.equal(afterBlip.targetAt, null);
+});
+
+test('_readReadyBy() caches targetAt and plannedAt independently — one blipping does not clobber the other', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+  inst._readReadyBy(); // establish both caches
+
+  // only the planned sensor blips
+  inst._hass.states['sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at'] = { state: 'unavailable' };
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
+  assert.equal(plannedAt.toISOString(), '2026-07-28T06:40:00.000Z');   // held from cache
+});
+
 // ── _readReadyBy() optimistic pending override (#66) ───────────────────────
 // Same shape as the pre-existing _pendingProfile pattern: a pending value set
 // right after the "Set"/"Cancel" service calls is preferred over the live
