@@ -123,3 +123,42 @@ test('_readyByCountdownText() returns empty string when nothing is planned', () 
   const inst = makeInstance();
   assert.equal(inst._readyByCountdownText(null), '');
 });
+
+// ── _bindReadyByPicker() / _readyByInteracting guard (#64) ─────────────────
+// No real shadow DOM here (matches this suite's existing boundary) — stubs
+// shadowRoot.getElementById with a fake input exposing addEventListener, and
+// asserts the focus/blur handlers toggle the flag the render-gates check.
+
+function makeFakeInput() {
+  const listeners = {};
+  return {
+    el: {
+      addEventListener(type, handler) { listeners[type] = handler; },
+    },
+    fire(type) { listeners[type](); },
+  };
+}
+
+test('_bindReadyByPicker() sets _readyByInteracting=true on focus and false on blur', () => {
+  const inst = makeInstance();
+  inst._readyByInteracting = false;
+  const { el, fire } = makeFakeInput();
+  inst.shadowRoot = { getElementById: id => (id === 'glp-readyby-input' ? el : null) };
+
+  inst._bindReadyByPicker();
+  assert.equal(inst._readyByInteracting, false);
+
+  fire('focus');
+  assert.equal(inst._readyByInteracting, true);
+
+  fire('blur');
+  assert.equal(inst._readyByInteracting, false);
+});
+
+test('_bindReadyByPicker() is a no-op when the input is not present in the DOM', () => {
+  const inst = makeInstance();
+  inst._readyByInteracting = false;
+  inst.shadowRoot = { getElementById: () => null };
+  assert.doesNotThrow(() => inst._bindReadyByPicker());
+  assert.equal(inst._readyByInteracting, false);
+});
