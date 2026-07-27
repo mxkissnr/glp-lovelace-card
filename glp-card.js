@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.17.2';
+const GLP_CARD_VERSION = '2.17.3';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
@@ -1052,6 +1052,10 @@ class GlpCard extends HTMLElement {
     // when nothing is pending — see _readReadyBy().
     this._pendingReadyByTargetAt = null;
     this._pendingReadyByTimer = null;
+    // last-known-good cache (#68): 'unavailable' is a transient connectivity
+    // blip, not a real "nothing scheduled" signal — see _readReadyBy().
+    this._lastKnownReadyByTargetAt = null;
+    this._lastKnownReadyByPlannedAt = null;
 
     // Delegated power-button/ready-by handlers on shadowRoot — survive every innerHTML replacement
     this.shadowRoot.addEventListener('pointerdown', e => {
@@ -1172,15 +1176,37 @@ class GlpCard extends HTMLElement {
   // Reads sensor.<prefix>preheat_ready_by_target_at / _planned_switch_on_at
   // (integration >= 1.22.0 — see README); both are ISO-datetime-string
   // sensors, 'unknown' when nothing is scheduled.
+  //
+  // 'unknown' vs 'unavailable' (#68): 'unknown' is a real signal — the
+  // backend genuinely has nothing scheduled (or the schedule just fired/was
+  // cancelled) — and clears the display. 'unavailable' means the entity is
+  // transiently unreachable (a coordinator poll blip, integration reload,
+  // etc.) and must NOT be read as "nothing scheduled"; it falls back to the
+  // last successfully-parsed value, cached per-sensor on the instance.
   _readReadyBy() {
-    const parse = suffix => {
+    const read = suffix => {
       const s = this._s(suffix);
-      if (!s || s.state === 'unknown' || s.state === 'unavailable') return null;
-      const d = new Date(s.state);
-      return isNaN(d.getTime()) ? null : d;
+      if (s && s.state !== 'unknown' && s.state !== 'unavailable') {
+        const d = new Date(s.state);
+        if (!isNaN(d.getTime())) return { kind: 'value', date: d };
+      }
+      if (s && s.state === 'unavailable') return { kind: 'unavailable' };
+      return { kind: 'unknown' };
     };
-    const realTargetAt  = parse('preheat_ready_by_target_at');
-    const realPlannedAt = parse('preheat_planned_switch_on_at');
+
+    const targetRead = read('preheat_ready_by_target_at');
+    if (targetRead.kind === 'value') this._lastKnownReadyByTargetAt = targetRead.date;
+    else if (targetRead.kind === 'unknown') this._lastKnownReadyByTargetAt = null;
+    const realTargetAt = targetRead.kind === 'value' ? targetRead.date
+      : targetRead.kind === 'unavailable' ? (this._lastKnownReadyByTargetAt || null)
+      : null;
+
+    const plannedRead = read('preheat_planned_switch_on_at');
+    if (plannedRead.kind === 'value') this._lastKnownReadyByPlannedAt = plannedRead.date;
+    else if (plannedRead.kind === 'unknown') this._lastKnownReadyByPlannedAt = null;
+    const realPlannedAt = plannedRead.kind === 'value' ? plannedRead.date
+      : plannedRead.kind === 'unavailable' ? (this._lastKnownReadyByPlannedAt || null)
+      : null;
 
     // Optimistic override (#66): prefer the just-picked/just-cancelled value
     // over the live sensor read until the sensor confirms it (or a timeout
