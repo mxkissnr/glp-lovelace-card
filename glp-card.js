@@ -1026,6 +1026,10 @@ class GlpCard extends HTMLElement {
     this._readyByInteracting = false;
     this._profileOpen  = false;
     this._animating     = false;
+    // set when a render was requested while _renderBlocked() (#72) — replayed
+    // once by _requestRender() as soon as the blocking interaction ends,
+    // instead of being discarded like it was before.
+    this._pendingRender = false;
     this._shotIndex     = 0;
     this._prevShotIndex = -1;
     this._recentShots   = [];
@@ -1135,7 +1139,10 @@ class GlpCard extends HTMLElement {
     const input = this.shadowRoot.getElementById('glp-readyby-input');
     if (!input) return;
     input.addEventListener('focus', () => { this._readyByInteracting = true; });
-    input.addEventListener('blur', () => { this._readyByInteracting = false; });
+    input.addEventListener('blur', () => {
+      this._readyByInteracting = false;
+      if (this._pendingRender) this._requestRender();
+    });
   }
 
   _bindTabBtns() {
@@ -1288,7 +1295,7 @@ class GlpCard extends HTMLElement {
     if (!force && sig === this._ordersSig) return;
     this._ordersSig = sig;
     this._orders = active;
-    if (!this._profileInteracting && !this._animating && !this._maintConfirm && !this._readyByInteracting) this._render();
+    this._requestRender();
   }
 
   async _orderAction(id, action, body) {
@@ -1412,7 +1419,11 @@ class GlpCard extends HTMLElement {
 
     const newSwipe   = this.shadowRoot.querySelector('.swipe-target');
     const newContent = this.shadowRoot.querySelector('.swipe-content');
-    if (!oldClone || !newSwipe || !newContent) { this._animating = false; return; }
+    if (!oldClone || !newSwipe || !newContent) {
+      this._animating = false;
+      if (this._pendingRender) this._requestRender();
+      return;
+    }
 
     // prev = going to older shot → new content enters from right, old exits left
     const enterX = dir === 'prev' ? '36px' : '-36px';
@@ -1438,6 +1449,7 @@ class GlpCard extends HTMLElement {
         if (oldClone.parentNode) oldClone.remove();
         ['transform', 'transition', 'opacity'].forEach(p => newContent.style.removeProperty(p));
         this._animating = false;
+        if (this._pendingRender) this._requestRender();
       }, 250);
     }));
   }
@@ -1456,7 +1468,7 @@ class GlpCard extends HTMLElement {
     { const l = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2).toLowerCase(); LANG = SUPPORTED_LANGS.includes(l) ? l : 'en'; }
     if (!this._ordersPoll) this._startOrdersPoll();
     this._loadBeansInfo();
-    if (!this._profileInteracting && !this._animating && !this._maintConfirm && !this._readyByInteracting) this._render();
+    this._requestRender();
   }
 
   // ── Bean metadata (via the integration REST proxy, app >= 1.96) ───────────
@@ -1662,8 +1674,27 @@ class GlpCard extends HTMLElement {
     }
   }
 
+  // Single source of truth for "a full re-render would currently wipe out an
+  // in-progress user interaction" (#72 — this used to be duplicated verbatim
+  // at the orders-poll and `set hass` call sites, and any new interactive
+  // flag had to be added to both by hand or a render would silently blow
+  // away focus/open state, exactly as happened in #64/#66/#68).
+  _renderBlocked() {
+    return !!(this._profileInteracting || this._animating || this._maintConfirm || this._readyByInteracting);
+  }
+
+  // Renders now if nothing is blocking, otherwise defers via `_pendingRender`
+  // (ported from glp-order-card.js's `_pendingRender` pattern) so the
+  // deferred render is replayed once by whichever call flips the blocking
+  // flag back off, instead of being discarded outright.
+  _requestRender() {
+    if (this._renderBlocked()) { this._pendingRender = true; return; }
+    this._render();
+  }
+
   _render() {
     if (!this._hass || !this._config) return;
+    this._pendingRender = false;
 
     const prefix    = this._resolvePrefix();
     const bsPrefix  = prefix.replace(/^sensor\./, 'binary_sensor.');
