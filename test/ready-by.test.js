@@ -24,7 +24,7 @@ function loadGlpCard() {
   const context = { HTMLElement, customElements: { define() {} }, window: {}, console, URL, setTimeout, clearTimeout };
   context.globalThis = context;
   vm.createContext(context);
-  vm.runInContext(src, context, { filename: 'glp-card.js' });
+  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
   return context.__GlpCard;
 }
 

@@ -21,8 +21,17 @@
 //                           reproduce a mismatch, e.g. dark OS + light HA
 //                           theme.
 // `--light` is shorthand for `--ha-theme=light --os-scheme=light`.
+// `--machine-off` flips the mock switch entity to `state: 'off'` (the only
+// thing _render() actually keys the machine-off branch off of — see
+// glp-card.js's `machineOff` check against the switch entity, not
+// machine_status, which per README only ever reports online/error) so the
+// off-state ready-by time picker/countdown (#61, only rendered while off)
+// shows up instead of the normal hero view. Default output then becomes
+// docs/screenshots/card-ready-by.png instead of card.png so it doesn't
+// clobber the hero shot.
 // `--out=<path>` overrides the output file (default docs/screenshots/card.png,
-// or card-light.png when --ha-theme=light).
+// or card-light.png when --ha-theme=light, or card-ready-by.png when
+// --machine-off).
 // Requires `npx playwright install chromium` once beforehand.
 
 import http from 'node:http';
@@ -42,9 +51,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot  = path.join(__dirname, '..');
 const outDir    = path.join(repoRoot, 'docs', 'screenshots');
 const LIGHT_SHORTHAND = process.argv.includes('--light');
+const MACHINE_OFF = process.argv.includes('--machine-off');
 const HA_THEME  = flag('ha-theme', 'GLP_HA_THEME', LIGHT_SHORTHAND ? 'light' : 'dark');
 const OS_SCHEME = flag('os-scheme', 'GLP_OS_SCHEME', LIGHT_SHORTHAND ? 'light' : HA_THEME);
-const outFile   = flag('out', '', path.join(outDir, HA_THEME === 'light' ? 'card-light.png' : 'card.png'));
+const defaultOutName = MACHINE_OFF
+  ? 'card-ready-by.png'
+  : (HA_THEME === 'light' ? 'card-light.png' : 'card.png');
+const outFile   = flag('out', '', path.join(outDir, defaultOutName));
 const PORT      = 8321;
 
 // HA theme CSS variables the card reads via the GLP-TOKENS fallback chain.
@@ -113,7 +126,7 @@ const mockStates = {
         },
     },
     'switch.gaggiuino_local_profiler_machine': {
-        state: 'on',
+        state: MACHINE_OFF ? 'off' : 'on',
         last_changed: new Date(now - 2 * 3600 * 1000).toISOString(),
         attributes: { friendly_name: 'Gaggiuino Machine' },
     },
