@@ -41,7 +41,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm run test:coverage
 
       - name: Build check (syntax)
         run: npm run build

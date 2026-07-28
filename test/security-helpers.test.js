@@ -25,7 +25,7 @@ function loadCardHelpers() {
     URL,
   };
   vm.createContext(context);
-  vm.runInContext(src, context, { filename: 'glp-card.js' });
+  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
 
   return { esc: context.esc, safeUrl: context.safeUrl };
 }

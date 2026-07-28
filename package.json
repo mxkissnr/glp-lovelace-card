@@ -3,12 +3,14 @@
   "private": true,
   "scripts": {
     "test": "node --test",
+    "test:coverage": "c8 --reporter=text --reporter=json-summary --check-coverage --lines=53 node --test",
     "build": "node --check glp-card.js",
     "lint": "eslint .",
     "screenshot": "node scripts/screenshot.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "c8": "^12.0.0",
     "eslint": "^10.8.0",
     "globals": "^17.8.0",
     "playwright": "^1.62.0"
