@@ -1223,8 +1223,13 @@ class GlpCard extends HTMLElement {
       if (!realTargetAt) { clearTimeout(this._pendingReadyByTimer); this._pendingReadyByTargetAt = null; }
       else return { targetAt: null, plannedAt: null };
     } else if (this._pendingReadyByTargetAt) {
-      if (realTargetAt) { clearTimeout(this._pendingReadyByTimer); this._pendingReadyByTargetAt = null; }
-      else return { targetAt: this._pendingReadyByTargetAt, plannedAt: null };
+      // Compare by value, not truthiness (#70): a stale realTargetAt (old
+      // target still live, or the #68 unavailable-fallback cache holding the
+      // pre-reschedule value) must not clear a pending re-schedule to a
+      // *different* new target — only the matching value counts as confirmed.
+      if (realTargetAt && realTargetAt.getTime() === this._pendingReadyByTargetAt.getTime()) {
+        clearTimeout(this._pendingReadyByTimer); this._pendingReadyByTargetAt = null;
+      } else return { targetAt: this._pendingReadyByTargetAt, plannedAt: null };
     }
     return { targetAt: realTargetAt, plannedAt: realPlannedAt };
   }

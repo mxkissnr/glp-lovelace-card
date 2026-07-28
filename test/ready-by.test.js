@@ -226,11 +226,47 @@ test('_readReadyBy() clears the pending Set override once the sensor reports a r
       'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
     },
   });
-  inst._pendingReadyByTargetAt = new Date(2026, 6, 28, 7, 0, 0);
+  // pending value constructed from the ISO string (not local y/m/d/h/m/s
+  // fields) so the getTime() match against the sensor's UTC state is
+  // timezone-independent.
+  inst._pendingReadyByTargetAt = new Date('2026-07-28T07:00:00.000Z');
   const { targetAt, plannedAt } = inst._readReadyBy();
   assert.equal(targetAt.toISOString(), '2026-07-28T07:00:00.000Z');
   assert.equal(plannedAt.toISOString(), '2026-07-28T06:40:00.000Z');
   // resolved — pending override cleared so future renders read the sensor
+  assert.equal(inst._pendingReadyByTargetAt, null);
+});
+
+test('_readReadyBy() (#70) keeps a pending re-schedule when the sensor still reports the old target', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      // sensor still holds the *old* target — hasn't caught up to the new pick yet
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T07:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T06:40:00.000Z' },
+    },
+  });
+  const newPending = new Date('2026-07-28T08:00:00.000Z'); // 08:00, different from the sensor's 07:00
+  inst._pendingReadyByTargetAt = newPending;
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt, newPending);
+  assert.equal(plannedAt, null);
+  // not confirmed yet — a truthy-but-mismatched realTargetAt must not clear it
+  assert.equal(inst._pendingReadyByTargetAt, newPending);
+});
+
+test('_readReadyBy() (#70) clears a pending re-schedule once the sensor reports the matching new target', () => {
+  const inst = makeInstance({
+    states: {
+      'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} },
+      'sensor.gaggiuino_local_profiler_preheat_ready_by_target_at': { state: '2026-07-28T08:00:00.000Z' },
+      'sensor.gaggiuino_local_profiler_preheat_planned_switch_on_at': { state: '2026-07-28T07:40:00.000Z' },
+    },
+  });
+  inst._pendingReadyByTargetAt = new Date('2026-07-28T08:00:00.000Z');
+  const { targetAt, plannedAt } = inst._readReadyBy();
+  assert.equal(targetAt.toISOString(), '2026-07-28T08:00:00.000Z');
+  assert.equal(plannedAt.toISOString(), '2026-07-28T07:40:00.000Z');
   assert.equal(inst._pendingReadyByTargetAt, null);
 });
 
