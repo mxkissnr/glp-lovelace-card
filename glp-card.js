@@ -1043,6 +1043,7 @@ class GlpCard extends HTMLElement {
     this._ordersSig = null;
     this._ordersPoll = null;
     this._beansInfo = null;
+    this._beansInfoById = null;
     this._beansInfoAt = 0;
     this._beansInfoUnavailable = false;
     this._orderEtaFor = null;
@@ -1486,13 +1487,21 @@ class GlpCard extends HTMLElement {
       const r = await this._hass.fetchWithAuth('/api/glp/library/beans-info');
       if (!r.ok) { this._beansInfoUnavailable = true; return; }
       const list = await r.json();
-      this._beansInfo = new Map((Array.isArray(list) ? list : [])
-        .map(b => [String(b.name || '').toLowerCase(), b]));
+      const beans = Array.isArray(list) ? list : [];
+      this._beansInfoById = new Map(beans.filter(b => b.id != null).map(b => [b.id, b]));
+      this._beansInfo = new Map(beans.map(b => [String(b.name || '').toLowerCase(), b]));
     } catch { /* transient — retry after the cache window */ }
   }
 
-  _beanExtraHtml(coffee) {
-    const bean = this._beansInfo?.get(String(coffee || '').toLowerCase());
+  // #55 (follow-up to gaggiuino-local-profiler#456): prefers the stable
+  // beanId link over the free-text coffee name — mirrors the app's
+  // resolveBeanForAnnotation, since a delete+reimport under the same name
+  // gets a new id but keeps stale references matching by name alone. Falls
+  // back to name matching when beanId isn't available (shots that predate
+  // beanId on the annotation, or an integration too old to expose it).
+  _beanExtraHtml(coffee, beanId) {
+    const bean = (beanId != null && this._beansInfoById?.get(beanId))
+      || this._beansInfo?.get(String(coffee || '').toLowerCase());
     if (!bean) return '';
     const parts = [];
     const fl = flagEmoji(bean.origin);
@@ -2030,7 +2039,7 @@ class GlpCard extends HTMLElement {
               <div class="shot-profile">${esc(profile)}</div>
               <div class="shot-meta">
                 ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
-                ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>${this._beanExtraHtml(coffee)}` : ''}
+                ${coffee    ? `<span class="shot-coffee">☕ ${esc(coffee)}</span>${this._beanExtraHtml(coffee, shotObj?.beanId)}` : ''}
               </div>
               ${(grinder || grind) ? `<div class="shot-grind">⚙️ ${esc([grinder, grind].filter(Boolean).join(' · '))}</div>` : ''}
             </div>
