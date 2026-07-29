@@ -1,4 +1,4 @@
-const GLP_CARD_VERSION = '2.17.4';
+const GLP_CARD_VERSION = '2.17.5';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 // DE wording is the original card text; language follows hass.language (DE/EN/IT/FR/ES/NL, falls back to EN).
