@@ -2,8 +2,8 @@
   "name": "glp-lovelace-card",
   "private": true,
   "scripts": {
-    "test": "node --test",
-    "test:coverage": "c8 --reporter=text --reporter=json-summary --check-coverage --lines=53 node --test",
+    "test": "node --test 'test/**/*.test.js'",
+    "test:coverage": "c8 --reporter=text --reporter=json-summary --check-coverage --lines=53 node --test 'test/**/*.test.js'",
     "build": "node --check glp-card.js",
     "lint": "eslint .",
     "screenshot": "node scripts/screenshot.mjs"
