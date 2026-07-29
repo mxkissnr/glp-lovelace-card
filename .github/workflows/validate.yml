@@ -29,6 +29,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Checkout neighbor repo (glp-order-card) for shared-block sync test (#74)
+        uses: actions/checkout@v7
+        with:
+          repository: mxkissnr/glp-order-card
+          path: neighbor-glp-order-card
+
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
@@ -42,6 +48,8 @@ jobs:
 
       - name: Run tests
         run: npm run test:coverage
+        env:
+          GLP_ORDER_CARD_PATH: ${{ github.workspace }}/neighbor-glp-order-card/glp-order-card.js
 
       - name: Build check (syntax)
         run: npm run build
