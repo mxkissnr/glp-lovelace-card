@@ -25,15 +25,19 @@ jobs:
   test:
     name: Test and build
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Checkout neighbor repo (glp-order-card) for shared-block sync test (#74)
-        uses: actions/checkout@v7
-        with:
-          repository: mxkissnr/glp-order-card
-          path: neighbor-glp-order-card
+      - name: Fetch glp-order-card.js for shared-block sync test (#74)
+        # Only the raw file is needed (byte comparison of marked blocks) --
+        # no full checkout, so it can live outside github.workspace where
+        # node --test's default recursive discovery would otherwise pick up
+        # glp-order-card's own test suite, including a Playwright e2e test
+        # whose browser binary isn't installed here (hung CI for 8+ min,
+        # see #83).
+        run: curl -fsSL -o "${{ runner.temp }}/glp-order-card.js" https://raw.githubusercontent.com/mxkissnr/glp-order-card/main/glp-order-card.js
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -49,7 +53,7 @@ jobs:
       - name: Run tests
         run: npm run test:coverage
         env:
-          GLP_ORDER_CARD_PATH: ${{ github.workspace }}/neighbor-glp-order-card/glp-order-card.js
+          GLP_ORDER_CARD_PATH: ${{ runner.temp }}/glp-order-card.js
 
       - name: Build check (syntax)
         run: npm run build

@@ -28,6 +28,7 @@
 <p align="center">
   <img src="docs/screenshots/card.png" alt="GLP Shot Card showing a preheated Gaggiuino, the current profile, live machine tiles, the last shot's metrics and its pressure/flow/temperature/weight curve" width="420"/>
   <img src="docs/screenshots/card-light.png" alt="The same GLP Shot Card rendered against a light Home Assistant theme" width="420"/>
+  <img src="docs/screenshots/card-ready-by.png" alt="The GLP Shot Card with the machine off, showing the 'Ready by' preheat scheduler's time picker" width="420"/>
 </p>
 
 ---
