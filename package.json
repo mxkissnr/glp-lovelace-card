@@ -6,7 +6,8 @@
     "test:coverage": "c8 --reporter=text --reporter=json-summary --check-coverage --lines=53 node --test",
     "build": "node --check glp-card.js",
     "lint": "eslint .",
-    "screenshot": "node scripts/screenshot.mjs"
+    "screenshot": "node scripts/screenshot.mjs",
+    "sync-to-integration": "bash scripts/sync-to-integration.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
