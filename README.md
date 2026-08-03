@@ -59,6 +59,9 @@ title: Gaggiuino                                  # optional header title
 entity_prefix: sensor.gaggiuino_local_profiler_   # optional — auto-detected if omitted
 switch_entity: switch.espresso_plug               # optional — power toggle + collapse when off
 machine: Kitchen GaggiMate                        # optional — multi-machine setups only, see below
+theme: ember-espresso                              # optional — one of 8 curated colour presets, see below
+# accent_color: "#c2703d"                          # optional — custom flat colour instead of `theme`
+# accent_gradient: ["#c2703d", "#e8b4a0"]           # optional — custom two-stop gradient instead of `theme`
 ```
 
 ### Options
@@ -70,6 +73,11 @@ machine: Kitchen GaggiMate                        # optional — multi-machine s
 | `glp_url` | URL to the GLP web interface (adds an "open" link) | *(none)* |
 | `title` | Card header title | `Gaggiuino` |
 | `machine` | Name/slug of a specific machine, for setups with more than one GLP machine (the app's multi-machine mode) — matches the `*_machine_status` entity whose name references it, and scopes the switch-entity `localStorage` key so multiple cards don't collide. Ignored if `entity_prefix` is also set. | *(auto — first Gaggiuino-named entity)* |
+| `theme` | One of 8 curated colour presets for this machine's card: `amber-americano`, `ruby-ristretto`, `copper-cortado`, `twilight-turkish`, `marbled-macchiato`, `ember-espresso`, `mulberry-mocha`, `frosty-flat-white`. Colours the machine icon and the card's accent tokens. Ignored if `accent_color` or `accent_gradient` is also set. | *(none — HA theme's `--primary-color`)* |
+| `accent_color` | Custom flat accent colour as `#rrggbb`, instead of a `theme` preset. Invalid/non-hex values are ignored. Overrides `theme`. | *(none)* |
+| `accent_gradient` | Custom two-stop gradient as `["#rrggbb", "#rrggbb"]`, instead of a `theme` preset. Invalid/non-hex values are ignored. Overrides both `theme` and `accent_color`. | *(none)* |
+
+Per-machine colour theme (`theme`/`accent_color`/`accent_gradient`) mirrors the storage contract used by the [GLP app's own machine registry](https://github.com/mxkissnr/gaggiuino-local-profiler) (`machines.theme`) — this card has no direct database access, so these YAML keys are its standalone/no-app fallback and manual override for now. A later release will add a card-to-app sync so a theme set once in the app's machine settings applies here automatically without any YAML config; until then, whatever is set here wins for this card.
 
 ## What it shows
 

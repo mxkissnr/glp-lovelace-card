@@ -1,7 +1,8 @@
 // Proves _applySemanticColorContrast() actually RUNS and picks the correct
 // --glp-ok/--glp-warn/--glp-err (by --glp-bg luminance) and --glp-accent-text
-// (by --glp-accent luminance, independently) — not just that the method
-// exists. Same vm-sandbox + Object.create(prototype) approach as
+// (by the DARKER of --glp-accent-start/--glp-accent-end's luminance,
+// independently — #87's per-machine gradient theme) — not just that the
+// method exists. Same vm-sandbox + Object.create(prototype) approach as
 // machine-config.test.js: avoids needing a full custom-element/shadow-DOM
 // constructor, just a minimal style/shadowRoot stub sufficient to drive the
 // method end-to-end. Real color normalization (hex/named-color -> rgb()) is
@@ -78,23 +79,46 @@ test('_applySemanticColorContrast() picks dark-safe --glp-ok/--glp-warn/--glp-er
   assert.equal(inst.style.getPropertyValue('--glp-err'), '#ef4444');
 });
 
-test('_applySemanticColorContrast() picks dark --glp-accent-text for a light accent (amber)', () => {
+test('_applySemanticColorContrast() picks dark --glp-accent-text for a light flat accent (amber)', () => {
   const inst = makeInstance();
   inst.style.setProperty('--glp-bg', 'rgb(24, 24, 27)');
-  inst.style.setProperty('--glp-accent', 'rgb(245, 158, 11)'); // #f59e0b, GLP Dark's default primary
+  // flat colour: start and end are the same, as GLP-TOKENS' default chain produces
+  inst.style.setProperty('--glp-accent-start', 'rgb(245, 158, 11)'); // #f59e0b, GLP Dark's default primary
+  inst.style.setProperty('--glp-accent-end', 'rgb(245, 158, 11)');
   inst._applySemanticColorContrast();
   assert.equal(inst.style.getPropertyValue('--glp-accent-text'), '#000');
 });
 
-test('_applySemanticColorContrast() picks light --glp-accent-text for a dark accent (indigo)', () => {
+test('_applySemanticColorContrast() picks light --glp-accent-text for a dark flat accent (indigo)', () => {
   const inst = makeInstance();
   inst.style.setProperty('--glp-bg', 'rgb(255, 255, 255)');
-  inst.style.setProperty('--glp-accent', 'rgb(26, 35, 126)'); // #1a237e, Material Indigo 900 — a common dark theme primary
+  inst.style.setProperty('--glp-accent-start', 'rgb(26, 35, 126)'); // #1a237e, Material Indigo 900 — a common dark theme primary
+  inst.style.setProperty('--glp-accent-end', 'rgb(26, 35, 126)');
   inst._applySemanticColorContrast();
   assert.equal(inst.style.getPropertyValue('--glp-accent-text'), '#fff');
 });
 
-test('_applySemanticColorContrast() is a no-op (does not throw) when --glp-bg/--glp-accent are unset', () => {
+test('_applySemanticColorContrast() picks --glp-accent-text off the DARKER gradient stop, whichever side it is', () => {
+  // "Copper Cortado" preset (#87): a light start (#c2703d, luminance ~.12,
+  // dark-safe) paired with a much lighter end (#e8b4a0, luminance ~.47,
+  // light-safe) — the light end alone would wrongly pick white text.
+  const inst = makeInstance();
+  inst.style.setProperty('--glp-bg', 'rgb(24, 24, 27)');
+  inst.style.setProperty('--glp-accent-start', 'rgb(194, 112, 61)');  // #c2703d
+  inst.style.setProperty('--glp-accent-end', 'rgb(232, 180, 160)');   // #e8b4a0
+  inst._applySemanticColorContrast();
+  assert.equal(inst.style.getPropertyValue('--glp-accent-text'), '#000');
+
+  // Same pair, reversed which stop is "start" vs "end" — still the darker wins.
+  const inst2 = makeInstance();
+  inst2.style.setProperty('--glp-bg', 'rgb(24, 24, 27)');
+  inst2.style.setProperty('--glp-accent-start', 'rgb(232, 180, 160)'); // #e8b4a0
+  inst2.style.setProperty('--glp-accent-end', 'rgb(194, 112, 61)');    // #c2703d
+  inst2._applySemanticColorContrast();
+  assert.equal(inst2.style.getPropertyValue('--glp-accent-text'), '#000');
+});
+
+test('_applySemanticColorContrast() is a no-op (does not throw) when --glp-bg/--glp-accent-start/-end are unset', () => {
   const inst = makeInstance();
   assert.doesNotThrow(() => inst._applySemanticColorContrast());
   assert.equal(inst.style.getPropertyValue('--glp-ok'), '');
