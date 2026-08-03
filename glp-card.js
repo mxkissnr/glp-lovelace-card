@@ -510,24 +510,30 @@ const STYLES = `
     --glp-border:  var(--divider-color, #3f3f46);
     --glp-text:    var(--primary-text-color, #e4e4e7);
     --glp-sub:     var(--secondary-text-color, #a1a1aa);
-    --glp-accent:  var(--primary-color, #f59e0b);
     /* --glp-accent-start/--glp-accent-end (#87): per-machine colour theme
        (8 curated presets or a custom flat colour/gradient, see the
        theme/accent_color/accent_gradient setConfig() keys and
-       _applyMachineTheme()) — mirrors the storage contract the GLP app uses
+       _applyMachineTheme()) — mirror the storage contract the GLP app uses
        on machines.theme (gaggiuino-local-profiler#595), for this card's
-       standalone/no-app YAML config. Both default to --glp-accent itself, so
-       a card with no theme configured renders identically to before this
-       existed (flat colour = both stops equal). _applyMachineTheme() sets
-       these as inline styles on the host (highest-priority cascade, same
-       pattern as _applySemanticColorContrast() below) only when a theme is
-       configured; otherwise they fall through to these stylesheet defaults.
+       standalone/no-app YAML config. Both default directly to HA's
+       --primary-color, so a card with no theme configured renders
+       identically to before this existed (flat colour = both stops equal).
+       _applyMachineTheme() sets these as inline styles on the host
+       (highest-priority cascade, same pattern as
+       _applySemanticColorContrast() below) only when a theme is configured;
+       otherwise they fall through to these stylesheet defaults.
        --glp-accent itself is kept as the legacy single-colour alias (e.g.
-       the preheat progress bar fill) — it resolves through
+       the preheat progress bar fill) and MUST derive FROM
+       --glp-accent-start (not the other way around) — it resolves through
        --glp-accent-start via the cascade, so it also picks up a configured
-       theme's first stop automatically. */
-    --glp-accent-start: var(--glp-accent);
+       theme's first stop automatically. Getting this direction backwards
+       (--glp-accent-start deriving from --glp-accent) would leave
+       --glp-accent permanently pinned to --primary-color, silently
+       ignoring any configured theme wherever old code still reads
+       --glp-accent directly. */
+    --glp-accent-start: var(--primary-color, #f59e0b);
     --glp-accent-end:   var(--glp-accent-start);
+    --glp-accent:       var(--glp-accent-start);
     /* --glp-accent-text: the readable-on-accent text/icon color, for
        anything rendering directly on a full-strength --glp-accent fill (e.g.
        glp-order-card.js's .order-btn). --glp-accent can be ANY HA theme's
