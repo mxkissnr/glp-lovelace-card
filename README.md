@@ -33,6 +33,8 @@
 
 ---
 
+> **AI-generated project.** All code, tests, and documentation in this repo are written by Claude (Anthropic). Scope, hardware testing (Gaggia Classic + Gaggiuino), and release decisions are done by a human maintainer. Keep that in mind before installing this on your machine.
+
 ## Prerequisites
 
 - [Gaggiuino Local Profiler](https://github.com/mxkissnr/gaggiuino-local-profiler) app installed
