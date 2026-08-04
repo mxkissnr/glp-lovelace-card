@@ -2292,7 +2292,7 @@ class GlpCard extends HTMLElement {
         ${waterLevel !== null ? `<span class="footer-item">💧 ${waterLevel}%</span>` : '<span></span>'}
         <span class="footer-item">
           ${syncTime ? `${syncTime}` : ''}
-          ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${esc(glpUrl)}" target="_blank">GLP ↗</a>` : ''}
+          ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${esc(glpUrl)}" target="_blank" rel="noopener noreferrer">GLP ↗</a>` : ''}
         </span>
       </div>`;
 
