@@ -79,7 +79,7 @@ theme: ember-espresso                              # optional — one of 8 curat
 | `accent_color` | Custom flat accent colour as `#rrggbb`, instead of a `theme` preset. Invalid/non-hex values are ignored. Overrides `theme`. | *(none)* |
 | `accent_gradient` | Custom two-stop gradient as `["#rrggbb", "#rrggbb"]`, instead of a `theme` preset. Invalid/non-hex values are ignored. Overrides both `theme` and `accent_color`. | *(none)* |
 
-Per-machine colour theme (`theme`/`accent_color`/`accent_gradient`) mirrors the storage contract used by the [GLP app's own machine registry](https://github.com/mxkissnr/gaggiuino-local-profiler) (`machines.theme`) — this card has no direct database access, so these YAML keys are its standalone/no-app fallback and manual override for now. A later release will add a card-to-app sync so a theme set once in the app's machine settings applies here automatically without any YAML config; until then, whatever is set here wins for this card.
+Per-machine colour theme (`theme`/`accent_color`/`accent_gradient`) syncs automatically from the [GLP app's own machine registry](https://github.com/mxkissnr/gaggiuino-local-profiler): a theme set once in the app's Settings → Machines picker is read live from the `*_machine_status` sensor's `theme` attribute and applied here without any YAML config. The `theme`/`accent_color`/`accent_gradient` keys above remain a manual override/fallback — set them to pin a colour for this card regardless of the app, or for standalone setups with no app-side theme configured.
 
 ## What it shows
 
