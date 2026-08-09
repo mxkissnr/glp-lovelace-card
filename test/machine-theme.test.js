@@ -36,9 +36,10 @@ function loadGlpCard() {
 
 const GlpCard = loadGlpCard();
 
-function makeInstance(config) {
+function makeInstance(config, hass) {
   const inst = Object.create(GlpCard.prototype);
   inst._config = config;
+  inst._hass = hass;
   inst.style = makeStyleStub();
   return inst;
 }
@@ -115,4 +116,61 @@ test('_applyMachineTheme() clears any previously-set inline override when no the
   inst._applyMachineTheme();
   assert.equal(inst.style.getPropertyValue('--glp-accent-start'), '');
   assert.equal(inst.style.getPropertyValue('--glp-accent-end'), '');
+});
+
+// #701 — app-synced theme (via hass state) takes precedence over this
+// card's own YAML config.
+test('_appMachineTheme() returns null with no hass set (standalone/no-app-sync mode, unchanged pre-#701 behavior)', () => {
+  assert.equal(makeInstance({})._appMachineTheme(), null);
+});
+
+test('_appMachineTheme() returns null when no *_machine_status entity carries a machines[] attribute', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: {} } } };
+  assert.equal(makeInstance({}, hass)._appMachineTheme(), null);
+});
+
+test('_appMachineTheme() resolves the isDefault machine\'s theme when `machine` is not configured', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: { preset: 'twilight-turkish' } },
+    { id: 2, name: 'Kitchen GaggiMate', isDefault: false, theme: { preset: 'ember-espresso' } },
+  ] } } } };
+  assertTheme(makeInstance({}, hass)._appMachineTheme(), '#0891b2', '#4338ca');
+});
+
+test('_appMachineTheme() resolves the machine matching `_config.machine` by name', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: null },
+    { id: 2, name: 'Kitchen GaggiMate', isDefault: false, theme: { preset: 'ember-espresso' } },
+  ] } } } };
+  assertTheme(makeInstance({ machine: 'Kitchen GaggiMate' }, hass)._appMachineTheme(), '#dc4a1f', '#f5a623');
+});
+
+test('_appMachineTheme() resolves a custom {a,b} theme', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: { a: '#111111', b: '#222222' } },
+  ] } } } };
+  assertTheme(makeInstance({}, hass)._appMachineTheme(), '#111111', '#222222');
+});
+
+test('_appMachineTheme() rejects a malformed custom theme from hass state', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: { a: 'not-hex', b: '#222222' } },
+  ] } } } };
+  assert.equal(makeInstance({}, hass)._appMachineTheme(), null);
+});
+
+test('_resolveMachineTheme(): the app-synced theme wins over this card\'s own YAML config', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: { preset: 'twilight-turkish' } },
+  ] } } } };
+  const inst = makeInstance({ theme: 'ember-espresso' }, hass);
+  assertTheme(inst._resolveMachineTheme(), '#0891b2', '#4338ca');
+});
+
+test('_resolveMachineTheme(): falls back to YAML config when the app has no theme set for this machine', () => {
+  const hass = { states: { 'sensor.gaggiuino_local_profiler_machine_status': { attributes: { machines: [
+    { id: 1, name: 'Gaggiuino', isDefault: true, theme: null },
+  ] } } } };
+  const inst = makeInstance({ theme: 'ember-espresso' }, hass);
+  assertTheme(inst._resolveMachineTheme(), '#dc4a1f', '#f5a623');
 });
