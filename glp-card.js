@@ -253,12 +253,13 @@ function downsample(arr, maxPts) {
 const CC = { pres: '#0072b2', flow: '#c77000', temp: '#c0392b', wt: '#009e73' };
 
 // GLP-SHARED:theme-presets v1 — the 8 approved per-machine colour theme
-// presets (#87), kept byte-identical (key -> {a,b} hex pair) with
-// gaggiuino-local-profiler's lib/machines/theme-presets.js and with
-// glp-order-card.js's copy — same contract as machines.theme, see
-// mxkissnr/gaggiuino-local-profiler#595. This card has no theme-picker UI
-// (YAML-config-only, see the `theme` setConfig() key), so unlike the app's
-// copy there are no i18n name/hint labels here, just the hex values.
+// presets (mxkissnr/glp-lovelace-card#87 / mxkissnr/glp-order-card#62),
+// kept byte-identical (key -> {a,b} hex pair) with gaggiuino-local-profiler's
+// lib/machines/theme-presets.js and with glp-order-card.js's copy — same
+// contract as machines.theme, see mxkissnr/gaggiuino-local-profiler#595.
+// Neither card has a theme-picker UI (YAML-config-only, see the `theme`
+// setConfig() key), so unlike the app's copy there are no i18n name/hint
+// labels here, just the hex values.
 const THEME_PRESETS = {
   'amber-americano':   { a: '#f59e0b', b: '#f59e0b' },
   'ruby-ristretto':    { a: '#7f1d1d', b: '#7f1d1d' },
@@ -279,16 +280,18 @@ const THEME_PRESETS = {
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 // GLP-SHARED:machine-icon v1 — approved detailed Gaggia Classic icon
-// geometry (#87), ported faithfully from the Theme Lab mockup Max approved
-// (see ICON-AND-THEMES-SPEC.js in the glp-project workspace) and kept in
-// sync with glp-order-card.js's copy. `id` is a per-render-instance-unique
-// gradient id (this card can appear more than once on one dashboard, see
-// _iconGradId in the constructor) coloured via --glp-accent-start/-end (the
-// mockup's --acc-a/--acc-b, renamed to this card's own token names); a
-// second, fixed `${id}-steel` gradient colours the drip-tray mesh in silver,
-// independent of the accent theme. `mini` drops fine detail (portafilter
-// spout, steam wand tip, button highlights/LEDs, drip-tray mesh holes) for
-// small render sizes, per the mockup's own MACHINE_BODY(id, mini).
+// geometry (mxkissnr/glp-lovelace-card#87 / mxkissnr/glp-order-card#62),
+// ported faithfully from the Theme Lab mockup Max approved (see
+// ICON-AND-THEMES-SPEC.js in the glp-project workspace) and kept in sync
+// with glp-order-card.js's copy. `id` is a per-render-instance-unique
+// gradient id (this card can appear more than once on one dashboard — each
+// file's constructor derives its own id under its own name) coloured via
+// --glp-accent-start/-end (the mockup's --acc-a/--acc-b, renamed to this
+// card's own token names); a second, fixed `${id}-steel` gradient colours
+// the drip-tray mesh in silver, independent of the accent theme. `mini`
+// drops fine detail (portafilter spout, steam wand tip, button
+// highlights/LEDs, drip-tray mesh holes) for small render sizes, per the
+// mockup's own MACHINE_BODY(id, mini).
 const MACHINE_BODY = (id, mini) => `
     <!-- Seitenwand rechts inkl. Kantenlicht, volle Hoehe -->
     <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="url(#${id})"/>
@@ -1948,7 +1951,8 @@ class GlpCard extends HTMLElement {
       this.style.setProperty('--glp-warn', light ? '#a16207' : '#eab308');
       this.style.setProperty('--glp-err',  light ? '#dc2626' : '#ef4444');
     }
-    // #87: when a per-machine gradient theme is active, --glp-accent-start
+    // mxkissnr/glp-lovelace-card#87 / mxkissnr/glp-order-card#62: when a
+    // per-machine gradient theme is active, --glp-accent-start
     // and --glp-accent-end differ — pick the DARKER (lower-luminance) stop
     // as the worst case, since text/icon content can sit anywhere across the
     // gradient. A flat colour (no theme, or a flat custom/preset) has both
