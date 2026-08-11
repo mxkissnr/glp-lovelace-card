@@ -65,18 +65,16 @@ const BLOCKS = [
 // companion PR only. Every entry MUST carry an issue reference — an entry
 // without one is a bug, and the file refuses to load if it finds one (see
 // the validation loop below). The list MUST be emptied immediately once the
-// named companion PR(s) merge — see #115, which tracks doing exactly that.
+// named companion PR(s) merge (#115 tracked this repo's post-#114 cleanup).
 // A non-empty TRANSITIONAL outside of an active cross-repo merge window
 // means the guard is silently checking less than it claims to, exactly the
 // failure mode #113 was filed to fix in the first place.
-const TRANSITIONAL = {
-  'GLP-SHARED:esc v1':           { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-  'GLP-SHARED:safeUrl v1':       { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-  'GLP-SHARED:theme-presets v1': { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-  'GLP-SHARED:machine-icon v1':  { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-  'GLP-SHARED:contrast v1':      { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-  'GLP-SHARED:machine-match v1': { issue: '#113', reason: 'companion PR mxkissnr/glp-order-card#84 adds this marker there; not on glp-order-card main yet' },
-};
+//
+// Normal state: EMPTY. Populate it only while a companion PR that changes a
+// GLP-SHARED block is open on the neighbor repo, and empty it again in the
+// same round that companion PR merges — see #115 for the shape that
+// cleanup PR takes.
+const TRANSITIONAL = {};
 
 for (const [name, entry] of Object.entries(TRANSITIONAL)) {
   if (!entry || !entry.issue) {
