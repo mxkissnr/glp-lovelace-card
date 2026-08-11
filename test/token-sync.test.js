@@ -111,7 +111,7 @@ for (const block of BLOCKS) {
     if (transitional && !inSync) {
       // Loud on purpose — this must be impossible to miss scrolling a CI
       // log, not a quietly-skipped line among hundreds of others.
-      const msg = `TRANSITIONAL: ${block.name} wird nicht geprüft, siehe ${transitional.issue} (${transitional.reason})`;
+      const msg = `TRANSITIONAL: ${block.name} not checked, see ${transitional.issue} (${transitional.reason})`;
       console.log(`\n########## ${msg} ##########\n`);
       t.skip(msg);
       return;
