@@ -34,11 +34,10 @@
 // --machine-off).
 // Requires `npx playwright install chromium` once beforehand.
 
-import http from 'node:http';
 import path from 'node:path';
-import { mkdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
+import { repoRoot, startServer } from './e2e-harness.mjs';
 
 function flag(name, envVar, fallback) {
     const eq = process.argv.find(a => a.startsWith(`--${name}=`));
@@ -47,8 +46,6 @@ function flag(name, envVar, fallback) {
     return fallback;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot  = path.join(__dirname, '..');
 const outDir    = path.join(repoRoot, 'docs', 'screenshots');
 const LIGHT_SHORTHAND = process.argv.includes('--light');
 const MACHINE_OFF = process.argv.includes('--machine-off');
@@ -58,7 +55,6 @@ const defaultOutName = MACHINE_OFF
   ? 'card-ready-by.png'
   : (HA_THEME === 'light' ? 'card-light.png' : 'card.png');
 const outFile   = flag('out', '', path.join(outDir, defaultOutName));
-const PORT      = 8321;
 
 // HA theme CSS variables the card reads via the GLP-TOKENS fallback chain.
 // Values match the "GLP Light"/"GLP Dark" themes in glp-ha-theme.yaml.
@@ -196,28 +192,9 @@ ${THEME_VARS}  }
 </body>
 </html>`;
 
-function startServer() {
-    return new Promise(resolve => {
-        const server = http.createServer((req, res) => {
-            if (req.url === '/' || req.url === '/index.html') {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(PAGE_HTML);
-                return;
-            }
-            if (req.url === '/glp-card.js') {
-                res.writeHead(200, { 'Content-Type': 'text/javascript' });
-                res.end(readFileSync(path.join(repoRoot, 'glp-card.js'), 'utf8'));
-                return;
-            }
-            res.writeHead(404);
-            res.end();
-        });
-        server.listen(PORT, () => resolve(server));
-    });
-}
-
 async function main() {
-    const server = await startServer();
+    const server = await startServer(PAGE_HTML);
+    const { port } = server.address();
     const browser = await chromium.launch();
     try {
         // colorScheme is intentionally independent from HA_THEME/THEME_VARS —
@@ -230,7 +207,7 @@ async function main() {
             viewport: { width: 460, height: 900 },
             colorScheme: OS_SCHEME === 'light' ? 'light' : 'dark',
         });
-        await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });
+        await page.goto(`http://127.0.0.1:${port}/__harness.html`, { waitUntil: 'load' });
         await page.waitForTimeout(500);
         const card = page.locator('#card');
         await card.waitFor({ state: 'attached' });

@@ -31,7 +31,7 @@ module.exports = [
     rules: commonRules,
   },
   {
-    files: ['test/**/*.js'],
+    files: ['test/**/*.js', 'test/**/*.mjs'],
     languageOptions: {
       globals: globals.node,
     },
