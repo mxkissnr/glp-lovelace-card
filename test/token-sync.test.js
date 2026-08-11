@@ -4,12 +4,19 @@
 // (esc/safeUrl, the machine-status matching predicate) without anyone
 // noticing, because the old version only ever compared the CSS block.
 //
+// A second gap in this same spirit (#113): glp-card.js grew markers for
+// theme-presets, machine-icon, app-theme-lookup and contrast over time, but
+// glp-order-card.js and/or this BLOCKS list didn't always grow the matching
+// half in lockstep — and a marker missing on the neighbor's side used to
+// always skip instead of fail, so the guard quietly checked one block out
+// of seven for a while. Both sides now carry every marker in BLOCKS, so a
+// marker missing there is no longer a legitimate transitional state — it
+// fails, the same as a byte-level drift would.
+//
 // "Neighbor repo not checked out" is a normal, expected state for local dev
 // (skip) but not for CI, which is expected to check the neighbor out
 // (see .github/workflows/validate.yml) — there, its absence means the
 // checkout step is broken and this fails instead of silently skipping.
-// A block missing on the neighbor's side (companion change not landed yet)
-// always skips, in CI or not — that's a legitimate transitional state.
 'use strict';
 
 const test = require('node:test');
@@ -36,6 +43,8 @@ const BLOCKS = [
   { name: 'GLP-TOKENS v1',               start: '/* GLP-TOKENS v1',               end: '/* /GLP-TOKENS v1 */' },
   { name: 'GLP-SHARED:esc v1',           start: '// GLP-SHARED:esc v1',           end: '// /GLP-SHARED:esc v1' },
   { name: 'GLP-SHARED:safeUrl v1',       start: '// GLP-SHARED:safeUrl v1',       end: '// /GLP-SHARED:safeUrl v1' },
+  { name: 'GLP-SHARED:theme-presets v1', start: '// GLP-SHARED:theme-presets v1', end: '// /GLP-SHARED:theme-presets v1' },
+  { name: 'GLP-SHARED:machine-icon v1',  start: '// GLP-SHARED:machine-icon v1',  end: '// /GLP-SHARED:machine-icon v1' },
   { name: 'GLP-SHARED:contrast v1',      start: '/* GLP-SHARED:contrast v1',      end: '/* /GLP-SHARED:contrast v1 */' },
   { name: 'GLP-SHARED:machine-match v1', start: '// GLP-SHARED:machine-match v1', end: '// /GLP-SHARED:machine-match v1' },
   { name: 'GLP-SHARED:app-theme-lookup v1', start: '// GLP-SHARED:app-theme-lookup v1', end: '// /GLP-SHARED:app-theme-lookup v1' },
@@ -62,14 +71,12 @@ for (const block of BLOCKS) {
 
     const neighborSrc = fs.readFileSync(NEIGHBOR_PATH, 'utf8');
     const neighborBlock = extractBlock(neighborSrc, block);
-    if (!neighborBlock) {
-      // glp-order-card hasn't picked up this shared block yet — an expected
-      // transitional state (companion change not landed there), not a
-      // CI-worthy failure. Once it adds its own matching markers, this
-      // starts asserting the two stay byte-identical.
-      t.skip(`glp-order-card.js has no ${block.name} block yet — companion change not implemented, skipping`);
-      return;
-    }
+    // A block missing on the neighbor's side used to always skip here (an
+    // "expected transitional state, companion change not landed yet") — but
+    // every block in BLOCKS now has a matching marker on both sides (#113),
+    // so a marker disappearing from the neighbor is drift, not a transition,
+    // and must fail exactly like a byte-level mismatch would.
+    assert.ok(neighborBlock, `glp-order-card.js has no ${block.name} block — it must carry a matching marker`);
 
     assert.equal(neighborBlock, ownBlock, `${block.name} block drifted between glp-card.js and glp-order-card.js`);
   });
