@@ -374,6 +374,82 @@ const MACHINE_ICON_MINI = (id) => `
     </svg>`;
 // /GLP-SHARED:machine-icon v1
 
+// GLP-SHARED:icons v1 — drawn stroke icons replacing the cards' emoji glyphs
+// (glp-order-card#90 / glp-lovelace-card#120), kept byte-identical between
+// glp-card.js and glp-order-card.js.
+//
+// Why a block per card instead of an import: a Lovelace custom element is a
+// single file served straight to the browser, so neither card can import the
+// app's public-src/icons.js. The style is deliberately the same as that file
+// (viewBox 0 0 24 24, stroke-width 1.8, currentColor, no fill) so the app and
+// the cards read as one system.
+//
+// Why this replaces emoji at all: emoji render in the OS font, so they change
+// shape per platform, ignore the card's colour, cannot align to a text
+// baseline, and — the actual functional problem — collapse distinctions the UI
+// needs. The six default drinks used exactly two emoji between them (three
+// drinks on U+2615, three on U+1F95B), so the icon carried no information.
+// The six drink icons below are drawn to differ: cup size, fill level, foam.
+//
+// One ICONS object rather than one const per icon, deliberately: this block is
+// byte-identical in both cards, so it necessarily holds icons that a given
+// card has no use for (glp-order-card.js never renders a flask). As separate
+// consts that would be a standing no-unused-vars error per unused icon in
+// whichever card doesn't need it, and the usual fix — an eslint-disable over
+// the block — would also blind the rule to genuinely dead icons later.
+//
+// Every icon inherits currentColor, so a themed accent line, a muted label and
+// a semantic colour all work without a second copy of the icon. ICONS.of()
+// takes an optional extra class for sizing/colour at the call site.
+const GLP_ICON_PATHS = {
+  // --- drinks -----------------------------------------------------------
+  // One shared demitasse silhouette for the three straight espresso drinks;
+  // they differ only in fill level, which is the honest difference between
+  // them (same basket, same cup, more or less water through it).
+  ristretto:  '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M6.5 15.2h8.6"/>',
+  espresso:   '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.6 13.2h10.4"/>',
+  lungo:      '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.1 10.6h11.2"/>',
+  // Cappuccino: domed foam cap standing proud of the rim.
+  cappuccino: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.4 8.5a5.8 5.8 0 0 1 11 0"/><path d="M5.8 12h10"/>',
+  // Latte macchiato: tall glass, layered.
+  latte:      '<path d="M7.5 4.5h9l-1 14a2 2 0 0 1-2 1.8h-3a2 2 0 0 1-2-1.8l-1-14z"/><path d="M7.9 9h8.2M8.2 13h7.6"/>',
+  // Flat white: wide shallow cup, thin microfoam layer, latte-art dot.
+  flat_white: '<path d="M17.5 9.5h1a2.2 2.2 0 0 1 0 4.4h-1"/><path d="M3.5 9.5h14v3.6a4.4 4.4 0 0 1-4.4 4.4H7.9a4.4 4.4 0 0 1-4.4-4.4V9.5z"/><path d="M4.2 12h12.6"/><circle cx="10.5" cy="14.4" r="1.1"/>',
+  // --- state, action, status --------------------------------------------
+  coffee:     '<path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/><path d="M8 2v2M12 2v2"/>',
+  check:      '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+  close:      '<path d="M6 6l12 12M18 6 6 18"/>',
+  heat:       '<path d="M12 3.5c3 3.2 4.5 5.8 4.5 8a4.5 4.5 0 0 1-9 0c0-2.2 1.5-4.8 4.5-8z"/><path d="M9.5 20.5h5"/>',
+  droplet:    '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  steam:      '<path d="M7 20c0-2 1.6-2.4 1.6-4.4S7 12.6 7 10.6"/><path d="M12 20c0-2.4 1.8-2.9 1.8-5.3S12 10.3 12 8"/><path d="M17 20c0-2 1.6-2.4 1.6-4.4S17 12.6 17 10.6"/>',
+  warning:    '<path d="M12 4.5 21 19.5H3L12 4.5z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r="0.6"/>',
+  gear:       '<circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
+  plug:       '<path d="M9 3.5v5M15 3.5v5"/><path d="M6.5 8.5h11v3a5.5 5.5 0 0 1-11 0v-3z"/><path d="M12 17v3.5"/>',
+  cart:       '<path d="M3 4.5h2.2l2.3 10.4h9.6l2.1-7.4H6.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/>',
+  shower:     '<path d="M4.5 8.5h15v2.6a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3V8.5z"/><path d="M8 17.5v2M12 17.5v3M16 17.5v2"/>',
+  wrench:     '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/>',
+  refresh:    '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/>',
+  circle:     '<circle cx="12" cy="12" r="8"/>',
+  flask:      '<path d="M10 3.5v6L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5v-6"/><path d="M9 3.5h6"/><path d="M7.4 14h9.2"/>',
+  // Not a party popper — a small burst, so it still reads at 16px and keeps
+  // the card's tone. Used for the completed-order confirmation.
+  celebrate:  '<path d="M12 3v3.5M12 17.5V21M21 12h-3.5M6.5 12H3M18.4 5.6l-2.5 2.5M8.1 15.9l-2.5 2.5M18.4 18.4l-2.5-2.5M8.1 8.1 5.6 5.6"/>',
+  // Replaces the ★/☆ text characters in the rating row. The filled state is a
+  // class on the element, not a second path — it is the same shape either way.
+  star:       '<path d="M12 3.8l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 10l5.9-.9L12 3.8z"/>',
+};
+
+const ICONS = {
+  has: (name) => Object.prototype.hasOwnProperty.call(GLP_ICON_PATHS, name),
+  // Returns '' for an unknown name rather than an empty <svg>: callers fall
+  // back to other content (e.g. a stored emoji on a user-created menu entry),
+  // and an empty string is what makes `ICONS.of(x) || fallback` work.
+  of: (name, cls = '') => (ICONS.has(name)
+    ? `<svg class="glp-i${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLP_ICON_PATHS[name]}</svg>`
+    : ''),
+};
+// /GLP-SHARED:icons v1
+
 function _scale(arr) { return (Array.isArray(arr) && arr.length) ? arr.map(v => v / 10) : []; }
 
 function fmtClock(s) {
