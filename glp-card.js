@@ -430,6 +430,10 @@ const GLP_ICON_PATHS = {
   wrench:     '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/>',
   refresh:    '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/>',
   circle:     '<circle cx="12" cy="12" r="8"/>',
+  // Waiting/queued. An hourglass rather than a clock: a clock reads as "when",
+  // an hourglass as "not yet" — and this marks an order sitting unconfirmed,
+  // not a time of day.
+  hourglass:  '<path d="M7 3.5h10M7 20.5h10"/><path d="M8 3.5v3.2c0 1.6 1.2 2.9 4 5.3 2.8-2.4 4-3.7 4-5.3V3.5"/><path d="M8 20.5v-3.2c0-1.6 1.2-2.9 4-5.3 2.8 2.4 4 3.7 4 5.3v3.2"/>',
   flask:      '<path d="M10 3.5v6L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5v-6"/><path d="M9 3.5h6"/><path d="M7.4 14h9.2"/>',
   // Not a party popper — a small burst, so it still reads at 16px and keeps
   // the card's tone. Used for the completed-order confirmation.
