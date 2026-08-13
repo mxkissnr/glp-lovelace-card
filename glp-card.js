@@ -793,6 +793,19 @@ const STYLES = `
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  /* Base sizing for every drawn icon inserted via ICONS.of() (GLP-SHARED:icons
+     v1 above) — 1em locks it to whatever font-size token its container already
+     resolves through, so the same icon dropped into a status line vs. a pill
+     vs. a bean row never needs a second, size-specific copy of this rule.
+     currentColor is what lets one icon sit inside a muted label, a semantic
+     green pill or an accent underline with no per-context markup.
+     stroke/fill are NOT optional here: an <svg> with neither defaults to
+     fill:black + stroke:none, which renders every one of these stroke-drawn
+     paths as a solid black blob. Nothing in the test suite can see that, so
+     it fails silently and only in the browser. The rating row deliberately
+     re-enables fill on .on to get a solid star out of the same path. */
+  .glp-i { width: 1em; height: 1em; stroke: currentColor; fill: none; stroke-width: 1.8; vertical-align: -0.15em; flex-shrink: 0; }
+
   ha-card {
     background: transparent;
     border: none;
