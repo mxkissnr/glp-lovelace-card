@@ -906,7 +906,12 @@ const STYLES = `
     margin-bottom: var(--glp-sp-4);
   }
   .tab-btn {
-    flex: 1; background: none; border: none; border-radius: var(--glp-radius-sm);
+    /* Top corners only: a border-bottom on a fully rounded box gets bent
+       around the corner radius with it, which renders the active underline
+       as a shallow curve running out past the tab's own width instead of a
+       straight 2px rule. */
+    flex: 1; background: none; border: none;
+    border-radius: var(--glp-radius-sm) var(--glp-radius-sm) 0 0;
     padding: var(--glp-sp-2) 0; min-height: 36px;
     color: var(--sub);
     font-family: inherit; font-size: var(--glp-fs-1); font-weight: 600;

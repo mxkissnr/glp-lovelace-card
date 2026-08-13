@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **The active tab's underline rendered as a curve running past the tab.** `.tab-btn` carried both a full `border-radius` and the new 2px `border-bottom` marker, and a border on a rounded box is bent around the corner radius with it. The radius is now applied to the top corners only, so the marker is a straight rule. #120
 - **Every drawn icon rendered as a solid black shape.** The icons are stroke-drawn paths carrying no presentation attributes of their own, and the card was missing the base `.glp-i` rule that gives them `fill: none` / `stroke: currentColor` — so they fell back to the SVG default of `fill: black; stroke: none`. Markup, tests and build were all green; the failure existed only in the browser. Added the base rule, plus `test/icon-base-style.test.js`, which asserts the rule exists, sets both properties, and that no icon path carries a competing `fill` attribute of its own. #120
 
 ### Changed
