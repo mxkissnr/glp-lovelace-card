@@ -45,6 +45,7 @@ const BLOCKS = [
   { name: 'GLP-SHARED:safeUrl v1',       start: '// GLP-SHARED:safeUrl v1',       end: '// /GLP-SHARED:safeUrl v1' },
   { name: 'GLP-SHARED:theme-presets v1', start: '// GLP-SHARED:theme-presets v1', end: '// /GLP-SHARED:theme-presets v1' },
   { name: 'GLP-SHARED:machine-icon v1',  start: '// GLP-SHARED:machine-icon v1',  end: '// /GLP-SHARED:machine-icon v1' },
+  { name: 'GLP-SHARED:icons v1',         start: '// GLP-SHARED:icons v1',         end: '// /GLP-SHARED:icons v1' },
   { name: 'GLP-SHARED:contrast v1',      start: '/* GLP-SHARED:contrast v1',      end: '/* /GLP-SHARED:contrast v1 */' },
   { name: 'GLP-SHARED:machine-match v1', start: '// GLP-SHARED:machine-match v1', end: '// /GLP-SHARED:machine-match v1' },
   { name: 'GLP-SHARED:app-theme-lookup v1', start: '// GLP-SHARED:app-theme-lookup v1', end: '// /GLP-SHARED:app-theme-lookup v1' },
@@ -74,7 +75,16 @@ const BLOCKS = [
 // GLP-SHARED block is open on the neighbor repo, and empty it again in the
 // same round that companion PR merges — see #115 for the shape that
 // cleanup PR takes.
-const TRANSITIONAL = {};
+const TRANSITIONAL = {
+  // ACTIVE MERGE WINDOW — the "Instrument" redesign changes three shared
+  // blocks at once, in glp-order-card#91 and glp-lovelace-card#121 together.
+  // CI resolves the neighbour file from its default branch, so until BOTH
+  // land each PR compares its new block against the other repo main's old
+  // one. Remove all three the moment both have merged — tracked as mxkissnr/glp-lovelace-card#122.
+  'GLP-TOKENS v1':          { issue: 'mxkissnr/glp-lovelace-card#122', reason: 'type scale, spacing ladder and --glp-aline land in both cards at once' },
+  'GLP-SHARED:icons v1':    { issue: 'mxkissnr/glp-lovelace-card#122', reason: 'new shared block, absent from the neighbour default branch' },
+  'GLP-SHARED:contrast v1': { issue: 'mxkissnr/glp-lovelace-card#122', reason: '_rgbOf/_contrastOf split out for the accent-line resolution' },
+};
 
 for (const [name, entry] of Object.entries(TRANSITIONAL)) {
   if (!entry || !entry.issue) {
