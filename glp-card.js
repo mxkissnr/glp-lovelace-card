@@ -614,6 +614,53 @@ const STYLES = `
     --glp-ok:      #22c55e;
     --glp-warn:    #eab308;
     --glp-err:     #ef4444;
+    /* --glp-fs-1..6 / --glp-sp-1..6: the six-step type scale and spacing
+       ladder introduced by the "Instrument" redesign (glp-order-card#90,
+       glp-lovelace-card#120). Both cards used to carry a long tail of ad-hoc
+       values — 14 distinct font-sizes in glp-order-card.js, 28 in
+       glp-card.js, stepping in 0.02rem increments — which reads as a UI that
+       was never actually designed. Every font-size, gap and padding resolves
+       through these tokens; a bare literal is a regression.
+       The smallest step is deliberately 0.8125rem and NOT the 0.5–0.6rem the
+       cards used to reach for: the border diet removes boxes as a grouping
+       device, and it must not come back as hairline micro-typography nobody
+       can read.
+       Radii are deliberately NOT part of this ladder. Both cards already
+       resolve every corner through --glp-radius / --glp-radius-sm above, and
+       --glp-radius stays HA-led (var(--ha-card-border-radius)) so a card
+       keeps matching the dashboard it sits on — pinning it to a fixed
+       redesign value would break exactly that. */
+    --glp-fs-1: 0.8125rem;
+    --glp-fs-2: 0.875rem;
+    --glp-fs-3: 1rem;
+    --glp-fs-4: 1.25rem;
+    --glp-fs-5: 1.625rem;
+    --glp-fs-6: 2.25rem;
+    --glp-sp-1: 4px;
+    --glp-sp-2: 8px;
+    --glp-sp-3: 12px;
+    --glp-sp-4: 16px;
+    --glp-sp-5: 24px;
+    --glp-sp-6: 32px;
+    /* --glp-aline: the accent used as a THIN LINE (2px underline, active-row
+       edge marker, focus ring) rather than as a fill. WCAG 1.4.11 asks 3:1
+       for such non-text indicators, and three of the eight curated machine
+       themes miss that as a line against a dark background — measured
+       against the app's dark ground: Ruby Ristretto #7f1d1d 1.88:1,
+       Mulberry Mocha #5b21b6 2.09:1, Twilight Turkish #4338ca 2.38:1. That
+       is a pre-existing gap, not one the redesign introduced; it only became
+       visible because the redesign replaces borders with accent lines as a
+       grouping device.
+       Resolved at runtime by _applySemanticColorContrast() below, because
+       the card's background is whatever the user's HA theme resolved to —
+       a value no stylesheet here can know up front. The accent is blended
+       toward --glp-text until it clears 3:1; themes that already pass are
+       left untouched, so the seven-of-eight common case is byte-exact.
+       FILLS ARE NEVER TOUCHED: --glp-accent-start/-end keep their exact
+       configured hex values, so gradients, buttons and the machine icon
+       render precisely as before. Gradients belong on surfaces, not on
+       hairlines. */
+    --glp-aline: var(--glp-accent-start);
     --glp-series-pres:   #0072b2;
     --glp-series-flow:   #c77000;
     --glp-series-temp:   #c0392b;
@@ -1909,7 +1956,12 @@ class GlpCard extends HTMLElement {
   // through a scratch element's computed style (handles hex/rgb/named/etc —
   // whatever the real cascade actually resolved a custom property to).
   // Returns null if it can't be determined (no DOM, unset value, ...).
-  _luminanceOf(cssColor) {
+  // Resolves a CSS color string to [r, g, b] (0-255) by normalizing it
+  // through a scratch element's computed style, so hex/rgb/named/color-mix
+  // all work — whatever the real cascade actually produced. Split out of
+  // _luminanceOf() (which now builds on it) because --glp-aline has to
+  // BLEND two resolved colors, not merely compare their luminance.
+  _rgbOf(cssColor) {
     if (!cssColor) return null;
     let rgb;
     try {
@@ -1922,9 +1974,25 @@ class GlpCard extends HTMLElement {
     } catch { return null; }
     const m = rgb && rgb.match(/[\d.]+/g);
     if (!m || m.length < 3) return null;
-    const [r, g, b] = m.map(Number);
+    return m.slice(0, 3).map(Number);
+  }
+
+  _luminanceOf(cssColor) {
+    const rgb = this._rgbOf(cssColor);
+    if (!rgb) return null;
+    const [r, g, b] = rgb;
     const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
     return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  // Relative-luminance contrast ratio of two [r,g,b] triples, WCAG 2.x.
+  _contrastOf(rgbA, rgbB) {
+    const lum = ([r, g, b]) => {
+      const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const a = lum(rgbA), b = lum(rgbB);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   }
 
   // Picks the contrast-safe --glp-ok/--glp-warn/--glp-err/--glp-accent-text
@@ -1968,6 +2036,48 @@ class GlpCard extends HTMLElement {
       // moving away from it) — no need to check specific theme values here.
       this.style.setProperty('--glp-accent-text', accentLuminance > 0.179 ? '#000' : '#fff');
     }
+    this._applyAccentLineContrast();
+  }
+
+  // Resolves --glp-aline: the accent as a thin line needs 3:1 against the
+  // card's background (WCAG 1.4.11 non-text contrast), which three of the
+  // eight curated machine themes miss on a dark ground (see the --glp-aline
+  // comment in the GLP-TOKENS block for the measured values).
+  //
+  // Uses the DARKER of the two gradient stops as the worst case, matching
+  // --glp-accent-text's reasoning above: a line can be drawn anywhere along
+  // the gradient, so the weakest stop is what has to clear the bar.
+  //
+  // A theme that already passes is left EXACTLY as configured — this must
+  // not quietly recolour the seven themes that were always fine. Only a
+  // failing stop is blended toward --glp-text (the direction that is
+  // guaranteed to increase contrast against the background, since --glp-text
+  // is itself the high-contrast colour for this ground) in 5% steps, and the
+  // first step that clears 3:1 wins. Stepping rather than solving keeps the
+  // result as close to the configured colour as possible: the accent should
+  // still look like the machine's colour, just legible.
+  _applyAccentLineContrast() {
+    const cs = getComputedStyle(this);
+    const bg = this._rgbOf(cs.getPropertyValue('--glp-bg').trim());
+    const text = this._rgbOf(cs.getPropertyValue('--glp-text').trim());
+    const stops = ['--glp-accent-start', '--glp-accent-end']
+      .map(v => this._rgbOf(cs.getPropertyValue(v).trim()))
+      .filter(Boolean);
+    if (!bg || !text || !stops.length) return;
+    // Worst case = the stop with the lowest contrast against the background.
+    const weakest = stops.reduce((worst, s) =>
+      this._contrastOf(s, bg) < this._contrastOf(worst, bg) ? s : worst, stops[0]);
+    if (this._contrastOf(weakest, bg) >= 3) {
+      this.style.setProperty('--glp-aline', `rgb(${weakest.join(' ')})`);
+      return;
+    }
+    let out = weakest;
+    for (let t = 0.05; t <= 1.0001; t += 0.05) {
+      const mixed = weakest.map((c, i) => Math.round(c + (text[i] - c) * t));
+      out = mixed;
+      if (this._contrastOf(mixed, bg) >= 3) break;
+    }
+    this.style.setProperty('--glp-aline', `rgb(${out.join(' ')})`);
   }
   /* /GLP-SHARED:contrast v1 */
 
