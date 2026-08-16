@@ -75,9 +75,7 @@ const BLOCKS = [
 // GLP-SHARED block is open on the neighbor repo, and empty it again in the
 // same round that companion PR merges — see #115 for the shape that
 // cleanup PR takes.
-const TRANSITIONAL = {
-  'GLP-TOKENS v1': { issue: '#125', reason: 'companion PR mxkissnr/glp-order-card#96 changes --glp-radius-sm/control radii there; not on glp-order-card main yet' },
-};
+const TRANSITIONAL = {};
 
 for (const [name, entry] of Object.entries(TRANSITIONAL)) {
   if (!entry || !entry.issue) {
