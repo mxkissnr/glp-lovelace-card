@@ -1295,7 +1295,7 @@ const STYLES = `
     font-size: var(--glp-fs-1); padding: 7px var(--glp-sp-3); cursor: pointer; min-height: 34px;
     touch-action: manipulation; white-space: nowrap;
   }
-  .ready-by-btn.primary { background: var(--green); color: #06210f; }
+  .ready-by-btn.primary { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
   .ready-by-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--sub); }
 
   /* ── maintenance ── border diet (#120): the row itself is only clickable
@@ -1338,7 +1338,7 @@ const STYLES = `
     font-size: var(--glp-fs-1); padding: 5px var(--glp-sp-3); cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px;
   }
-  .maint-confirm-yes { background: var(--green); color: #06210f; }
+  .maint-confirm-yes { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
   .maint-confirm-no  { background: var(--surface); color: var(--sub); }
   .maint-confirm-no svg { width: 11px; height: 11px; }
 
