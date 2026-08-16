@@ -17,7 +17,7 @@
 
 <p align="center">
   Custom Lovelace card for <a href="https://github.com/mxkissnr/gaggiuino-local-profiler">Gaggiuino Local Profiler</a>.<br/>
-  Premium card with hero metric typography, a clean shot chart and warm layered palette — feels like Decent Espresso or Apple Health, built for espresso. Follows your Home Assistant theme, light or dark.<br/>
+  Premium card with hero metric typography, a clean shot chart and a cool, instrument-panel feel — feels like Decent Espresso or Apple Health, built for espresso. Follows your Home Assistant theme, light or dark.<br/>
   Mobile-first with swipe gestures, dot navigation, custom profile picker and live brewing view — all from the <a href="https://github.com/mxkissnr/glp-integration">GLP HA Integration</a>.
 </p>
 
