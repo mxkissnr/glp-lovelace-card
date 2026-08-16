@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+### Fixed
+- **Controls still resolved their corner radius through the same HA-led `--glp-radius` as the card shell**, so buttons, tiles, inputs and status banners read as rounded as the dashboard's own card radius instead of the flatter, more instrument-like geometry the redesign plan called for (`glp-project/redesign-2026-08/PLAN.md` §2: `--r-sm 4px` controls vs `--r-lg 10px` container — a two-radius system that #120 never actually applied). `--glp-radius-sm` moves from a fixed 8px to the plan's 4px and now covers every control (`.tab-bar`, `.lm-tile`, `.profile-current-btn`, `.profile-opts`/`.profile-opt`, `.brewing-banner`, `.steam-banner`, `.water-low`, `.preheat-ready`, `.ready-by`, `.maint-row`, `.ord-row`); `--glp-radius` stays HA-led and scoped to `.card` only. GLP-TOKENS v1 kept byte-identical with glp-order-card.js. glp-lovelace-card#125
+
 ## [2.20.0] – 2026-08-16
 ### Fixed
 - **The active tab's underline rendered as a curve running past the tab.** `.tab-btn` carried both a full `border-radius` and the new 2px `border-bottom` marker, and a border on a rounded box is bent around the corner radius with it. The radius is now applied to the top corners only, so the marker is a straight rule. #120
