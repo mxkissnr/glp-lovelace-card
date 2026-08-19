@@ -15,7 +15,7 @@ function loadCard() {
   let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
   src = src.replace(
     "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard;"
+    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard; globalThis.metricLineHtml = metricLineHtml;"
   );
 
   class HTMLElement {}

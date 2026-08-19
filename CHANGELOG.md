@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **The Shot Card failed to register at all when bundled alongside the Order Card** (`glp-integration` v1.31.0+), showing "Custom element doesn't exist: glp-card" in the card picker. Both cards are loaded as classic `<script src>` tags in the same HA frontend document and declared identical top-level `const` names (`STRINGS`, `THEME_PRESETS`, `MACHINE_BODY`, `MACHINE_ICON_MINI`, `GLP_ICON_PATHS`, `ICONS`, `STYLES`) — classic scripts share that lexical scope, so whichever card's script loaded second threw `SyntaxError: Identifier already declared` and aborted before `customElements.define()` ran. `glp-card.js` is now wrapped in an IIFE so its top-level declarations no longer leak into the shared document scope; same fix applied in glp-order-card. #141
+
 ### Changed
 - Internal: retry-wrap the CI Playwright Chromium install step (short per-attempt timeout + 3 retries) instead of relying on the bare 8-minute job timeout, so a runner-side apt-mirror hiccup self-heals within one CI run. Job timeout raised to 20 minutes to give the retries room. CI/tooling only, no card behavior change. glp-lovelace-card#138
 

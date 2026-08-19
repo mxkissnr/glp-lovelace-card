@@ -13,7 +13,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 function loadCardHelpers() {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
+  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
+  // #141: glp-card.js is wrapped in an IIFE to avoid a top-level const
+  // collision with the bundled glp-order-card.js, so esc()/safeUrl() no
+  // longer auto-attach to the vm context's global object — expose them
+  // explicitly for this test, same injection approach as __GlpCard below.
+  src = src.replace(
+    "customElements.define('glp-card', GlpCard);",
+    "customElements.define('glp-card', GlpCard); globalThis.esc = esc; globalThis.safeUrl = safeUrl;"
+  );
 
   class HTMLElement {}
 
@@ -24,6 +32,7 @@ function loadCardHelpers() {
     console,
     URL,
   };
+  context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
 
