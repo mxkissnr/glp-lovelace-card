@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev-dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^github\\/codeql-action/"],
+      "groupName": "codeql-action",
+      "description": "github/codeql-action's init/analyze/upload-sarif sub-actions ship from one release train and must stay version-matched, or the Analyze job fails on the mismatch (PR #81, run 31450429543, and #109/#110)."
+    }
+  ]
+}
