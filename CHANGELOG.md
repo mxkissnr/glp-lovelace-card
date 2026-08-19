@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+### Changed
+- Internal: retry-wrap the CI Playwright Chromium install step (short per-attempt timeout + 3 retries) instead of relying on the bare 8-minute job timeout, so a runner-side apt-mirror hiccup self-heals within one CI run. Job timeout raised to 20 minutes to give the retries room. CI/tooling only, no card behavior change. glp-lovelace-card#138
+
 ## [2.20.1] – 2026-08-19
 ### Changed
 - **Switched dependency updates from Dependabot to Renovate** (`renovate.json`), matching the same npm dev-dependency and codeql-action grouping as before, plus automerge for green minor/patch updates (the card has no runtime npm dependencies, only build/lint/test tooling), immediate unscheduled security PRs, weekly lockfile maintenance, and semantic commits matching the existing convention. CI/tooling only, no card behavior change. glp-lovelace-card#133
