@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Switched dependency updates from Dependabot to Renovate** (`renovate.json`), matching the same npm dev-dependency and codeql-action grouping as before, plus automerge for green minor/patch updates (the card has no runtime npm dependencies, only build/lint/test tooling), immediate unscheduled security PRs, weekly lockfile maintenance, and semantic commits matching the existing convention. CI/tooling only, no card behavior change. glp-lovelace-card#133
+
 ### Fixed
 - **GitHub-only CI workflows (CodeQL, dependency review, scorecard) no longer auto-run against the local Gitea mirror.** Gitea Actions picks up `.github/workflows` automatically, so registering the local runner would re-run all of them there too. Each now skips outside `github.com`; the `validate.yml` gate is unaffected and runs on both. glp-lovelace-card#129
 - **Controls still resolved their corner radius through the same HA-led `--glp-radius` as the card shell**, so buttons, tiles, inputs and status banners read as rounded as the dashboard's own card radius instead of the flatter, more instrument-like geometry the redesign plan called for (`glp-project/redesign-2026-08/PLAN.md` §2: `--r-sm 4px` controls vs `--r-lg 10px` container — a two-radius system that #120 never actually applied). `--glp-radius-sm` moves from a fixed 8px to the plan's 4px and now covers every control (`.tab-bar`, `.lm-tile`, `.profile-current-btn`, `.profile-opts`/`.profile-opt`, `.brewing-banner`, `.steam-banner`, `.water-low`, `.preheat-ready`, `.ready-by`, `.maint-row`, `.ord-row`); `--glp-radius` stays HA-led and scoped to `.card` only. GLP-TOKENS v1 kept byte-identical with glp-order-card.js. glp-lovelace-card#125

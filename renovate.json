@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "semanticCommits": "enabled",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "labels": ["security"],
+    "automerge": false
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev-dependencies",
+      "description": "The card itself is a single self-contained JS file with no runtime npm dependencies — everything here is build/lint/test tooling, safe to automerge on green CI.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "dev-dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^github\\/codeql-action/"],
+      "groupName": "codeql-action",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "description": "github/codeql-action's init/analyze/upload-sarif sub-actions ship from one release train and must stay version-matched, or the Analyze job fails on the mismatch (PR #81, run 31450429543, and #109/#110)."
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^github\\/codeql-action/"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "codeql-action"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "excludePackageNames": ["/^github\\/codeql-action/"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "description": "Every other action is CI-only, ungrouped is fine — safe to automerge on green."
+    }
+  ]
+}
