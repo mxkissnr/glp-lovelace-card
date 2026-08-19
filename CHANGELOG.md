@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Changed
-- **Switched dependency updates from Dependabot to Renovate** (`renovate.json`), matching the same npm dev-dependency and codeql-action grouping as before. CI/tooling only, no card behavior change. glp-lovelace-card#133
+- **Switched dependency updates from Dependabot to Renovate** (`renovate.json`), matching the same npm dev-dependency and codeql-action grouping as before, plus automerge for green minor/patch updates (the card has no runtime npm dependencies, only build/lint/test tooling), immediate unscheduled security PRs, weekly lockfile maintenance, and semantic commits matching the existing convention. CI/tooling only, no card behavior change. glp-lovelace-card#133
 
 ### Fixed
 - **GitHub-only CI workflows (CodeQL, dependency review, scorecard) no longer auto-run against the local Gitea mirror.** Gitea Actions picks up `.github/workflows` automatically, so registering the local runner would re-run all of them there too. Each now skips outside `github.com`; the `validate.yml` gate is unaffected and runs on both. glp-lovelace-card#129
