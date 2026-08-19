@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.20.1] – 2026-08-19
 ### Changed
 - **Switched dependency updates from Dependabot to Renovate** (`renovate.json`), matching the same npm dev-dependency and codeql-action grouping as before, plus automerge for green minor/patch updates (the card has no runtime npm dependencies, only build/lint/test tooling), immediate unscheduled security PRs, weekly lockfile maintenance, and semantic commits matching the existing convention. CI/tooling only, no card behavior change. glp-lovelace-card#133
 
