@@ -1549,7 +1549,14 @@ class GlpCard extends HTMLElement {
   // would itself be blocked.
   _bindTouchGuard() {
     this.addEventListener('touchstart', () => { this._touchActive = true; }, { passive: true });
-    const onTouchEnd = () => {
+    // touchend/touchcancel fire once per finger lifted, not once all fingers
+    // are gone (Touch Events spec) — a second finger resting on the card
+    // (accidental edge touch, or a pinch/zoom starting on the card) must keep
+    // the guard held until `touches.length === 0` confirms nothing is left
+    // in contact, or lifting the first finger would trigger the very
+    // mid-gesture rebuild #147 exists to prevent.
+    const onTouchEnd = e => {
+      if (e.touches.length > 0) return;
       this._touchActive = false;
       if (this._pendingRender) this._requestRender();
     };

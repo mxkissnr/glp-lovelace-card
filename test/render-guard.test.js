@@ -181,14 +181,14 @@ test('a render requested while blocked by one flag is still deferred if another 
 // `set hass()`-triggered innerHTML rebuild mid-gesture aborted the WKWebView
 // touch-scroll) ──────────────────────────────────────────────────────────────
 
-test('_bindTouchGuard(): touchstart sets _touchActive, touchend clears it', () => {
+test('_bindTouchGuard(): touchstart sets _touchActive, touchend (last finger) clears it', () => {
   const inst = makeInstance();
   const listeners = bindFakeTouchGuard(inst);
 
   listeners.touchstart();
   assert.equal(inst._touchActive, true);
 
-  listeners.touchend();
+  listeners.touchend({ touches: [] });
   assert.equal(inst._touchActive, false);
 });
 
@@ -197,7 +197,7 @@ test('_bindTouchGuard(): touchcancel also clears _touchActive (e.g. an interrupt
   const listeners = bindFakeTouchGuard(inst);
 
   listeners.touchstart();
-  listeners.touchcancel();
+  listeners.touchcancel({ touches: [] });
   assert.equal(inst._touchActive, false);
 });
 
@@ -211,7 +211,7 @@ test('a render requested while the finger is on the card is deferred, then repla
   assert.equal(renderCount(), 0, 'must not rebuild the DOM while the finger is still on the card');
   assert.equal(inst._pendingRender, true);
 
-  listeners.touchend();
+  listeners.touchend({ touches: [] });
   assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once on touchend');
   assert.equal(inst._pendingRender, false);
 });
@@ -225,8 +225,37 @@ test('touchcancel replays a pending render exactly once, same as touchend', () =
   inst._requestRender();
   assert.equal(renderCount(), 0);
 
-  listeners.touchcancel();
+  listeners.touchcancel({ touches: [] });
   assert.equal(renderCount(), 1);
+});
+
+// A `touchend` fires once per finger lifted, not once all fingers are gone
+// (Touch Events spec) — e.g. an accidental second finger resting near the
+// card's edge while scrolling, or a pinch/zoom starting on the card. Lifting
+// the *first* finger must not release the guard while the second is still in
+// contact, or it reproduces the #147 mid-gesture rebuild for the
+// multi-touch case.
+test('_bindTouchGuard(): a second finger on the card keeps the guard held until touches.length reaches 0', () => {
+  const inst = makeInstance();
+  const renderCount = spyOnRender(inst);
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart(); // first finger down
+  listeners.touchstart(); // second finger down
+  inst._requestRender();
+  assert.equal(renderCount(), 0);
+  assert.equal(inst._pendingRender, true);
+
+  // First finger lifts — one touch point remains in contact.
+  listeners.touchend({ touches: [{}] });
+  assert.equal(inst._touchActive, true, 'guard must stay held while a second finger is still touching');
+  assert.equal(renderCount(), 0, 'must not rebuild the DOM while a finger is still on the card');
+
+  // Second (last) finger lifts — no touch points remain.
+  listeners.touchend({ touches: [] });
+  assert.equal(inst._touchActive, false);
+  assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once once all fingers are gone');
+  assert.equal(inst._pendingRender, false);
 });
 
 test('set hass() pushes during an active touch do not rebuild the DOM, and touchend catches up with the latest hass state', () => {
@@ -249,6 +278,6 @@ test('set hass() pushes during an active touch do not rebuild the DOM, and touch
   inst.hass = latest; // hass push #2, still mid-gesture — still deferred
   assert.equal(renderedWith, null);
 
-  listeners.touchend();
+  listeners.touchend({ touches: [] });
   assert.equal(renderedWith, latest, 'the catch-up render must see the latest hass state, not a stale one');
 });
