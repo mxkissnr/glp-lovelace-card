@@ -41,8 +41,20 @@ function makeInstance() {
   inst._animating = false;
   inst._maintConfirm = null;
   inst._readyByInteracting = false;
+  inst._touchActive = false;
   inst._pendingRender = false;
   return inst;
+}
+
+// Stands in for the constructor's `this.addEventListener(...)` calls (the
+// fake HTMLElement in this vm context has none) so `_bindTouchGuard()` can be
+// exercised directly, same approach as the fake shadowRoot input further
+// below for `_bindReadyByPicker()`.
+function bindFakeTouchGuard(inst) {
+  const listeners = {};
+  inst.addEventListener = (type, handler) => { listeners[type] = handler; };
+  inst._bindTouchGuard();
+  return listeners;
 }
 
 // Replaces `_render` with a counting spy that also clears `_pendingRender`,
@@ -61,7 +73,7 @@ test('_renderBlocked() is false when no guard flag is set', () => {
 });
 
 test('_renderBlocked() is true for each guard flag independently', () => {
-  const flags = ['_profileInteracting', '_animating', '_readyByInteracting'];
+  const flags = ['_profileInteracting', '_animating', '_readyByInteracting', '_touchActive'];
   for (const flag of flags) {
     const inst = makeInstance();
     inst[flag] = true;
@@ -163,4 +175,80 @@ test('a render requested while blocked by one flag is still deferred if another 
   inst._profileInteracting = false;
   inst._requestRender();
   assert.equal(renderCount(), 1);
+});
+
+// ── touch guard (#147 — iOS: page couldn't scroll past the card because a
+// `set hass()`-triggered innerHTML rebuild mid-gesture aborted the WKWebView
+// touch-scroll) ──────────────────────────────────────────────────────────────
+
+test('_bindTouchGuard(): touchstart sets _touchActive, touchend clears it', () => {
+  const inst = makeInstance();
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  assert.equal(inst._touchActive, true);
+
+  listeners.touchend();
+  assert.equal(inst._touchActive, false);
+});
+
+test('_bindTouchGuard(): touchcancel also clears _touchActive (e.g. an interrupted gesture)', () => {
+  const inst = makeInstance();
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  listeners.touchcancel();
+  assert.equal(inst._touchActive, false);
+});
+
+test('a render requested while the finger is on the card is deferred, then replayed exactly once on touchend', () => {
+  const inst = makeInstance();
+  const renderCount = spyOnRender(inst);
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  inst._requestRender();
+  assert.equal(renderCount(), 0, 'must not rebuild the DOM while the finger is still on the card');
+  assert.equal(inst._pendingRender, true);
+
+  listeners.touchend();
+  assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once on touchend');
+  assert.equal(inst._pendingRender, false);
+});
+
+test('touchcancel replays a pending render exactly once, same as touchend', () => {
+  const inst = makeInstance();
+  const renderCount = spyOnRender(inst);
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  inst._requestRender();
+  assert.equal(renderCount(), 0);
+
+  listeners.touchcancel();
+  assert.equal(renderCount(), 1);
+});
+
+test('set hass() pushes during an active touch do not rebuild the DOM, and touchend catches up with the latest hass state', () => {
+  const inst = makeInstance();
+  inst._startOrdersPoll = () => {};
+  inst._loadBeansInfo = () => {};
+  inst._ordersPoll = 1; // already "running" — set hass() must not try to start it again
+  const listeners = bindFakeTouchGuard(inst);
+
+  let renderedWith = null;
+  inst._render = () => { renderedWith = inst._hass; inst._pendingRender = false; };
+
+  listeners.touchstart();
+
+  inst.hass = { states: {}, language: 'en' }; // mid-scroll hass push #1
+  assert.equal(renderedWith, null, 'no rebuild while _touchActive is true');
+  assert.equal(inst._pendingRender, true);
+
+  const latest = { states: {}, language: 'en' };
+  inst.hass = latest; // hass push #2, still mid-gesture — still deferred
+  assert.equal(renderedWith, null);
+
+  listeners.touchend();
+  assert.equal(renderedWith, latest, 'the catch-up render must see the latest hass state, not a stale one');
 });

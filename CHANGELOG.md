@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **On iOS (HA Companion App), the dashboard page could not be scrolled past the Shot Card during a live shot** — any scroll attempt snapped back to the top instead. `set hass()` fires on every state update (several times a second while the live chart is running) and, unless a `_renderBlocked()` guard was active, rebuilt the entire shadow DOM via `innerHTML` on every call — including whatever was currently under the user's finger. WKWebView aborts an in-progress touch-scroll when the DOM subtree under the touch point is replaced mid-gesture; Chrome tolerates it, so the bug was iOS-only. Same root-cause class as #30 and #45. New `_touchActive` guard flag, set via `touchstart`/`touchend`/`touchcancel` listeners (`{ passive: true }`) on the card root element, added to `_renderBlocked()`; a render requested mid-touch is replayed via the existing `_pendingRender` catch-up once the touch ends. `glp-card.js`, `test/render-guard.test.js`. Closes #147
 
 ## [2.20.2] – 2026-08-20
 ### Fixed

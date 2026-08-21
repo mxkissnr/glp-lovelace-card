@@ -1446,6 +1446,9 @@ class GlpCard extends HTMLElement {
     this._readyByInteracting = false;
     this._profileOpen  = false;
     this._animating     = false;
+    // #147: true while the user's finger is in contact with the card
+    // (touchstart..touchend/touchcancel) — see _bindTouchGuard().
+    this._touchActive   = false;
     // set when a render was requested while _renderBlocked() (#72) — replayed
     // once by _requestRender() as soon as the blocking interaction ends,
     // instead of being discarded like it was before.
@@ -1532,9 +1535,27 @@ class GlpCard extends HTMLElement {
         }
       }
     });
+
+    this._bindTouchGuard();
   }
 
   _bindPowerBtn() { /* no-op — handler is delegated on shadowRoot in constructor */ }
+
+  // #147: the card root element (`this`) is never replaced by `_render()` —
+  // only `this.shadowRoot`'s content is — so this is bound once, here, and
+  // survives every re-render exactly like the delegated shadowRoot listener
+  // above. `{ passive: true }` on all three: these must never call
+  // preventDefault(), or the very native scroll this guard exists to protect
+  // would itself be blocked.
+  _bindTouchGuard() {
+    this.addEventListener('touchstart', () => { this._touchActive = true; }, { passive: true });
+    const onTouchEnd = () => {
+      this._touchActive = false;
+      if (this._pendingRender) this._requestRender();
+    };
+    this.addEventListener('touchend', onTouchEnd, { passive: true });
+    this.addEventListener('touchcancel', onTouchEnd, { passive: true });
+  }
 
   _bindProfilePicker() {
     const toggle = this.shadowRoot.querySelector('[data-action="toggle-profile"]');
@@ -2321,7 +2342,7 @@ class GlpCard extends HTMLElement {
   // flag had to be added to both by hand or a render would silently blow
   // away focus/open state, exactly as happened in #64/#66/#68).
   _renderBlocked() {
-    return !!(this._profileInteracting || this._animating || this._maintConfirm || this._readyByInteracting);
+    return !!(this._profileInteracting || this._animating || this._maintConfirm || this._readyByInteracting || this._touchActive);
   }
 
   // Renders now if nothing is blocking, otherwise defers via `_pendingRender`
