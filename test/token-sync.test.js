@@ -75,13 +75,7 @@ const BLOCKS = [
 // GLP-SHARED block is open on the neighbor repo, and empty it again in the
 // same round that companion PR merges — see #115 for the shape that
 // cleanup PR takes.
-const TRANSITIONAL = {
-  // ACTIVE MERGE WINDOW — GaggiMate icon variant lands in both cards at
-  // once, in glp-lovelace-card#149 and glp-order-card#121 together. Remove
-  // both the moment both have merged.
-  'GLP-SHARED:machine-icon v1':     { issue: 'mxkissnr/glp-order-card#121', reason: 'GaggiMate puck/chrome-housing geometry added, not on glp-order-card main yet' },
-  'GLP-SHARED:app-theme-lookup v1': { issue: 'mxkissnr/glp-order-card#121', reason: '_appMachineEntry()/_appMachineType() split out for machine-type resolution, not on glp-order-card main yet' },
-};
+const TRANSITIONAL = {};
 
 for (const [name, entry] of Object.entries(TRANSITIONAL)) {
   if (!entry || !entry.issue) {
