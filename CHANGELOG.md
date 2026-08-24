@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Bumped the `github/codeql-action` digest pin to `db488dd`** (Renovate, #152). CI/tooling only, no card behavior change.
 
 ## [2.20.3] – 2026-08-22
 ### Fixed
