@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [2.20.4] – 2026-08-25
 ### Fixed
 - **The card could freeze permanently on Android if a touch guard flag never cleared.** `_touchActive` (added for #147) is only reset by `touchend`/`touchcancel`; if the WebView failed to deliver either for some finger (ghost/interrupted touch), the card was blocked from re-rendering for the rest of the session — matching reports of the card sometimes not showing up at all. `_bindTouchGuard()` now also starts a short safety-net timer on `touchstart` that force-clears `_touchActive` (and flushes any pending render) if no matching end event arrives; a real `touchend`/`touchcancel` cancels it as usual. `glp-card.js`, `test/render-guard.test.js`. Closes #155
 
