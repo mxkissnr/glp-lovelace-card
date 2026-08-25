@@ -42,6 +42,8 @@ function makeInstance() {
   inst._maintConfirm = null;
   inst._readyByInteracting = false;
   inst._touchActive = false;
+  inst._touchGuardTimer = null;
+  inst._touchGuardTimeoutMs = 1000;
   inst._pendingRender = false;
   return inst;
 }
@@ -256,6 +258,44 @@ test('_bindTouchGuard(): a second finger on the card keeps the guard held until 
   assert.equal(inst._touchActive, false);
   assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once once all fingers are gone');
   assert.equal(inst._pendingRender, false);
+});
+
+// #155: Android WebView can occasionally fail to deliver a matching
+// touchend/touchcancel (ghost/interrupted touch). Without a safety net,
+// _touchActive would stay true forever, permanently blocking every future
+// render — matching the reported "card sometimes isn't shown at all".
+test('_bindTouchGuard(): a watchdog timer force-clears _touchActive if touchend never arrives', async () => {
+  const inst = makeInstance();
+  inst._touchGuardTimeoutMs = 10; // real, short timer instead of mocking globals inside the vm sandbox
+  const renderCount = spyOnRender(inst);
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  inst._requestRender();
+  assert.equal(renderCount(), 0);
+  assert.equal(inst._pendingRender, true);
+
+  // No touchend/touchcancel ever arrives -- simulate a lost event.
+  await new Promise(resolve => setTimeout(resolve, 30));
+
+  assert.equal(inst._touchActive, false, 'watchdog must clear the stuck guard flag');
+  assert.equal(renderCount(), 1, 'the deferred render must be flushed once the watchdog fires');
+});
+
+test('_bindTouchGuard(): a real touchend cancels the watchdog timer (no double-clear/double-render)', async () => {
+  const inst = makeInstance();
+  inst._touchGuardTimeoutMs = 10;
+  const renderCount = spyOnRender(inst);
+  const listeners = bindFakeTouchGuard(inst);
+
+  listeners.touchstart();
+  listeners.touchend({ touches: [] });
+  assert.equal(inst._touchActive, false);
+
+  // Advancing past the watchdog window must not fire a second, stale
+  // clear/render now that the real touchend already handled it.
+  await new Promise(resolve => setTimeout(resolve, 30));
+  assert.equal(renderCount(), 0, 'no render was ever pending, so nothing should have fired');
 });
 
 test('set hass() pushes during an active touch do not rebuild the DOM, and touchend catches up with the latest hass state', () => {
