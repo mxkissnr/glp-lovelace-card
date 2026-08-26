@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.20.5] – 2026-08-26
+### Fixed
+- **The "machine on since" uptime badge reset to 0:00 on every Home Assistant restart, even though the machine stayed physically on.** It derived `_machineOnSince` from `switch.*.last_changed`; a HA core restart rebuilds the state machine, so the switch's `last_changed` jumps to the restart/reconnect time instead of keeping the real original power-on timestamp. The preheat progress bar was unaffected — it already reads `preheat_elapsed`/`preheat_remaining`, which the add-on persists to disk and re-serves correctly across restarts. `_machineOnSince` is now derived from that same restart-safe `preheat_elapsed` sensor instead. `glp-card.js`. Closes #158
+
 ## [2.20.4] – 2026-08-25
 ### Fixed
 - **The card could freeze permanently on Android if a touch guard flag never cleared.** `_touchActive` (added for #147) is only reset by `touchend`/`touchcancel`; if the WebView failed to deliver either for some finger (ghost/interrupted touch), the card was blocked from re-rendering for the rest of the session — matching reports of the card sometimes not showing up at all. `_bindTouchGuard()` now also starts a short safety-net timer on `touchstart` that force-clears `_touchActive` (and flushes any pending render) if no matching end event arrives; a real `touchend`/`touchcancel` cancels it as usual. `glp-card.js`, `test/render-guard.test.js`. Closes #155
