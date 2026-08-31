@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Chore
+- **Raised the coverage threshold from 53% to 59%** to match the real measured 61.27% baseline instead of a stale, wider-than-necessary floor. Closes #165
 
 ## [2.20.5] – 2026-08-26
 ### Fixed
