@@ -15,5 +15,8 @@ Working rules for this repo (mirrors the app repo's rules; full rationale lives 
   model spelled out: `Co-Authored-By: Claude <model name> <noreply@anthropic.com>`.
 - **XSS**: card renders HA data into DOM — always escape/textContent, never
   unsanitized innerHTML from entity attributes.
+- **PR AI disclosure** — every PR fills the PR template's "AI assistance disclosure" section
+  (`none`/`assisted`/`substantial`/`generated` + tool/model); every AI-assisted commit carries
+  a `Co-Authored-By:` trailer. CI enforces it. See CONTRIBUTING.md.
 - **Releases** end at the GitHub release + HACS; no HA deploy (Max installs himself).
 - Screenshots: `npm run screenshot` regenerates docs assets when the UI changes.
