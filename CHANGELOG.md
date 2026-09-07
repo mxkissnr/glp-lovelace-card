@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Live tab now shows a descaling banner while the machine is running its descale program**, matching the existing brewing/steam banners. Reads the new `is_descaling` attribute on the `Brewing` binary sensor (`glp-integration#186`), always exposed regardless of the brew (`is_on`) state itself, so the banner shows up even when no shot is running. New `.descaling-banner` (own droplet+mineral-crystal icon, `--accent` color family matching this card's existing "due maintenance" tokens, slow icon-pulse animation distinct from the static brewing/steam banners) plus `descaling_mode` translation keys in all 6 languages. `glp-card.js`, `test/e2e/smoke.test.mjs`. Closes #170
+
 ### Chore
 - **Raised the coverage threshold from 53% to 59%** to match the real measured 61.27% baseline instead of a stale, wider-than-necessary floor. Closes #165
 

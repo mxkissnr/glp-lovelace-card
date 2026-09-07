@@ -24,7 +24,7 @@ import { startServer } from '../../scripts/e2e-harness.mjs';
 
 const PREFIX = 'sensor.gaggiuino_local_profiler_';
 
-function buildMockStates({ switchState = 'on', readyByTarget = 'unknown' } = {}) {
+function buildMockStates({ switchState = 'on', readyByTarget = 'unknown', isDescaling = false } = {}) {
   const now = Date.now();
   return {
     [PREFIX + 'machine_status']: {
@@ -38,6 +38,12 @@ function buildMockStates({ switchState = 'on', readyByTarget = 'unknown' } = {})
       state: switchState,
       last_changed: new Date(now - 3600 * 1000).toISOString(),
       attributes: {},
+    },
+    // #170: is_descaling lives on the Brewing binary sensor (glp-integration#186),
+    // always present regardless of the brew (is_on) state itself.
+    'binary_sensor.gaggiuino_local_profiler_brewing': {
+      state: 'off',
+      attributes: { is_descaling: isDescaling },
     },
     [PREFIX + 'preheat_ready_by_target_at']:      { state: readyByTarget, attributes: {} },
     [PREFIX + 'preheat_planned_switch_on_at']:    { state: 'unknown', attributes: {} },
@@ -151,6 +157,35 @@ test('a concurrent hass update does not clobber an in-progress ready-by pick', a
     assert.equal(state.pendingTargetAt, true, 'pending target survives the concurrent hass push');
     assert.equal(state.readySetShown, true, 'still shows the set/cancel view, not reverted to the picker');
     assert.equal(state.pickerShown, false);
+    assert.deepEqual(pageErrors, []);
+  } finally {
+    await tearDown(ctx);
+  }
+});
+
+// #170: the Brewing binary sensor's `is_descaling` attribute (glp-integration#186)
+// drives a dedicated banner, same shape as the existing steam-mode banner but
+// its own class/icon/copy.
+test('is_descaling on the Brewing entity shows the descaling banner', async () => {
+  const ctx = await setUpCard(buildMockStates({ isDescaling: true }), '.descaling-banner');
+  const { page, pageErrors } = ctx;
+  try {
+    const bannerText = await page.evaluate(() =>
+      document.querySelector('glp-card').shadowRoot.querySelector('.descaling-banner').textContent.trim());
+    assert.equal(bannerText, 'Entkalkung läuft');
+    assert.deepEqual(pageErrors, []);
+  } finally {
+    await tearDown(ctx);
+  }
+});
+
+test('the descaling banner is absent when is_descaling is false', async () => {
+  const ctx = await setUpCard(buildMockStates({ isDescaling: false }), '.shot-profile');
+  const { page, pageErrors } = ctx;
+  try {
+    const bannerShown = await page.evaluate(() =>
+      !!document.querySelector('glp-card').shadowRoot.querySelector('.descaling-banner'));
+    assert.equal(bannerShown, false);
     assert.deepEqual(pageErrors, []);
   } finally {
     await tearDown(ctx);

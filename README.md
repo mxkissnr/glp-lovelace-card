@@ -93,6 +93,7 @@ Per-machine colour theme (`theme`/`accent_color`/`accent_gradient`) syncs automa
 - **Profile selector** — custom pill-button picker (no native `<select>`) to switch the active brew profile; stays open across HA state updates; auto-detected via entity prefix; requires `select.*_profile` from [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.9.0+; hidden when unavailable
 - **Maintenance tab** — tab bar (☕ Shot | 🔧 Wartung) appears automatically when GLP maintenance sensors exist; shows all five machine maintenance tasks plus per-grinder cleaning schedules with status pill, days/shots since last service and a colored progress bar; ⚠ on the tab label when anything is due; **tap a task to mark it done** (with a confirmation step) via the `gaggiuino_profiler.maintenance_done` service — requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.11.0+
 - **Steam mode banner** — shown automatically when steam switch is active
+- **Descaling banner** — shown automatically while the machine is running its descale program, with its own icon and pulse animation; reads the `is_descaling` attribute on the Brewing binary sensor, requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.32.0+
 - **Water level** in footer (💧 XX%); warning banner when below 20%
 - Last shot: profile name, coffee bean, rating (★), duration, yield, brew ratio, avg pressure, temp, target temp
 - **Bean info enrichment** — origin flag, variety and roast age next to the bean name, fetched from the coffee library via the integration proxy (`GET /api/glp/library/beans-info`; requires [GLP Integration](https://github.com/mxkissnr/glp-integration) v1.16.0+ and GLP app v1.96.0+; hidden automatically on older installations)
@@ -106,7 +107,7 @@ The card reads the following entities (with default `entity_prefix`):
 
 | Entity | Description |
 |---|---|
-| `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state; attributes: `datapoints`, `profile_name`, `seq` during active shot (v1.9.4+) |
+| `binary_sensor.gaggiuino_local_profiler_brewing` | Live brewing state; attributes: `datapoints`, `profile_name`, `seq` during active shot (v1.9.4+); `is_descaling` always present, drives the descaling banner (v1.32.0+) |
 | `binary_sensor.gaggiuino_local_profiler_preheat_ready` | Machine warmed up |
 | `binary_sensor.gaggiuino_local_profiler_steam_switch` | Steam mode active *(optional)* |
 | `sensor.gaggiuino_local_profiler_preheat_elapsed` | Warmup elapsed (s) |
