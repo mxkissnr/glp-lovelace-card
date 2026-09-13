@@ -2786,7 +2786,7 @@ class GlpCard extends HTMLElement {
     const scoreCls = score == null ? '' : score >= 80 ? 'high' : score >= 55 ? 'mid' : 'low';
     const verdictWord = { high: T('verdict_high'), mid: T('verdict_mid'), low: T('verdict_low') }[scoreCls];
     const scoreBadge = score != null
-      ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${score}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>`
+      ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${esc(score)}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>`
       : '';
 
     const shotSectionHtml = !brewing && !showMaint ? `
