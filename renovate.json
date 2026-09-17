@@ -44,10 +44,12 @@
     },
     {
       "matchManagers": ["github-actions"],
-      "excludePackageNames": ["/^github\\/codeql-action/"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
-      "description": "Every other action is CI-only, ungrouped is fine — safe to automerge on green."
+      "description": "Every other action is CI-only, ungrouped is fine — safe to automerge on green.",
+      "matchPackageNames": [
+        "!/^github\\/codeql-action/"
+      ]
     }
   ]
 }
