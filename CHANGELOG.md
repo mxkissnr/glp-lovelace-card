@@ -7,9 +7,6 @@
 - **The card no longer fails with "Custom element doesn't exist" when it loads before Home Assistant's frontend has finished starting up.** Closes #184
 - **The shot score in the verdict badge is now HTML-escaped like every other value the card renders**, closing the one place where a value arriving from the app was interpolated into the card's markup unescaped. Not reachable with the current app, which always sends a number — this is defense in depth. Closes #175
 
-### Chore
-- **Untracked the `graphify-out` symlink and hardened `.gitignore`** (it was committed as a symlink; `graphify-out/` only matches directories, so it slipped through). Also ignores `.env*`, `*.pem`, `*.key`, `.DS_Store`. Closes #186
-
 ## [2.21.0] – 2026-09-07
 ### Added
 - **Live tab now shows a descaling banner while the machine is running its descale program**, matching the existing brewing/steam banners. Reads the new `is_descaling` attribute on the `Brewing` binary sensor (`glp-integration#186`), always exposed regardless of the brew (`is_on`) state itself, so the banner shows up even when no shot is running. New `.descaling-banner` (own droplet+mineral-crystal icon, `--accent` color family matching this card's existing "due maintenance" tokens, slow icon-pulse animation distinct from the static brewing/steam banners) plus `descaling_mode` translation keys in all 6 languages. `glp-card.js`, `test/e2e/smoke.test.mjs`. Closes #170
