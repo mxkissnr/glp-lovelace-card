@@ -27,7 +27,7 @@ function loadGlpCard() {
   );
 
   class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {} }, window: {}, console, URL };
+  const context = { HTMLElement, customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } }, window: {}, console, URL };
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
