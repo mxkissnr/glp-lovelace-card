@@ -2880,7 +2880,10 @@ class GlpCard extends HTMLElement {
   static getStubConfig() { return { entity_prefix: 'sensor.gaggiuino_local_profiler_' }; }
 }
 
-customElements.define('glp-card', GlpCard);
+// Deferred until HA's scoped-registry polyfill has replaced customElements. #184
+const define = () => customElements.get('glp-card') || customElements.define('glp-card', GlpCard);
+if (customElements.get('home-assistant')) define();
+else customElements.whenDefined('home-assistant').then(define);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
