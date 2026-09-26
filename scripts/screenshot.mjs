@@ -175,6 +175,8 @@ const PAGE_HTML = `<!doctype html>
     max-width: 420px; margin: 0 auto; padding: 32px 20px;
 ${THEME_VARS}  }
 </style>
+<!-- Stands in for HA's frontend so the card's deferred define (#184) fires. -->
+<script>customElements.define('home-assistant', class extends HTMLElement {});</script>
 <script type="module" src="/glp-card.js"></script>
 </head>
 <body>
