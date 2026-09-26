@@ -55,6 +55,8 @@ function harnessHtml(mockStates) {
 <html><head><meta charset="utf-8"></head>
 <body>
 <div id="wrap"><glp-card id="card"></glp-card></div>
+<!-- Stands in for HA's frontend so the card's deferred define (#184) fires. -->
+<script>customElements.define('home-assistant', class extends HTMLElement {});</script>
 <script type="module" src="/glp-card.js"></script>
 <script type="module">
   const mockStates = ${JSON.stringify(mockStates)};

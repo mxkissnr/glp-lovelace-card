@@ -39,7 +39,7 @@ function loadGlpCard() {
   const fakeDocument = { createElement() { return { style: makeStyleStub(), remove() {} }; } };
   const context = {
     HTMLElement,
-    customElements: { define() {} },
+    customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } },
     window: {},
     document: fakeDocument,
     getComputedStyle(el) { return el.style; },

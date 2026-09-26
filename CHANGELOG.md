@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **The card no longer fails with "Custom element doesn't exist" when it loads before Home Assistant's frontend has finished starting up.** Closes #184
 - **The shot score in the verdict badge is now HTML-escaped like every other value the card renders**, closing the one place where a value arriving from the app was interpolated into the card's markup unescaped. Not reachable with the current app, which always sends a number — this is defense in depth. Closes #175
 
 ## [2.21.0] – 2026-09-07
