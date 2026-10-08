@@ -12,6 +12,7 @@ import { T, SUPPORTED_LANGS, setLang, getLang } from './i18n.ts';
 import { roastAgeDays, esc, safeUrl, parseTs, THEME_PRESETS, HEX_COLOR_RE } from './helpers.ts';
 import { MACHINE_BODY, MACHINE_ICON_MINI, ICONS } from './icons.ts';
 import { fmtUptime, buildShotChart, buildLiveChart, chartLegendHtml, metricLineHtml } from './charts.ts';
+import type { MachineEntry, ThemeStops, Rgb } from './types.ts';
 const GLP_CARD_VERSION = '2.21.1';
 
 // ─── card ──────────────────────────────────────────────────────────────────────
@@ -414,16 +415,16 @@ class GlpCard extends HTMLElement {
   // mxkissnr/glp-order-card#97) so both read the one resolved entry instead
   // of duplicating the lookup. Kept byte-identical between glp-card.js and
   // glp-order-card.js.
-  _appMachineEntry() {
+  _appMachineEntry(): MachineEntry | null | undefined {
     if (!this._hass) return null;
     const statusIds = Object.keys(this._hass.states).filter(id => id.endsWith('_machine_status'));
-    let machines = null;
+    let machines: MachineEntry[] | null = null;
     for (const id of statusIds) {
       const list = this._hass.states[id]?.attributes?.machines;
       if (Array.isArray(list)) { machines = list; break; }
     }
     if (!machines) return null;
-    let entry = null;
+    let entry: MachineEntry | null | undefined = null;
     if (this._config?.machine) {
       const needle = String(this._config.machine).toLowerCase();
       entry = machines.find(m =>
@@ -433,11 +434,11 @@ class GlpCard extends HTMLElement {
     return entry;
   }
 
-  _appMachineTheme() {
+  _appMachineTheme(): ThemeStops | null {
     const theme = this._appMachineEntry()?.theme;
     if (!theme) return null;
     if (typeof theme.preset === 'string' && Object.prototype.hasOwnProperty.call(THEME_PRESETS, theme.preset)) {
-      return THEME_PRESETS[theme.preset];
+      return THEME_PRESETS[theme.preset as keyof typeof THEME_PRESETS];
     }
     // Inline literal regex (not each file's own HEX_COLOR_RE/_validHex) so
     // this shared block stays byte-identical regardless of what either
@@ -451,7 +452,7 @@ class GlpCard extends HTMLElement {
   // Machine type ('gaggiuino' | 'gaggimate') for MACHINE_BODY/MACHINE_ICON_MINI's
   // badge shape. Defaults to 'gaggiuino' when unresolved/unrecognized, same
   // backward-compatible default MACHINE_BODY itself falls back to.
-  _appMachineType() {
+  _appMachineType(): 'gaggiuino' | 'gaggimate' {
     const type = this._appMachineEntry()?.type;
     return type === 'gaggimate' ? 'gaggimate' : 'gaggiuino';
   }
@@ -568,7 +569,7 @@ class GlpCard extends HTMLElement {
       const needle = String(this._config.machine).toLowerCase();
       const needleSlug = needle.replace(/\s+/g, '_');
       const matched = candidates.find(id =>
-        this._hass.states[id]?.attributes?.friendly_name?.toLowerCase().includes(needle) ||
+        (this._hass!.states[id]?.attributes?.friendly_name as string)?.toLowerCase().includes(needle) ||
         id.toLowerCase().includes(needleSlug));
       // /GLP-SHARED:machine-match v1
       if (matched) return matched.replace(/machine_status$/, '');
@@ -696,34 +697,34 @@ class GlpCard extends HTMLElement {
   // all work — whatever the real cascade actually produced. Split out of
   // _luminanceOf() (which now builds on it) because --glp-aline has to
   // BLEND two resolved colors, not merely compare their luminance.
-  _rgbOf(cssColor) {
+  _rgbOf(cssColor: string): Rgb | null {
     if (!cssColor) return null;
-    let rgb;
+    let rgb: string | undefined;
     try {
       const probe = document.createElement('span');
       probe.style.cssText = 'display:none';
       probe.style.color = cssColor;
-      this.shadowRoot.appendChild(probe);
+      this.shadowRoot!.appendChild(probe);
       rgb = getComputedStyle(probe).color;
       probe.remove();
     } catch { return null; }
     const m = rgb && rgb.match(/[\d.]+/g);
     if (!m || m.length < 3) return null;
-    return m.slice(0, 3).map(Number);
+    return m.slice(0, 3).map(Number) as Rgb;
   }
 
-  _luminanceOf(cssColor) {
+  _luminanceOf(cssColor: string): number | null {
     const rgb = this._rgbOf(cssColor);
     if (!rgb) return null;
     const [r, g, b] = rgb;
-    const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const lin = (c: number) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
     return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   }
 
   // Relative-luminance contrast ratio of two [r,g,b] triples, WCAG 2.x.
-  _contrastOf(rgbA, rgbB) {
-    const lum = ([r, g, b]) => {
-      const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  _contrastOf(rgbA: Rgb, rgbB: Rgb): number {
+    const lum = ([r, g, b]: Rgb) => {
+      const lin = (c: number) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
       return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
     };
     const a = lum(rgbA), b = lum(rgbB);
@@ -762,8 +763,8 @@ class GlpCard extends HTMLElement {
     // stops equal, so this reduces to the original single-value check.
     const startLuminance = this._luminanceOf(getComputedStyle(this).getPropertyValue('--glp-accent-start').trim());
     const endLuminance    = this._luminanceOf(getComputedStyle(this).getPropertyValue('--glp-accent-end').trim());
-    const accentLuminance = [startLuminance, endLuminance].filter(v => v != null)
-      .reduce((min, v) => (min == null || v < min ? v : min), null);
+    const accentLuminance = [startLuminance, endLuminance].filter((v): v is number => v != null)
+      .reduce<number | null>((min, v) => (min == null || v < min ? v : min), null);
     if (accentLuminance != null) {
       // Pure #000/#fff at the same 0.179 split is a mathematical guarantee
       // of >=4.58:1 against ANY accent color (both text colors measure
@@ -791,24 +792,24 @@ class GlpCard extends HTMLElement {
   // first step that clears 3:1 wins. Stepping rather than solving keeps the
   // result as close to the configured colour as possible: the accent should
   // still look like the machine's colour, just legible.
-  _applyAccentLineContrast() {
+  _applyAccentLineContrast(): void {
     const cs = getComputedStyle(this);
     const bg = this._rgbOf(cs.getPropertyValue('--glp-bg').trim());
     const text = this._rgbOf(cs.getPropertyValue('--glp-text').trim());
-    const stops = ['--glp-accent-start', '--glp-accent-end']
+    const stops = (['--glp-accent-start', '--glp-accent-end']
       .map(v => this._rgbOf(cs.getPropertyValue(v).trim()))
-      .filter(Boolean);
+      .filter(Boolean)) as Rgb[];
     if (!bg || !text || !stops.length) return;
     // Worst case = the stop with the lowest contrast against the background.
     const weakest = stops.reduce((worst, s) =>
-      this._contrastOf(s, bg) < this._contrastOf(worst, bg) ? s : worst, stops[0]);
+      this._contrastOf(s, bg) < this._contrastOf(worst, bg) ? s : worst, stops[0]!);
     if (this._contrastOf(weakest, bg) >= 3) {
       this.style.setProperty('--glp-aline', `rgb(${weakest.join(' ')})`);
       return;
     }
     let out = weakest;
     for (let t = 0.05; t <= 1.0001; t += 0.05) {
-      const mixed = weakest.map((c, i) => Math.round(c + (text[i] - c) * t));
+      const mixed = weakest.map((c, i) => Math.round(c + (text[i]! - c) * t)) as Rgb;
       out = mixed;
       if (this._contrastOf(mixed, bg) >= 3) break;
     }

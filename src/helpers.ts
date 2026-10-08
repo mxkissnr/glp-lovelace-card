@@ -1,40 +1,37 @@
-// @ts-nocheck
-// TODO(#180 typing slice): shared blocks are typed in lockstep with the Order Card.
 // Pure helpers shared with glp-order-card.js through the GLP-SHARED marker
 // blocks (test/token-sync.test.js), split out of glp-card.ts (#180). The
-// marker pairs must stay byte-identical with the neighbor copy, so any type
-// annotation would have to sit outside them; the file stays unchecked until
-// both cards are typed in the same lockstep slice.
+// marker pairs must stay byte-identical with the neighbor copy, so each type
+// annotation sits outside its marker pair.
 
 // ─── bean helpers ────────────────────────────────────────────────────────────
 
 // Days since roast; accepts DD.MM.YYYY and YYYY-MM-DD (same as the GLP app)
-function roastAgeDays(str) {
+function roastAgeDays(str: string | null | undefined): number | null {
   if (!str || typeof str !== 'string') return null;
-  let d = null;
-  let m = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
+  let d: Date | null = null;
+  let m: RegExpMatchArray | null = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
   if (m) {
-    const y = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
-    d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
+    const y = m[3]!.length === 2 ? 2000 + parseInt(m[3]!) : parseInt(m[3]!);
+    d = new Date(y, parseInt(m[2]!) - 1, parseInt(m[1]!));
   } else {
     m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    if (m) d = new Date(parseInt(m[1]!), parseInt(m[2]!) - 1, parseInt(m[3]!));
   }
-  if (!d || isNaN(d)) return null;
+  if (!d || isNaN(d as unknown as number)) return null;
   const days = Math.floor((Date.now() - d.getTime()) / 86400000);
   return days >= 0 && days <= 730 ? days : null;
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function esc(s) {
+function esc(s: unknown): string {
   // GLP-SHARED:esc v1 — body kept byte-identical with glp-order-card.js's _esc()
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   // /GLP-SHARED:esc v1
 }
 
-function safeUrl(url) {
+function safeUrl(url: string | null | undefined): string | null {
   // GLP-SHARED:safeUrl v1 — body kept byte-identical with glp-order-card.js's
   // _safeUrl() (#74 — that copy had drifted to returning the raw input,
   // losing this reasoning; re-sync it from here)
@@ -47,17 +44,17 @@ function safeUrl(url) {
   // /GLP-SHARED:safeUrl v1
 }
 
-function parseTs(val) {
+function parseTs(val: string | number | null | undefined): Date | null {
   if (!val && val !== 0) return null;
   if (typeof val === 'number') return new Date(val > 1e10 ? val : val * 1000);
-  return new Date(val);
+  return new Date(val as string);
 }
 
-function downsample(arr, maxPts) {
+function downsample(arr: number[] | null | undefined, maxPts: number): number[] {
   if (!arr || arr.length <= maxPts) return arr || [];
   const step = Math.ceil(arr.length / maxPts);
   const out  = arr.filter((_, i) => i % step === 0);
-  if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
+  if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]!);
   return out;
 }
 
