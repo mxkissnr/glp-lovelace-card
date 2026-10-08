@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
 
 ## [2.21.1] – 2026-09-26
 ### Fixed
