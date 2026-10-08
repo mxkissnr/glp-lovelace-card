@@ -9,7 +9,7 @@
 // stub sufficient to drive the method end-to-end without a full custom-
 // element/shadow-DOM constructor. Real color normalization (hex/named-color
 // -> rgb()) is exactly what the browser's engine does and is NOT
-// re-implemented here — that layer is covered by scripts/screenshot.mjs's
+// re-implemented here — that layer is covered by scripts/screenshot.mts's
 // real Playwright renders instead; this test only proves the
 // luminance-decision logic itself fires.
 'use strict';
