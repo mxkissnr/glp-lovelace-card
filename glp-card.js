@@ -4,7 +4,7 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-  // ../../../fresh/node_modules/@lit/reactive-element/css-tag.js
+  // node_modules/@lit/reactive-element/css-tag.js
   var t = globalThis;
   var e = t.ShadowRoot && (void 0 === t.ShadyCSS || t.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype;
   var s = /* @__PURE__ */ Symbol();
@@ -44,7 +44,7 @@
     return r(e6);
   })(t5) : t5;
 
-  // ../../../fresh/node_modules/@lit/reactive-element/reactive-element.js
+  // node_modules/@lit/reactive-element/reactive-element.js
   var { is: i2, defineProperty: e2, getOwnPropertyDescriptor: h, getOwnPropertyNames: r2, getOwnPropertySymbols: o2, getPrototypeOf: n2 } = Object;
   var a = globalThis;
   var c2 = a.trustedTypes;
@@ -269,7 +269,7 @@
   };
   y.elementStyles = [], y.shadowRootOptions = { mode: "open" }, y[d("elementProperties")] = /* @__PURE__ */ new Map(), y[d("finalized")] = /* @__PURE__ */ new Map(), p?.({ ReactiveElement: y }), (a.reactiveElementVersions ??= []).push("2.1.2");
 
-  // ../../../fresh/node_modules/lit-html/lit-html.js
+  // node_modules/lit-html/lit-html.js
   var t2 = globalThis;
   var i3 = /* @__PURE__ */ __name((t5) => t5, "i");
   var s2 = t2.trustedTypes;
@@ -549,7 +549,7 @@
     return h3._$AI(t5), h3;
   }, "D");
 
-  // ../../../fresh/node_modules/lit-element/lit-element.js
+  // node_modules/lit-element/lit-element.js
   var s3 = globalThis;
   var i4 = class extends y {
     static {
@@ -581,7 +581,7 @@
   o4?.({ LitElement: i4 });
   (s3.litElementVersions ??= []).push("4.2.2");
 
-  // ../../../fresh/node_modules/lit-html/directive.js
+  // node_modules/lit-html/directive.js
   var t3 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
   var e4 = /* @__PURE__ */ __name((t5) => (...e6) => ({ _$litDirective$: t5, values: e6 }), "e");
   var i5 = class {
@@ -604,7 +604,7 @@
     }
   };
 
-  // ../../../fresh/node_modules/lit-html/directives/unsafe-html.js
+  // node_modules/lit-html/directives/unsafe-html.js
   var e5 = class extends i5 {
     static {
       __name(this, "e");
@@ -625,7 +625,7 @@
   e5.directiveName = "unsafeHTML", e5.resultType = 1;
   var o5 = e4(e5);
 
-  // ../../../fresh/node_modules/lit-html/directives/unsafe-svg.js
+  // node_modules/lit-html/directives/unsafe-svg.js
   var t4 = class extends e5 {
     static {
       __name(this, "t");
@@ -634,7 +634,7 @@
   t4.directiveName = "unsafeSVG", t4.resultType = 2;
   var o6 = e4(t4);
 
-  // ../../../fresh/node_modules/lit-html/directives/if-defined.js
+  // node_modules/lit-html/directives/if-defined.js
   var o7 = /* @__PURE__ */ __name((o8) => o8 ?? A, "o");
 
   // src/styles.ts
