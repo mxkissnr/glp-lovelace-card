@@ -11,6 +11,9 @@ function loadCard({ expose = [], context = {} } = {}) {
     customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } },
     window: {},
     navigator: { language: 'en-US' },
+    // Lit's runtime calls document.createTreeWalker while it is imported; the
+    // DOM-rendering suites override this with a real happy-dom document.
+    document: { createTreeWalker() { return {}; } },
     ...context,
   };
   // defineProperty, not assignment: Node already defines some of these (e.g.

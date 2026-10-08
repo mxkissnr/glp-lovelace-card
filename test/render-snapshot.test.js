@@ -198,7 +198,12 @@ function renderScenario(scenario) {
   card._hass = scenario.hass;
   Object.assign(card, scenario.card || {});
   card._render();
-  const html = card.shadowRoot.innerHTML.replace(/<style>[\s\S]*?<\/style>/, '<style></style>');
+  // Lit leaves comment markers in the rendered DOM (its part and boundary
+  // markers, e.g. `<!--?lit$123$-->`, `<!---->`); strip them so the snapshot
+  // still describes only the elements and text the card produces.
+  const html = card.shadowRoot.innerHTML
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style>[\s\S]*?<\/style>/, '<style></style>');
   // Stop the tickers _render() started so node --test can exit.
   for (const key of ['_uptimeTimer', '_readyByTimer', '_ordersPoll']) {
     if (card[key]) { clearInterval(card[key]); card[key] = null; }
