@@ -989,10 +989,12 @@ class GlpCard extends HTMLElement {
     return this._isSwitchOff(switchState) || standbyState?.state === 'on';
   }
 
-  _render() {
-    if (!this._hass || !this._config) return;
-    this._pendingRender = false;
-
+  // Derives every value the render needs from `hass`/config, in the same order
+  // and with the same side effects the single-method _render() had. The
+  // machine-off branch returns before the recent-shot/tab derivations run,
+  // exactly as before. Nothing here builds HTML or touches the DOM — the
+  // section methods below turn this one plain object into the section strings.
+  _viewModel() {
     const prefix    = this._resolvePrefix();
     const bsPrefix  = prefix.replace(/^sensor\./, 'binary_sensor.');
     const selPrefix = prefix.replace(/^sensor\./, 'select.');
@@ -1033,38 +1035,15 @@ class GlpCard extends HTMLElement {
         </svg>
       </button>` : '';
 
+    const vm = {
+      prefix, bsPrefix, selPrefix,
+      switchState, standbyState, machineOff, switchOff,
+      uptimePreheatEl, readyByTargetAt, readyByPlannedAt,
+      _powerBtn,
+    };
+
     // ── machine off ──────────────────────────────────────────────────────────
-    if (machineOff) {
-      this._profileOpen = false;
-      const readyByHtml = this._buildReadyByHtml(readyByTargetAt, readyByPlannedAt);
-      const offOrders = this._orders.length > 0 ? `
-        <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
-          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T('tab_orders')}</div>
-          ${this._buildOrdersHtml()}
-        </div>` : '';
-      this.shadowRoot.innerHTML = `
-        <style>${STYLES}</style>
-        <ha-card><div class="card collapsed">
-          <div class="header">
-            <div class="title">
-              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-              ${esc(this._config.title)}
-            </div>
-            <div class="header-right">
-              <span class="off-label">${standbyState?.state === 'on' ? T('machine_standby') : T('off_label')}</span>${_powerBtn}
-            </div>
-          </div>
-          ${readyByHtml}
-          ${offOrders}
-        </div></ha-card>`;
-      this._applyMachineTheme();
-      this._applySemanticColorContrast();
-      this._bindPowerBtn();
-      this._bindReadyByPicker();
-      this._startReadyByTicker();
-      if (this._orders.length > 0) this._bindOrderBtns();
-      return;
-    }
+    if (machineOff) return vm;
 
     // ── recent shots ─────────────────────────────────────────────────────────
     const machineStatusEnt = this._s('machine_status');
@@ -1174,17 +1153,98 @@ class GlpCard extends HTMLElement {
     const showOrders = ordersTabAvail && this._activeTab === 'orders';
     const pendingOrders = this._orders.filter(o => o.status === 'pending').length;
 
-    const tabBarHtml = (maintAvailable || ordersTabAvail) ? `
+    // ── nav dots ──────────────────────────────────────────────────────────────
+    const indexChanged = this._shotIndex !== this._prevShotIndex;
+    this._prevShotIndex = this._shotIndex;
+    const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
+
+    // ── chart ──────────────────────────────────────────────────────────────────
+    const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length
+
+    const histDp = !brewing && shotObj?.dp || null;
+    const shotChartKey = shotObj ? (shotObj.id ?? `idx:${this._shotIndex}`) : null;
+    const animateChart = this._shotChartKeyChanged(this._lastChartShotKey, shotChartKey);
+    this._lastChartShotKey = shotChartKey;
+
+    // ── live machine panel (static, shown when on & not brewing) ──────────────
+    const lmTiles = [
+      temp !== null ? {
+        val: temp, unit: '°',
+        lbl: boilerOff ? 'Temp · Boiler aus' : (targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : 'Temp'),
+        warm: !boilerOff && targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1,
+      } : null,
+      livePressure !== null ? { val: livePressure, unit: ' bar', lbl: 'Druck' } : null,
+      liveWeight   !== null ? { val: liveWeight,   unit: ' g',   lbl: 'Waage' } : null,
+    ].filter(Boolean);
+
+    // ── shot section ─────────────────────────────────────────────────────────
+    // Score ring → typographic verdict (#120): thresholds intentionally
+    // UNCHANGED from before this pass (80/55 on the 0-100 `score` field, not
+    // the redesign brief's 90/70 — that figure describes the app-level
+    // achievement scale, a different metric; changing this card's actual
+    // scoring boundary would be a behavior change outside a visual redesign,
+    // so it stays exactly as it was). Only the presentation changed: number
+    // + word instead of a ringed circle.
+    const score = shotObj?.score ?? null;
+    const scoreCls = score == null ? '' : score >= 80 ? 'high' : score >= 55 ? 'mid' : 'low';
+    const verdictWord = { high: T('verdict_high'), mid: T('verdict_mid'), low: T('verdict_low') }[scoreCls];
+
+    return Object.assign(vm, {
+      totalShots, shotObj,
+      brewing, liveDatapoints, liveProfile, isDescaling, steamOn, elapsedSec,
+      profile, coffee, drinkType, grinder, grind,
+      duration, weight, ratio, pressure, rating, shotTemp,
+      temp, targetTemp, livePressure, liveWeight, boilerOff, waterLevel,
+      preheatReady, preheatHasEnt, preheatRem, preheatEl, preheatTotal, preheatPct, preheatMinLeft,
+      profileOptions, currentProfile, profileSwitching, profileAvailable,
+      status, dotClass, today, syncTime, glpUrl,
+      maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders,
+      indexChanged, showNav,
+      liveDur, histDp, shotChartKey, animateChart, lmTiles,
+      score, scoreCls, verdictWord,
+    });
+  }
+
+  // ── section builders (each returns the same string the old single-method
+  // _render() produced for that section, from the _viewModel() object) ────────
+
+  _machineOffHtml(vm) {
+    const { standbyState, _powerBtn } = vm;
+    const readyByHtml = this._buildReadyByHtml(vm.readyByTargetAt, vm.readyByPlannedAt);
+      const offOrders = this._orders.length > 0 ? `
+        <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
+          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T('tab_orders')}</div>
+          ${this._buildOrdersHtml()}
+        </div>` : '';
+      return `
+        <style>${STYLES}</style>
+        <ha-card><div class="card collapsed">
+          <div class="header">
+            <div class="title">
+              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
+              ${esc(this._config.title)}
+            </div>
+            <div class="header-right">
+              <span class="off-label">${standbyState?.state === 'on' ? T('machine_standby') : T('off_label')}</span>${_powerBtn}
+            </div>
+          </div>
+          ${readyByHtml}
+          ${offOrders}
+        </div></ha-card>`;
+  }
+
+  _tabBarHtml(vm) {
+    const { maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders } = vm;
+    return (maintAvailable || ordersTabAvail) ? `
       <div class="tab-bar">
         <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot">${ICONS.of('coffee')} Shot</button>
         ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">${ICONS.of('cart')} ${T('tab_orders')}${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
         ${maintAvailable ? `<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">${ICONS.of('wrench')} ${T('tab_maint')}${this._maintAnyDue() ? ` ${ICONS.of('warning', 'due')}` : ''}</button>` : ''}
       </div>` : '';
+  }
 
-    // ── nav dots ──────────────────────────────────────────────────────────────
-    const indexChanged = this._shotIndex !== this._prevShotIndex;
-    this._prevShotIndex = this._shotIndex;
-    const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
+  _navHtml(vm) {
+    const { indexChanged, showNav, totalShots, shotObj } = vm;
     let navHtml = '';
     if (showNav) {
       const dots = this._recentShots.slice(0, 10).map((_, i) => {
@@ -1206,9 +1266,12 @@ class GlpCard extends HTMLElement {
           <button class="nav-arrow" data-nav="prev"${prevDis}>›</button>
         </div>${tsLine}`;
     }
+    return navHtml;
+  }
 
-    // ── profile picker html ───────────────────────────────────────────────────
-    const profilePickerHtml = !brewing && !showMaint && profileAvailable ? `
+  _profilePickerHtml(vm) {
+    const { brewing, showMaint, profileAvailable, currentProfile, profileSwitching, profileOptions } = vm;
+    return !brewing && !showMaint && profileAvailable ? `
       <div class="profile-picker">
         <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile">
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
@@ -1223,28 +1286,36 @@ class GlpCard extends HTMLElement {
           ).join('')}
         </div>` : ''}
       </div>` : '';
+  }
 
-    // ── hero metrics ──────────────────────────────────────────────────────────
     // Star rating: drawn ICONS.of('star') replaces the ★ text character —
     // filled vs. empty is the .on class on the same shape, not a second glyph.
-    const ratingHtml = (() => {
+  _ratingHtml(vm) {
+    const { rating } = vm;
+    return (() => {
       if (!rating || rating < 1 || rating > 5) return '';
       const cls = rating >= 4 ? 'high' : rating >= 3 ? 'mid' : 'low';
       const stars = Array.from({length:5}, (_,i) =>
         ICONS.of('star', i < rating ? `on ${cls}` : '')).join('');
       return `<div class="rating-row">${stars}</div>`;
     })();
+  }
 
     // Historical shot: ratio is the recipe target a profile is set to hit,
     // duration is what actually happened during the pull, yield is what
     // came out — recipe/process/result, see metricLineHtml() above.
-    const metricTrioHtml = metricLineHtml([
+  _metricTrioHtml(vm) {
+    const { ratio, duration, weight } = vm;
+    return metricLineHtml([
       ratio    ? { role: 'recipe',  num: `1:${ratio}`, unit: '',  label: 'Ratio'          } : null,
       duration ? { role: 'process', num: duration,      unit: 's', label: T('m_duration') } : null,
       weight   ? { role: 'result',  num: weight,        unit: 'g', label: T('m_yield')    } : null,
     ]);
+  }
 
-    const secondaryHtml = (() => {
+  _secondaryHtml(vm) {
+    const { pressure, shotTemp } = vm;
+    return (() => {
       const pills = [
         pressure   !== null ? { label: T('m_pressure'), val: `${pressure} bar` }  : null,
         shotTemp   !== null ? { label: T('m_temp'),     val: `${shotTemp}°` }     : null,
@@ -1258,19 +1329,19 @@ class GlpCard extends HTMLElement {
           </div>`).join('')}
       </div>`;
     })();
+  }
 
-    // ── chart ──────────────────────────────────────────────────────────────────
-    const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length
-      ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
-    const liveSvgHtml = brewing && liveDatapoints
+  _liveSvgHtml(vm) {
+    const { brewing, liveDatapoints, liveDur } = vm;
+    return brewing && liveDatapoints
       ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : '';
+  }
 
-    const histDp = !brewing && shotObj?.dp || null;
-    const shotChartKey = shotObj ? (shotObj.id ?? `idx:${this._shotIndex}`) : null;
-    const animateChart = this._shotChartKeyChanged(this._lastChartShotKey, shotChartKey);
-    this._lastChartShotKey = shotChartKey;
-    const histSvgHtml = histDp
+  _histSvgHtml(vm) {
+    const { histDp, shotObj, animateChart } = vm;
+    return histDp
       ? `<div class="chart-wrap">${buildShotChart(histDp.p||[], histDp.t||[], histDp.w||[], histDp.f||[], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : '';
+  }
 
     // ── live brewing stats ──────────────────────────────────────────────────
     // Same metricLineHtml() component as the historical shot (metricTrioHtml
@@ -1280,23 +1351,18 @@ class GlpCard extends HTMLElement {
     // cup. (labels were hardcoded German before this pass — T() is correct
     // behavior here, not a scope change: these three tiles are the same
     // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
-    const liveStatsHtml = brewing ? metricLineHtml([
+  _liveStatsHtml(vm) {
+    const { brewing, temp, livePressure, liveWeight } = vm;
+    return brewing ? metricLineHtml([
       temp         !== null ? { role: 'recipe',  num: temp,         unit: '°', label: T('leg_temp')     } : null,
       livePressure !== null ? { role: 'process', num: livePressure, unit: 'bar', label: T('leg_pressure') } : null,
       liveWeight   !== null ? { role: 'result',  num: liveWeight,   unit: 'g', label: T('leg_weight')   } : null,
     ]) : '';
+  }
 
-    // ── live machine panel (static, shown when on & not brewing) ──────────────
-    const lmTiles = [
-      temp !== null ? {
-        val: temp, unit: '°',
-        lbl: boilerOff ? 'Temp · Boiler aus' : (targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : 'Temp'),
-        warm: !boilerOff && targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1,
-      } : null,
-      livePressure !== null ? { val: livePressure, unit: ' bar', lbl: 'Druck' } : null,
-      liveWeight   !== null ? { val: liveWeight,   unit: ' g',   lbl: 'Waage' } : null,
-    ].filter(Boolean);
-    const liveMachineHtml = (!brewing && !showMaint && lmTiles.length) ? `
+  _liveMachineHtml(vm) {
+    const { brewing, showMaint, lmTiles } = vm;
+    return (!brewing && !showMaint && lmTiles.length) ? `
       <div class="live-machine">
         <div class="lm-head"><span class="lm-live-dot"></span>${T('lm_live')}</div>
         <div class="lm-tiles">
@@ -1307,9 +1373,11 @@ class GlpCard extends HTMLElement {
             </div>`).join('')}
         </div>
       </div>` : '';
+  }
 
-    // ── preheat html ─────────────────────────────────────────────────────────
-    const preheatHtml = !brewing && !showMaint && preheatHasEnt ? (
+  _preheatHtml(vm) {
+    const { brewing, showMaint, preheatHasEnt, preheatReady, preheatPct, preheatMinLeft } = vm;
+    return !brewing && !showMaint && preheatHasEnt ? (
       preheatReady
         ? `<div class="preheat-ready">${ICONS.of('check')} ${T('preheat_ready')}</div>`
         : preheatPct !== null ? `
@@ -1323,23 +1391,14 @@ class GlpCard extends HTMLElement {
             </div>
           </div>` : ''
     ) : '';
+  }
 
-    // ── shot section ─────────────────────────────────────────────────────────
-    // Score ring → typographic verdict (#120): thresholds intentionally
-    // UNCHANGED from before this pass (80/55 on the 0-100 `score` field, not
-    // the redesign brief's 90/70 — that figure describes the app-level
-    // achievement scale, a different metric; changing this card's actual
-    // scoring boundary would be a behavior change outside a visual redesign,
-    // so it stays exactly as it was). Only the presentation changed: number
-    // + word instead of a ringed circle.
-    const score = shotObj?.score ?? null;
-    const scoreCls = score == null ? '' : score >= 80 ? 'high' : score >= 55 ? 'mid' : 'low';
-    const verdictWord = { high: T('verdict_high'), mid: T('verdict_mid'), low: T('verdict_low') }[scoreCls];
+  _shotSectionHtml(vm) {
+    const { brewing, showMaint, profile, drinkType, coffee, grinder, grind, shotObj, score, scoreCls, verdictWord } = vm;
     const scoreBadge = score != null
       ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${esc(score)}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>`
       : '';
-
-    const shotSectionHtml = !brewing && !showMaint ? `
+    return !brewing && !showMaint ? `
       ${profile
         ? `<div class="shot-hero">
             <div class="shot-hero-main">
@@ -1356,14 +1415,16 @@ class GlpCard extends HTMLElement {
             <div class="no-shot-label">${T('no_shot_label')}</div>
             <div class="no-shot-hint">${T('no_shot_hint')}</div>
           </div>`}
-      ${ratingHtml}
-      ${metricTrioHtml}
-      ${secondaryHtml}
-      ${histSvgHtml}
+      ${this._ratingHtml(vm)}
+      ${this._metricTrioHtml(vm)}
+      ${this._secondaryHtml(vm)}
+      ${this._histSvgHtml(vm)}
     ` : '';
+  }
 
-    // ── footer ───────────────────────────────────────────────────────────────
-    const footerHtml = `
+  _footerHtml(vm) {
+    const { today, waterLevel, syncTime, glpUrl } = vm;
+    return `
       <div class="footer">
         <span class="footer-item">${ICONS.of('coffee')} ${T('footer_today', today)}</span>
         ${waterLevel !== null ? `<span class="footer-item">${ICONS.of('droplet')} ${waterLevel}%</span>` : '<span></span>'}
@@ -1372,8 +1433,27 @@ class GlpCard extends HTMLElement {
           ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${esc(glpUrl)}" target="_blank" rel="noopener noreferrer">GLP ↗</a>` : ''}
         </span>
       </div>`;
+  }
 
-    // ── assemble ──────────────────────────────────────────────────────────────
+  _render() {
+    if (!this._hass || !this._config) return;
+    this._pendingRender = false;
+
+    const vm = this._viewModel();
+
+    // ── machine off ──────────────────────────────────────────────────────────
+    if (vm.machineOff) {
+      this._profileOpen = false;
+      this.shadowRoot.innerHTML = this._machineOffHtml(vm);
+      this._applyMachineTheme();
+      this._applySemanticColorContrast();
+      this._bindPowerBtn();
+      this._bindReadyByPicker();
+      this._startReadyByTicker();
+      if (this._orders.length > 0) this._bindOrderBtns();
+      return;
+    }
+
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card><div class="card">
@@ -1385,35 +1465,34 @@ class GlpCard extends HTMLElement {
           </div>
           <div class="header-right">
             ${this._machineOnSince ? `<span class="machine-uptime" title="${T('uptime_title')}">${ICONS.of('plug')}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : ''}
-            <div class="status-dot ${dotClass}"></div>
-            ${_powerBtn}
+            <div class="status-dot ${vm.dotClass}"></div>
+            ${vm._powerBtn}
           </div>
         </div>
 
-        ${tabBarHtml}
-        ${isDescaling && !brewing ? `<div class="descaling-banner">${ICONS.of('descale')} ${T('descaling_mode')}</div>` : ''}
-        ${steamOn && !brewing ? `<div class="steam-banner">${ICONS.of('steam')} ${T('steam_mode')}</div>` : ''}
-        ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">${ICONS.of('droplet')} ${T('water_low', waterLevel)}</div>` : ''}
-        ${preheatHtml}
-        ${profilePickerHtml}
-        ${liveMachineHtml}
-        ${navHtml}
+        ${this._tabBarHtml(vm)}
+        ${vm.isDescaling && !vm.brewing ? `<div class="descaling-banner">${ICONS.of('descale')} ${T('descaling_mode')}</div>` : ''}
+        ${vm.steamOn && !vm.brewing ? `<div class="steam-banner">${ICONS.of('steam')} ${T('steam_mode')}</div>` : ''}
+        ${vm.waterLevel !== null && vm.waterLevel < 20 ? `<div class="water-low">${ICONS.of('droplet')} ${T('water_low', vm.waterLevel)}</div>` : ''}
+        ${this._preheatHtml(vm)}
+        ${this._profilePickerHtml(vm)}
+        ${this._liveMachineHtml(vm)}
+        ${this._navHtml(vm)}
 
         <div class="swipe-target">
           <div class="swipe-content">
-            ${brewing ? `
-              <div class="brewing-banner">${ICONS.of('coffee')} ${T('brewing')}${elapsedSec !== null ? ` · ${elapsedSec}s` : ' …'}</div>
-              ${liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(liveProfile)}</div></div>` : ''}
-              ${liveSvgHtml}
-              ${liveStatsHtml}
-            ` : showMaint ? this._buildMaintHtml() : showOrders ? this._buildOrdersHtml() : shotSectionHtml}
+            ${vm.brewing ? `
+              <div class="brewing-banner">${ICONS.of('coffee')} ${T('brewing')}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : ' …'}</div>
+              ${vm.liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(vm.liveProfile)}</div></div>` : ''}
+              ${this._liveSvgHtml(vm)}
+              ${this._liveStatsHtml(vm)}
+            ` : vm.showMaint ? this._buildMaintHtml() : vm.showOrders ? this._buildOrdersHtml() : this._shotSectionHtml(vm)}
           </div>
         </div>
 
-        ${footerHtml}
+        ${this._footerHtml(vm)}
 
       </div></ha-card>`;
-
     this._applyMachineTheme();
     this._applySemanticColorContrast();
     this._bindPowerBtn();
