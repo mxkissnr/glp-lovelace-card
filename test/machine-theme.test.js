@@ -1,14 +1,13 @@
-// Per-machine colour theme config tests (#87). Same vm-sandbox approach as
-// machine-config.test.js: loads the real glp-card.js and exercises
-// _resolveMachineTheme()/_applyMachineTheme() directly, without a full
+// Per-machine colour theme config tests (#87). Card loaded via the shared
+// test helper (test/helpers/load-card.cjs), which evaluates the real
+// glp-card.js and exposes GlpCard so _resolveMachineTheme()/
+// _applyMachineTheme() can be exercised directly, without a full
 // custom-element/shadow-DOM harness.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
 function makeStyleStub() {
   const props = new Map();
@@ -19,22 +18,7 @@ function makeStyleStub() {
   };
 }
 
-function loadGlpCard() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard;"
-  );
-
-  class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } }, window: {}, console, URL };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-  return context.__GlpCard;
-}
-
-const GlpCard = loadGlpCard();
+const { GlpCard } = loadCard();
 
 function makeInstance(config, hass) {
   const inst = Object.create(GlpCard.prototype);

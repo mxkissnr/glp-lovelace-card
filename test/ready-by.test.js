@@ -1,6 +1,6 @@
-// Ready-by preheat scheduler tests (#61). Same vm-context approach as
-// machine-config.test.js: loads the real glp-card.js into a sandboxed vm
-// context and exercises GlpCard.prototype methods directly, without a real
+// Ready-by preheat scheduler tests (#61). Card loaded via the shared test
+// helper (test/helpers/load-card.cjs), which evaluates the real glp-card.js
+// and exposes GlpCard.prototype methods to the test directly, without a real
 // shadow DOM/customElements — covers only the pure-logic pieces
 // (_resolveReadyByTarget's today/tomorrow date math, _readReadyBy's
 // hass.states parsing), per this suite's existing boundary of not testing
@@ -9,26 +9,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
-function loadGlpCard() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard;"
-  );
-
-  class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } }, window: {}, console, URL, setTimeout, clearTimeout };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-  return context.__GlpCard;
-}
-
-const GlpCard = loadGlpCard();
+const { GlpCard } = loadCard();
 
 function makeInstance({ config = {}, states = {} } = {}) {
   const inst = Object.create(GlpCard.prototype);
