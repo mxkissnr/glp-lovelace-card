@@ -1,9 +1,7 @@
-// @ts-nocheck
-// TODO(#180 typing slice): shared blocks are typed in lockstep with the Order Card.
 // Drawn icon geometry and the ICONS lookup, split out of glp-card.ts (#180).
 // The GLP-SHARED:machine-icon and GLP-SHARED:icons marker pairs below are
-// byte-identical with the Order Card copy (test/token-sync.test.js), so they
-// stay unchecked until both cards are typed together.
+// byte-identical with the Order Card copy (test/token-sync.test.js), so each
+// type annotation sits outside them.
 
 // GLP-SHARED:machine-icon v1 — approved detailed Gaggia Classic icon
 // geometry (mxkissnr/glp-lovelace-card#87 / mxkissnr/glp-order-card#62),
@@ -25,7 +23,7 @@
 // approved machine_anim('gaggimate') panel, repositioned to sit within this
 // badge's existing `0 0 100 162` viewBox instead of that prototype's taller
 // offset viewBox (mxkissnr/glp-lovelace-card#127 / mxkissnr/glp-order-card#97).
-const MACHINE_BODY = (id, mini, type = 'gaggiuino') => `
+const MACHINE_BODY = (id: string, mini: boolean, type: string = 'gaggiuino'): string => `
     <!-- Seitenwand rechts inkl. Kantenlicht, volle Hoehe -->
     <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="url(#${id})"/>
     <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="#000" opacity=".26"/>
@@ -102,7 +100,7 @@ const MACHINE_BODY = (id, mini, type = 'gaggiuino') => `
     <ellipse cx="82.6" cy="27.3" rx="2.4" ry="6.8" fill="#3b3b43"/>
     ${mini ? '' : '<rect x="81.4" y="23.4" width="1.7" height="7.8" rx=".85" fill="#fff" opacity=".2"/>'}`}`;
 
-const MACHINE_ICON_MINI = (id, type = 'gaggiuino') => `
+const MACHINE_ICON_MINI = (id: string, type: string = 'gaggiuino'): string => `
     <svg viewBox="0 0 100 162" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="${id}" x1="6" y1="0" x2="92" y2="145" gradientUnits="userSpaceOnUse">
@@ -188,12 +186,12 @@ const GLP_ICON_PATHS = {
 };
 
 const ICONS = {
-  has: (name) => Object.prototype.hasOwnProperty.call(GLP_ICON_PATHS, name),
+  has: (name: string): boolean => Object.prototype.hasOwnProperty.call(GLP_ICON_PATHS, name),
   // Returns '' for an unknown name rather than an empty <svg>: callers fall
   // back to other content (e.g. a stored emoji on a user-created menu entry),
   // and an empty string is what makes `ICONS.of(x) || fallback` work.
-  of: (name, cls = '') => (ICONS.has(name)
-    ? `<svg class="glp-i${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLP_ICON_PATHS[name]}</svg>`
+  of: (name: string, cls: string = ''): string => (ICONS.has(name)
+    ? `<svg class="glp-i${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${(GLP_ICON_PATHS as Record<string, string>)[name]}</svg>`
     : ''),
 };
 // /GLP-SHARED:icons v1
@@ -204,6 +202,7 @@ const ICONS = {
 // Same droplet silhouette as `droplet` (water) with a jagged crystalline line
 // through it, standing in for the mineral/scale deposit being flushed out --
 // visually distinct from the plain droplet used for the water-level banner.
-GLP_ICON_PATHS.descale = '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M8.3 13.6l1.5 1.7 1.4-2.3 1.5 1.7 1.5-2.3"/>';
+type IconPathMap = Record<string, string>;
+(GLP_ICON_PATHS as IconPathMap).descale = '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M8.3 13.6l1.5 1.7 1.4-2.3 1.5 1.7 1.5-2.3"/>';
 
 export { MACHINE_BODY, MACHINE_ICON_MINI, GLP_ICON_PATHS, ICONS };
