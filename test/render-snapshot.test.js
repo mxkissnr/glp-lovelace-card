@@ -222,20 +222,31 @@ const expected = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
 // can list `data-action` before `class` where the old string-building render
 // wrote `class` first. The fixture predates the Lit render, so compare with the
 // comments stripped and each tag's attributes sorted; the fixture file itself
-// is left untouched.
+// is left untouched. This walks the parsed DOM rather than matching the markup
+// with regular expressions, so the normalization stays linear and complete.
+const COMMENT_NODE = 8;
+
+function removeComments(node) {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === COMMENT_NODE) child.remove();
+    else removeComments(child);
+  }
+}
+
+function sortAttributes(el) {
+  const attrs = el.getAttributeNames()
+    .map(name => [name, el.getAttribute(name)])
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  for (const [name] of attrs) el.removeAttribute(name);
+  for (const [name, value] of attrs) el.setAttribute(name, value);
+}
+
 function normalizeSnapshot(html) {
-  return html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<([a-zA-Z][\w-]*)((?:\s+[^\s=>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>/g,
-      (_, tag, attrs, selfClose) => {
-        const list = (attrs.match(/([^\s=]+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g) || [])
-          .map(a => a.trim())
-          .sort((a, b) => {
-            const name = s => s.split('=')[0];
-            return name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0;
-          });
-        return `<${tag}${list.map(a => ` ${a}`).join('')}${selfClose}>`;
-      });
+  const container = window.document.createElement('div');
+  container.innerHTML = html;
+  removeComments(container);
+  for (const el of Array.from(container.querySelectorAll('*'))) sortAttributes(el);
+  return container.innerHTML;
 }
 
 for (const scenario of SCENARIOS) {
