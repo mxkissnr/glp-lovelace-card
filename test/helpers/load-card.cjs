@@ -6,6 +6,12 @@
 // be exercised directly. Keeping the sandbox and the patch here — rather than
 // copied into each suite — means the later TypeScript/esbuild build switch only
 // has to update the anchor in one place.
+//
+// Deliberately minimal and unchanged by the #180 test migrations: every
+// migrated suite (slice 1a's five and slice 1b's four) is served by what is
+// here — per-suite extras go through the `expose`/`context` options rather than
+// new helper branches. `test/deferred-define.test.js` stays off this helper on
+// purpose (it needs the unpatched registration call).
 'use strict';
 
 const fs = require('node:fs');
