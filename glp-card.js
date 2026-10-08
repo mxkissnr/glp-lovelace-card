@@ -2454,7 +2454,7 @@
         return b2`<div class="ready-by ready-by-set">
         <div class="ready-by-info">
           <span class="ready-by-label">${T2("ready_by_target", hhmm)}</span>
-          <span class="ready-by-countdown" id="glp-readyby-countdown">${this._readyByCountdownText(plannedAt, targetAt)}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown" .textContent=${this._readyByCountdownText(plannedAt, targetAt)}></span>
         </div>
         <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T2("ready_by_cancel")}</button>
       </div>`;
@@ -3468,7 +3468,7 @@
           </div>
           <div class="header-right">
             ${this._machineOnSince ? b2`<span class="machine-uptime" title=${T2("uptime_title")}>${/* ICONS.of() emits fixed SVG markup */
-      o5(ICONS.of("plug"))}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : A}
+      o5(ICONS.of("plug"))}<span id="glp-uptime-text" .textContent=${fmtUptime(Date.now() - this._machineOnSince)}></span></span>` : A}
             <div class="status-dot ${vm.dotClass}"></div>
             ${vm._powerBtn}
           </div>

@@ -261,9 +261,10 @@ class GlpCard extends HTMLElement {
   _startUptimeTicker(): void {
     if (this._uptimeTimer) return;
     this._uptimeTimer = setInterval(() => {
-      // Only the text ticks every second (textContent, never innerHTML) —
-      // the plug icon rendered alongside it in the template is a sibling
-      // element, untouched here.
+      // This span's text must stay a property binding (`.textContent=`) in
+      // the template, never a Lit child part (`>${...}<`): overwriting
+      // textContent here every second would delete a child part's marker
+      // comments and crash the next Lit render (#180).
       const el = this.shadowRoot!.getElementById('glp-uptime-text');
       if (el && this._machineOnSince) el.textContent = fmtUptime(Date.now() - this._machineOnSince);
     }, 1000);
@@ -272,6 +273,7 @@ class GlpCard extends HTMLElement {
   _startReadyByTicker(): void {
     if (this._readyByTimer) return;
     this._readyByTimer = setInterval(() => {
+      // Same property-binding requirement as the uptime ticker above (#180).
       const el = this.shadowRoot!.getElementById('glp-readyby-countdown');
       if (el) el.textContent = this._readyByCountdownText(this._readyByPlannedAt, this._readyByTargetAt);
     }, 1000);
@@ -380,7 +382,7 @@ class GlpCard extends HTMLElement {
       return html`<div class="ready-by ready-by-set">
         <div class="ready-by-info">
           <span class="ready-by-label">${T('ready_by_target', hhmm)}</span>
-          <span class="ready-by-countdown" id="glp-readyby-countdown">${this._readyByCountdownText(plannedAt, targetAt)}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown" .textContent=${this._readyByCountdownText(plannedAt, targetAt)}></span>
         </div>
         <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T('ready_by_cancel')}</button>
       </div>`;
@@ -1428,7 +1430,7 @@ class GlpCard extends HTMLElement {
             ${this._config.title}
           </div>
           <div class="header-right">
-            ${this._machineOnSince ? html`<span class="machine-uptime" title=${T('uptime_title')}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('plug'))}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : nothing}
+            ${this._machineOnSince ? html`<span class="machine-uptime" title=${T('uptime_title')}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('plug'))}<span id="glp-uptime-text" .textContent=${fmtUptime(Date.now() - this._machineOnSince)}></span></span>` : nothing}
             <div class="status-dot ${vm.dotClass}"></div>
             ${vm._powerBtn}
           </div>
