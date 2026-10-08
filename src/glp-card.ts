@@ -9,7 +9,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { STYLES } from './styles.ts';
 import { T, SUPPORTED_LANGS, setLang, getLang } from './i18n.ts';
 import { roastAgeDays, esc, safeUrl, parseTs, THEME_PRESETS, HEX_COLOR_RE } from './helpers.ts';
-import { MACHINE_ICON_MINI, ICONS } from './icons.ts';
+import { MACHINE_BODY, MACHINE_ICON_MINI, ICONS } from './icons.ts';
 import { fmtUptime, buildShotChart, buildLiveChart, chartLegendHtml, metricLineHtml } from './charts.ts';
 import type { TemplateResult } from 'lit';
 import type {

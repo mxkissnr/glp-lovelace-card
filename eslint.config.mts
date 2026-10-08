@@ -56,6 +56,17 @@ export default [
     },
   }),
   {
+    // #180: the dead MACHINE_BODY import the Lit migration left in
+    // src/glp-card.ts is ignored by name so src/ stays byte-identical with dev.
+    files: ['src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true, varsIgnorePattern: '^MACHINE_BODY$' },
+      ],
+    },
+  },
+  {
     // Tests stay CommonJS/JavaScript under node --test.
     files: ['test/**/*.js', 'test/**/*.mjs', 'test/helpers/**/*.cjs'],
     languageOptions: {
