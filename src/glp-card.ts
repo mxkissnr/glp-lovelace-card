@@ -1288,8 +1288,8 @@ class GlpCard extends HTMLElement {
       </div>` : '';
   }
 
-    // Star rating: drawn ICONS.of('star') replaces the ★ text character —
-    // filled vs. empty is the .on class on the same shape, not a second glyph.
+  // Star rating: drawn ICONS.of('star') replaces the ★ text character —
+  // filled vs. empty is the .on class on the same shape, not a second glyph.
   _ratingHtml(vm) {
     const { rating } = vm;
     return (() => {
@@ -1301,9 +1301,9 @@ class GlpCard extends HTMLElement {
     })();
   }
 
-    // Historical shot: ratio is the recipe target a profile is set to hit,
-    // duration is what actually happened during the pull, yield is what
-    // came out — recipe/process/result, see metricLineHtml() above.
+  // Historical shot: ratio is the recipe target a profile is set to hit,
+  // duration is what actually happened during the pull, yield is what
+  // came out — recipe/process/result, see metricLineHtml() above.
   _metricTrioHtml(vm) {
     const { ratio, duration, weight } = vm;
     return metricLineHtml([
@@ -1343,14 +1343,14 @@ class GlpCard extends HTMLElement {
       ? `<div class="chart-wrap">${buildShotChart(histDp.p||[], histDp.t||[], histDp.w||[], histDp.f||[], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : '';
   }
 
-    // ── live brewing stats ──────────────────────────────────────────────────
-    // Same metricLineHtml() component as the historical shot (metricTrioHtml
-    // above) — see the redesign note on .metric-line in STYLES. Roles while
-    // brewing: temp is the recipe's set point being held, pressure is the
-    // process happening right now, weight is the result accumulating in the
-    // cup. (labels were hardcoded German before this pass — T() is correct
-    // behavior here, not a scope change: these three tiles are the same
-    // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
+  // ── live brewing stats ──────────────────────────────────────────────────
+  // Same metricLineHtml() component as the historical shot (metricTrioHtml
+  // above) — see the redesign note on .metric-line in STYLES. Roles while
+  // brewing: temp is the recipe's set point being held, pressure is the
+  // process happening right now, weight is the result accumulating in the
+  // cup. (labels were hardcoded German before this pass — T() is correct
+  // behavior here, not a scope change: these three tiles are the same
+  // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
   _liveStatsHtml(vm) {
     const { brewing, temp, livePressure, liveWeight } = vm;
     return brewing ? metricLineHtml([
