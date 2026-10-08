@@ -7,7 +7,6 @@
 
 ### Changed
 - **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
-- **The vm sandbox and the `customElements.define()` source patch used by the test suites now live in one shared helper (`test/helpers/load-card.cjs`).** Tests/tooling only, no card change. Part of #180
 
 ## [2.21.1] – 2026-09-26
 ### Fixed
