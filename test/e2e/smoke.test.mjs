@@ -220,19 +220,23 @@ test('the per-second uptime ticker does not break the next render after a hass p
       document.querySelector('glp-card').shadowRoot.querySelector('#glp-uptime-text')?.textContent);
     assert.ok(beforeText && beforeText.trim().length > 0, 'uptime text is present before the push');
 
-    // Push a fresh hass object the way HA does (a changed sensor value). The
+    // Push a fresh hass object the way HA does, with a *different* elapsed
+    // value (3725 s -> "1:02:05", not "1:00:00"). Lit skips writing an
+    // unchanged property value, so a same-value push would leave the
+    // destroyed child-part marker untouched and never exercise the bug. The
     // assignment runs from a timer so a render crash surfaces as an uncaught
     // pageerror, exactly as it does in HA, instead of rejecting evaluate().
     await page.evaluate(mockStates => {
       const el = document.querySelector('glp-card');
       setTimeout(() => { el.hass = { language: 'de', states: mockStates, callService: () => {} }; }, 0);
-    }, buildMockStates({ switchState: 'on', preheatElapsed: 3600, probeTick: 1 }));
+    }, buildMockStates({ switchState: 'on', preheatElapsed: 3725, probeTick: 1 }));
     await page.waitForTimeout(500);
 
     assert.deepEqual(pageErrors, [], 'the uptime ticker must not crash the next Lit render');
     const afterText = await page.evaluate(() =>
       document.querySelector('glp-card').shadowRoot.querySelector('#glp-uptime-text')?.textContent);
     assert.ok(afterText && afterText.trim().length > 0, '#glp-uptime-text still shows text after the push');
+    assert.notStrictEqual(afterText, beforeText, 'the pushed uptime value is re-rendered');
   } finally {
     await tearDown(ctx);
   }
@@ -245,6 +249,11 @@ test('the per-second ready-by countdown does not break the next render after a h
   const now = Date.now();
   const readyByTarget  = new Date(now + 30 * 60 * 1000).toISOString();
   const readyByPlanned = new Date(now + 25 * 60 * 1000).toISOString();
+  // The push below moves both timestamps on, so the countdown text changes
+  // from "in 25m" to "in 40m" and the render actually writes it: Lit skips an
+  // unchanged value, which would leave the destroyed marker untouched.
+  const readyByTarget2  = new Date(now + 45 * 60 * 1000).toISOString();
+  const readyByPlanned2 = new Date(now + 40 * 60 * 1000).toISOString();
   const ctx = await setUpCard(
     buildMockStates({ switchState: 'off', readyByTarget, readyByPlanned }),
     '#glp-readyby-countdown');
@@ -259,13 +268,14 @@ test('the per-second ready-by countdown does not break the next render after a h
     await page.evaluate(mockStates => {
       const el = document.querySelector('glp-card');
       setTimeout(() => { el.hass = { language: 'de', states: mockStates, callService: () => {} }; }, 0);
-    }, buildMockStates({ switchState: 'off', readyByTarget, readyByPlanned, probeTick: 1 }));
+    }, buildMockStates({ switchState: 'off', readyByTarget: readyByTarget2, readyByPlanned: readyByPlanned2, probeTick: 1 }));
     await page.waitForTimeout(500);
 
     assert.deepEqual(pageErrors, [], 'the ready-by ticker must not crash the next Lit render');
     const afterText = await page.evaluate(() =>
       document.querySelector('glp-card').shadowRoot.querySelector('#glp-readyby-countdown')?.textContent);
     assert.ok(afterText && afterText.trim().length > 0, '#glp-readyby-countdown still shows text after the push');
+    assert.notStrictEqual(afterText, beforeText, 'the pushed countdown value is re-rendered');
   } finally {
     await tearDown(ctx);
   }
