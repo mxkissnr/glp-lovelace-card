@@ -1,21 +1,16 @@
 # Changelog
 
 ## [Unreleased]
+
+## [2.22.0] – 2026-10-08
+### Changed
+- **The card now updates only the parts that changed instead of redrawing itself, so touches, open pickers, typed times and animations no longer delay or lose live updates when Home Assistant refreshes.** Part of #180
+- **The card is now built from a strictly typed TypeScript source, with the build and checks against the Order Card's shared code running as TypeScript tooling; the installed file behaves as before.** Part of #180, #197
+
 ### Fixed
 - **After setting or cancelling a ready-by time, the card keeps showing your choice until Home Assistant confirms it instead of briefly jumping back.** Closes #214
-- **The uptime and ready-by countdowns no longer crash the card's render.** Both spans bound their text as a Lit child part, but the per-second tickers overwrite `textContent`, which deletes the child part's marker comments; the next Home Assistant update then threw `TypeError: can't access property "data", this._$AA.nextSibling is null` and Home Assistant replaced the card with its "Configuration error" card after a few seconds. Both spans now bind the text as a property (`.textContent=`), which has no markers to lose. `glp-card.js`, `test/e2e/smoke.test.mjs`. Part of #180
-- **Touches, open pickers and typed times no longer delay or lose live updates.** Part of #180
 - **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
-- **The power button now follows the switch, not standby.** With a GaggiMate in standby the switch stays reported `on` while the machine reads as off (above), so the header button's class and title wrongly showed "Power on" even though its click calls `switch.toggle` and would cut power to the machine. The button's state and label now use the switch-only rule; the click behavior is unchanged. `glp-card.js`, `test/machine-standby.test.js`. Part of #195
-
-### Changed
-- **The development tooling now lints the TypeScript sources and runs its scripts as TypeScript; no card change.** Part of #180
-- **The card's TypeScript sources now type-check under strict mode; the installed file is unchanged.** Part of #180
-- **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
-- **The card is now built from a TypeScript source; the installed file and its behaviour are unchanged.** Part of #180
-- **The card now updates only the parts that changed instead of redrawing itself, so open pickers, typed times and animations survive Home Assistant updates.** Part of #180
-- **The GLP-SHARED blocks and the helper modules are now typed in lockstep with the Order Card's TypeScript sources; tooling only, no card change.** The typed `app-theme-lookup`, `machine-match` and `contrast` blocks in `src/glp-card.ts` and `machine-icon`/`icons` in `src/icons.ts` are copied byte-identically from the Order Card, the shared shapes live in the new type-only `src/types.ts`, and `src/helpers.ts`/`src/icons.ts` drop their `@ts-nocheck`. The generated `glp-card.js` is unchanged. Part of #180
-- **The bundle build passes `--preserve-symlinks`, so `npm run build` reproduces the committed `glp-card.js` even when `node_modules` is a symlink** (e.g. the review pipeline's shared dependency cache); a no-op when `node_modules` is a real directory. `package.json`, tooling only, no card change. Part of #180
+- **The header power button now follows the machine's power switch rather than standby, so its label no longer says "Power on" for a machine that is still powered.** Part of #195
 
 ## [2.21.1] – 2026-09-26
 ### Fixed
