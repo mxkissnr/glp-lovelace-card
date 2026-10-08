@@ -24,7 +24,7 @@ import { startServer } from '../../scripts/e2e-harness.mts';
 
 const PREFIX = 'sensor.gaggiuino_local_profiler_';
 
-function buildMockStates({ switchState = 'on', readyByTarget = 'unknown', isDescaling = false } = {}) {
+function buildMockStates({ switchState = 'on', readyByTarget = 'unknown', readyByPlanned = 'unknown', isDescaling = false, preheatElapsed = null, probeTick = 0 } = {}) {
   const now = Date.now();
   return {
     [PREFIX + 'machine_status']: {
@@ -46,7 +46,15 @@ function buildMockStates({ switchState = 'on', readyByTarget = 'unknown', isDesc
       attributes: { is_descaling: isDescaling },
     },
     [PREFIX + 'preheat_ready_by_target_at']:      { state: readyByTarget, attributes: {} },
-    [PREFIX + 'preheat_planned_switch_on_at']:    { state: 'unknown', attributes: {} },
+    [PREFIX + 'preheat_planned_switch_on_at']:    { state: readyByPlanned, attributes: {} },
+    // Restart-safe power-on timestamp (_machineOnSince, #158) -- only present
+    // when a test explicitly wants the uptime badge to render.
+    ...(preheatElapsed !== null
+      ? { [PREFIX + 'preheat_elapsed']: { state: String(preheatElapsed), attributes: {} } }
+      : {}),
+    // A sensor the card never renders: varying it across pushes proves a real
+    // hass update re-renders without changing the structure under assertion.
+    [PREFIX + 'e2e_probe']:                       { state: String(probeTick), attributes: {} },
   };
 }
 
@@ -189,6 +197,85 @@ test('the descaling banner is absent when is_descaling is false', async () => {
       !!document.querySelector('glp-card').shadowRoot.querySelector('.descaling-banner'));
     assert.equal(bannerShown, false);
     assert.deepEqual(pageErrors, []);
+  } finally {
+    await tearDown(ctx);
+  }
+});
+
+// #180: the uptime ticker overwrites `#glp-uptime-text`'s textContent every
+// second. The template must bind that text as a property (`.textContent=`),
+// never a Lit child part (`>${...}<`): overwriting textContent deletes the
+// child part's marker comments, so the next hass push crashes Lit's render
+// with `this._$AA.nextSibling is null` and HA swaps in its "Configuration
+// error" card.
+test('the per-second uptime ticker does not break the next render after a hass push', async () => {
+  const ctx = await setUpCard(buildMockStates({ switchState: 'on', preheatElapsed: 3600 }), '#glp-uptime-text');
+  const { page, pageErrors } = ctx;
+  try {
+    // Let the 1 s uptime ticker fire at least once, deleting the marker
+    // comments a child-part binding would have left behind.
+    await page.waitForTimeout(1600);
+
+    const beforeText = await page.evaluate(() =>
+      document.querySelector('glp-card').shadowRoot.querySelector('#glp-uptime-text')?.textContent);
+    assert.ok(beforeText && beforeText.trim().length > 0, 'uptime text is present before the push');
+
+    // Push a fresh hass object the way HA does, with a *different* elapsed
+    // value (3725 s -> "1:02:05", not "1:00:00"). Lit skips writing an
+    // unchanged property value, so a same-value push would leave the
+    // destroyed child-part marker untouched and never exercise the bug. The
+    // assignment runs from a timer so a render crash surfaces as an uncaught
+    // pageerror, exactly as it does in HA, instead of rejecting evaluate().
+    await page.evaluate(mockStates => {
+      const el = document.querySelector('glp-card');
+      setTimeout(() => { el.hass = { language: 'de', states: mockStates, callService: () => {} }; }, 0);
+    }, buildMockStates({ switchState: 'on', preheatElapsed: 3725, probeTick: 1 }));
+    await page.waitForTimeout(500);
+
+    assert.deepEqual(pageErrors, [], 'the uptime ticker must not crash the next Lit render');
+    const afterText = await page.evaluate(() =>
+      document.querySelector('glp-card').shadowRoot.querySelector('#glp-uptime-text')?.textContent);
+    assert.ok(afterText && afterText.trim().length > 0, '#glp-uptime-text still shows text after the push');
+    assert.notStrictEqual(afterText, beforeText, 'the pushed uptime value is re-rendered');
+  } finally {
+    await tearDown(ctx);
+  }
+});
+
+// Same bug, machine-off branch: `_startReadyByTicker()` rewrites
+// `#glp-readyby-countdown`'s textContent every second, so that span's text
+// must also be a property binding rather than a Lit child part.
+test('the per-second ready-by countdown does not break the next render after a hass push', async () => {
+  const now = Date.now();
+  const readyByTarget  = new Date(now + 30 * 60 * 1000).toISOString();
+  const readyByPlanned = new Date(now + 25 * 60 * 1000).toISOString();
+  // The push below moves both timestamps on, so the countdown text changes
+  // from "in 25m" to "in 40m" and the render actually writes it: Lit skips an
+  // unchanged value, which would leave the destroyed marker untouched.
+  const readyByTarget2  = new Date(now + 45 * 60 * 1000).toISOString();
+  const readyByPlanned2 = new Date(now + 40 * 60 * 1000).toISOString();
+  const ctx = await setUpCard(
+    buildMockStates({ switchState: 'off', readyByTarget, readyByPlanned }),
+    '#glp-readyby-countdown');
+  const { page, pageErrors } = ctx;
+  try {
+    await page.waitForTimeout(1600);
+
+    const beforeText = await page.evaluate(() =>
+      document.querySelector('glp-card').shadowRoot.querySelector('#glp-readyby-countdown')?.textContent);
+    assert.ok(beforeText && beforeText.trim().length > 0, 'countdown text is present before the push');
+
+    await page.evaluate(mockStates => {
+      const el = document.querySelector('glp-card');
+      setTimeout(() => { el.hass = { language: 'de', states: mockStates, callService: () => {} }; }, 0);
+    }, buildMockStates({ switchState: 'off', readyByTarget: readyByTarget2, readyByPlanned: readyByPlanned2, probeTick: 1 }));
+    await page.waitForTimeout(500);
+
+    assert.deepEqual(pageErrors, [], 'the ready-by ticker must not crash the next Lit render');
+    const afterText = await page.evaluate(() =>
+      document.querySelector('glp-card').shadowRoot.querySelector('#glp-readyby-countdown')?.textContent);
+    assert.ok(afterText && afterText.trim().length > 0, '#glp-readyby-countdown still shows text after the push');
+    assert.notStrictEqual(afterText, beforeText, 'the pushed countdown value is re-rendered');
   } finally {
     await tearDown(ctx);
   }
