@@ -2,7 +2,8 @@
 // ready-by.test.js: loads the real glp-card.js into a sandboxed vm context
 // and exercises GlpCard.prototype methods directly, without a real shadow
 // DOM/customElements — covers only the pure-logic decision made by
-// _isMachineOff(), not markup.
+// _isMachineOff(), not markup. ready-by.test.js is used only as the pattern
+// source for this new suite and is intentionally left unchanged.
 'use strict';
 
 const test = require('node:test');
