@@ -14,7 +14,9 @@ const commonRules = {
 
 module.exports = [
   {
-    ignores: ['node_modules/**', 'docs/**', 'graphify-out/**'],
+    // src/** is not linted yet — a later slice of #180 adds TS-aware linting of
+    // the card sources; the generated glp-card.js stands in for now.
+    ignores: ['node_modules/**', 'docs/**', 'graphify-out/**', 'src/**'],
   },
   js.configs.recommended,
   {
@@ -42,6 +44,11 @@ module.exports = [
     languageOptions: {
       globals: globals.browser,
     },
-    rules: commonRules,
+    rules: {
+      ...commonRules,
+      // esbuild drops comments, so `catch { /* ... */ }` in src/ becomes an empty
+      // catch in the bundle and would otherwise trip no-empty.
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
   },
 ];
