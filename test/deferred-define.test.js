@@ -11,6 +11,12 @@
 // Loads the real, unmodified glp-card.js into a vm context backed by a fake
 // registry, then swaps the registry mid-flight to reproduce that cold-load
 // sequence.
+//
+// Intentionally NOT migrated to test/helpers/load-card.cjs (#180, slice 1b):
+// that helper patches the card's custom-element registration call and stubs
+// the registry, whereas this suite must drive the real, unpatched define()
+// through its own swappable fake registry — so it keeps a local loader by
+// design.
 'use strict';
 
 const test = require('node:test');
