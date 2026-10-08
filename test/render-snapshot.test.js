@@ -198,12 +198,7 @@ function renderScenario(scenario) {
   card._hass = scenario.hass;
   Object.assign(card, scenario.card || {});
   card._render();
-  // Lit leaves comment markers in the rendered DOM (its part and boundary
-  // markers, e.g. `<!--?lit$123$-->`, `<!---->`); strip them so the snapshot
-  // still describes only the elements and text the card produces.
-  const html = card.shadowRoot.innerHTML
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<style>[\s\S]*?<\/style>/, '<style></style>');
+  const html = card.shadowRoot.innerHTML.replace(/<style>[\s\S]*?<\/style>/, '<style></style>');
   // Stop the tickers _render() started so node --test can exit.
   for (const key of ['_uptimeTimer', '_readyByTimer', '_ordersPoll']) {
     if (card[key]) { clearInterval(card[key]); card[key] = null; }
@@ -221,9 +216,31 @@ if (UPDATE || !fs.existsSync(SNAPSHOT_PATH)) {
 
 const expected = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
 
+// Lit leaves comment markers in the rendered DOM (its part/boundary markers,
+// `<!--?lit$123$-->` / `<!---->`, and the SVG comments unsafeSVG drops), and it
+// sets a bound attribute after the static ones it cloned — so the rendered DOM
+// can list `data-action` before `class` where the old string-building render
+// wrote `class` first. The fixture predates the Lit render, so compare with the
+// comments stripped and each tag's attributes sorted; the fixture file itself
+// is left untouched.
+function normalizeSnapshot(html) {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<([a-zA-Z][\w-]*)((?:\s+[^\s=>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>/g,
+      (_, tag, attrs, selfClose) => {
+        const list = (attrs.match(/([^\s=]+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g) || [])
+          .map(a => a.trim())
+          .sort((a, b) => {
+            const name = s => s.split('=')[0];
+            return name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0;
+          });
+        return `<${tag}${list.map(a => ` ${a}`).join('')}${selfClose}>`;
+      });
+}
+
 for (const scenario of SCENARIOS) {
   test(`render snapshot: ${scenario.name}`, () => {
-    assert.equal(results[scenario.name], expected[scenario.name],
+    assert.equal(normalizeSnapshot(results[scenario.name]), normalizeSnapshot(expected[scenario.name]),
       `render output for "${scenario.name}" changed; regenerate with UPDATE_SNAPSHOTS=1 only if the change is intentional`);
   });
 }

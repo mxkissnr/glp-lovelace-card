@@ -1432,7 +1432,7 @@ class GlpCard extends HTMLElement {
 
         ${this._footerHtml(vm)}
 
-      </div></ha-card>`);
+      </div></ha-card>`, this.shadowRoot);
     this._applyMachineTheme();
     this._applySemanticColorContrast();
     this._startUptimeTicker();
