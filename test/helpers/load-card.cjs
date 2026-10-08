@@ -1,68 +1,29 @@
-// Shared loader for the real glp-card.js in a sandboxed vm context.
-//
-// Every vm-based test suite needs the same two things: the sandbox globals the
-// card expects (HTMLElement, customElements, ...) and a source patch that
-// promotes the top-level `class GlpCard` onto the sandbox so its prototype can
-// be exercised directly. Keeping the sandbox and the patch here — rather than
-// copied into each suite — means the later TypeScript/esbuild build switch only
-// has to update the anchor in one place.
-//
-// Deliberately minimal and unchanged by the #180 test migrations: every
-// migrated suite (slice 1a's five and slice 1b's four) is served by what is
-// here — per-suite extras go through the `expose`/`context` options rather than
-// new helper branches. `test/deferred-define.test.js` stays off this helper on
-// purpose (it needs the unpatched registration call).
+// Shared test loader for the card source (#180). The card ships as a classic
+// script bundled into a single IIFE, so its class and top-level helpers are not
+// reachable from the page; the tests instead import them straight from
+// src/glp-card.ts, which Node loads via native type stripping. The module is
+// evaluated once per test process, so every test file calls loadCard() once.
 'use strict';
 
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-
-const CARD_PATH = path.join(__dirname, '..', '..', 'glp-card.js');
-const ANCHOR = "customElements.define('glp-card', GlpCard);";
-
-class HTMLElement {}
-
 function loadCard({ expose = [], context = {} } = {}) {
-  const source = fs.readFileSync(CARD_PATH, 'utf8');
-  if (!source.includes(ANCHOR)) {
-    throw new Error(
-      `loadCard: could not find the source anchor ${ANCHOR} in ${CARD_PATH} — ` +
-        'the test patch no longer matches the card (did the build switch quote style?)'
-    );
-  }
-
-  // A top-level `class` declaration does not become a property of the vm
-  // context, so append explicit globalThis assignments after the define() call.
-  const patch = [
-    ANCHOR,
-    'globalThis.__GlpCard = GlpCard;',
-    ...expose.map((name) => `globalThis.${name} = ${name};`),
-  ].join(' ');
-
-  const sandbox = {
-    HTMLElement,
-    customElements: {
-      define() {},
-      get() {},
-      whenDefined() {
-        return new Promise(() => {});
-      },
-    },
+  const stubs = {
+    HTMLElement: class HTMLElement {},
+    customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } },
     window: {},
-    console,
-    URL,
-    setTimeout,
-    clearTimeout,
+    navigator: { language: 'en-US' },
     ...context,
   };
-  sandbox.globalThis = sandbox;
+  // defineProperty, not assignment: Node already defines some of these (e.g.
+  // `navigator`) as getter-only globals, so a plain `globalThis.navigator = ...`
+  // would throw.
+  for (const [name, value] of Object.entries(stubs)) {
+    Object.defineProperty(globalThis, name, { value, configurable: true, writable: true });
+  }
 
-  vm.createContext(sandbox);
-  vm.runInContext(source.replace(ANCHOR, patch), sandbox, { filename: CARD_PATH });
-
-  const exposed = Object.fromEntries(expose.map((name) => [name, sandbox[name]]));
-  return { GlpCard: sandbox.__GlpCard, ...exposed };
+  const mod = require('../../src/glp-card.ts');
+  const result = { GlpCard: mod.GlpCard };
+  for (const name of expose) result[name] = mod[name];
+  return result;
 }
 
 module.exports = { loadCard };

@@ -59,7 +59,13 @@ function readNeighborSource() {
 
 const IN_CI = !!process.env.CI;
 
-const OWN_SRC = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
+// esbuild strips the GLP-SHARED/GLP-TOKENS marker comments, so the shared
+// blocks can only be extracted from the src/*.ts sources, not the bundle (#180).
+const OWN_SRC = fs.readdirSync(path.join(__dirname, '..', 'src'))
+  .filter((name) => name.endsWith('.ts'))
+  .sort()
+  .map((name) => fs.readFileSync(path.join(__dirname, '..', 'src', name), 'utf8'))
+  .join('\n');
 
 // Anchored on a short, stable prefix rather than the full marker sentence —
 // the marker's wording (it names both files) is itself part of the compared

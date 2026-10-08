@@ -50,11 +50,12 @@ Include:
 
 | Area | Details |
 |---|---|
-| File | Single JS file `glp-card.js` — no build step, no bundler |
+| File | TypeScript source `src/glp-card.ts`, bundled to the committed `glp-card.js` by `npm run build` (esbuild) |
 | Style | Vanilla ES2020, Web Components (`HTMLElement` + Shadow DOM) |
 | Entity prefix | Auto-detected via `_resolvePrefix()`; card reads HA entity state objects directly |
 | Testing | Load the card as a HACS custom resource and test in HA Lovelace |
 
 ## Versioning
 
-`MAJOR.MINOR.PATCH` — update `GLP_CARD_VERSION` constant at the top of `glp-card.js`.
+`MAJOR.MINOR.PATCH` — update the `GLP_CARD_VERSION` constant in `src/glp-card.ts`.
+The root `glp-card.js` is generated from it by `npm run build` (esbuild) — do not edit it by hand.
