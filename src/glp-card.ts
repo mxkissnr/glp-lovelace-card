@@ -18,6 +18,13 @@ import type {
 } from './types.ts';
 const GLP_CARD_VERSION = '2.21.1';
 
+// Fallback for a ready-by Set/Cancel whose sensor confirmation never lands
+// (#214). The optimistic value is cleared the moment _readReadyBy() sees the
+// sensor confirm it, so this timer only covers a call the backend never
+// applied; sized to the integration's default 60 s poll because its refresh
+// after the service call is debounced.
+const READY_BY_PENDING_FALLBACK_MS = 60000;
+
 // A tile in the live-machine panel below the profile picker.
 interface LmTile {
   val: string | number;
@@ -213,7 +220,7 @@ class GlpCard extends HTMLElement {
           });
           this._pendingReadyByTargetAt = target;   // optimistic: show immediately until the sensor confirms
           clearTimeout(this._pendingReadyByTimer as ReturnType<typeof setTimeout>);
-          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, 8000);
+          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, READY_BY_PENDING_FALLBACK_MS);
           this._render();
         }
         return;
@@ -227,7 +234,7 @@ class GlpCard extends HTMLElement {
           });
           this._pendingReadyByTargetAt = false;   // optimistic: show the picker immediately until the sensor confirms
           clearTimeout(this._pendingReadyByTimer as ReturnType<typeof setTimeout>);
-          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, 8000);
+          this._pendingReadyByTimer = setTimeout(() => { this._pendingReadyByTargetAt = null; this._render(); }, READY_BY_PENDING_FALLBACK_MS);
           this._render();
         }
       }

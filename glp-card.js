@@ -2232,6 +2232,7 @@
 
   // src/glp-card.ts
   var GLP_CARD_VERSION = "2.21.1";
+  var READY_BY_PENDING_FALLBACK_MS = 6e4;
   var GlpCard = class _GlpCard extends HTMLElement {
     static {
       __name(this, "GlpCard");
@@ -2293,7 +2294,7 @@
             this._pendingReadyByTimer = setTimeout(() => {
               this._pendingReadyByTargetAt = null;
               this._render();
-            }, 8e3);
+            }, READY_BY_PENDING_FALLBACK_MS);
             this._render();
           }
           return;
@@ -2310,7 +2311,7 @@
             this._pendingReadyByTimer = setTimeout(() => {
               this._pendingReadyByTargetAt = null;
               this._render();
-            }, 8e3);
+            }, READY_BY_PENDING_FALLBACK_MS);
             this._render();
           }
         }
