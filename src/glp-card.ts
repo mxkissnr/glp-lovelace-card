@@ -1,11 +1,8 @@
-// Wrapped in an IIFE so top-level `const`/`class` declarations don't leak into
-// the shared document-global scope: this card ships bundled alongside
+// @ts-nocheck
+// Built as an IIFE by esbuild (npm run build), so top-level declarations never
+// leak into the shared document-global scope this card shares with
 // glp-order-card.js as a second classic <script src> in the same HA frontend
-// page (glp-integration#157), and classic scripts share that lexical scope —
-// a same-named top-level const in both files throws on the second load and
-// aborts before customElements.define() runs. #141
-(() => {
-
+// page (#141, glp-integration#157).
 const GLP_CARD_VERSION = '2.21.1';
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
@@ -2926,4 +2923,4 @@ console.info(
   'background:#111113;color:#ff3b30;padding:2px 4px;border-radius:0 3px 3px 0'
 );
 
-})();
+export { GlpCard, esc, safeUrl, metricLineHtml };
