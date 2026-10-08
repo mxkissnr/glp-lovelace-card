@@ -1,17 +1,18 @@
-// TEMPORARY diagnostic (removed once the pipeline root cause is understood).
-// It fails on purpose with a one-line summary of the card-loading environment
-// so the pipeline's tail output reveals why the other test files cannot load
-// src/glp-card.ts.
+// Smoke test for the shared card loader (#180): the other suites cannot even
+// start if src/glp-card.ts fails to load, and the failure then shows up only as
+// a generic file-level "test failed". This fails with a one-line summary of the
+// environment when the loader is broken and passes when it works.
 'use strict';
 
 const test = require('node:test');
+const assert = require('node:assert/strict');
 const path = require('node:path');
 
 function brief(e) {
   return (e && e.code ? e.code + ':' : '') + String(e && e.message ? e.message : e).split('\n')[0].slice(0, 200);
 }
 
-test('diagnostic: card load environment', () => {
+test('card source loads in this environment', () => {
   const root = path.join(__dirname, '..');
   const card = path.join(root, 'src', 'glp-card.ts');
   const info = [];
@@ -19,7 +20,6 @@ test('diagnostic: card load environment', () => {
   info.push('execPath=' + process.execPath);
   info.push('platform=' + process.platform + '/' + process.arch);
   info.push('features=' + JSON.stringify(process.features || {}));
-  info.push('cwd=' + process.cwd());
   for (const p of ['lit', 'happy-dom', 'esbuild', 'typescript', 'c8']) {
     try {
       info.push(p + '=' + require.resolve(p, { paths: [root] }));
@@ -44,6 +44,6 @@ test('diagnostic: card load environment', () => {
     info.push('loadCard=OK');
   } catch (e) {
     info.push('loadCard=' + brief(e));
+    assert.fail('card loader broken: ' + info.join(' || '));
   }
-  throw new Error('DIAGNOSTIC ' + info.join(' || '));
 });
