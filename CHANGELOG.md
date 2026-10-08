@@ -5,6 +5,9 @@
 - **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
 - **The power button now follows the switch, not standby.** With a GaggiMate in standby the switch stays reported `on` while the machine reads as off (above), so the header button's class and title wrongly showed "Power on" even though its click calls `switch.toggle` and would cut power to the machine. The button's state and label now use the switch-only rule; the click behavior is unchanged. `glp-card.js`, `test/machine-standby.test.js`. Part of #195
 
+### Changed
+- **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
+
 ## [2.21.1] – 2026-09-26
 ### Fixed
 - **The card no longer fails with "Custom element doesn't exist" when it loads before Home Assistant's frontend has finished starting up.** Closes #184
