@@ -30,6 +30,7 @@ const STRINGS = {
     steam_mode: 'Dampfmodus', water_low: p => `Wasser fast leer (${p}%)`,
     descaling_mode: 'Entkalkung läuft',
     preheat_ready: 'Brühbereit', preheat_heating: 'Aufheizen …',
+    machine_standby: 'Standby',
     ready_by_set_label: 'Brühbereit bis', ready_by_set: 'Setzen',
     ready_by_target: hhmm => `Brühbereit bis ${hhmm}`, ready_by_cancel: 'Abbrechen',
     ready_by_switching_in: n => `schaltet in ${n} Min ein`, ready_by_switching_now: 'schaltet jetzt ein',
@@ -61,6 +62,7 @@ const STRINGS = {
     steam_mode: 'Steam mode', water_low: p => `Water almost empty (${p}%)`,
     descaling_mode: 'Descaling',
     preheat_ready: 'Ready to brew', preheat_heating: 'Warming up …',
+    machine_standby: 'Standby',
     ready_by_set_label: 'Ready by', ready_by_set: 'Set',
     ready_by_target: hhmm => `Ready by ${hhmm}`, ready_by_cancel: 'Cancel',
     ready_by_switching_in: n => `switching on in ${n}m`, ready_by_switching_now: 'switching on now',
@@ -92,6 +94,7 @@ const STRINGS = {
     steam_mode: 'Modalità vapore', water_low: p => `Acqua quasi esaurita (${p}%)`,
     descaling_mode: 'Decalcificazione in corso',
     preheat_ready: 'Pronto per l\'estrazione', preheat_heating: 'Riscaldamento …',
+    machine_standby: 'Standby',
     ready_by_set_label: 'Pronto entro', ready_by_set: 'Imposta',
     ready_by_target: hhmm => `Pronto entro le ${hhmm}`, ready_by_cancel: 'Annulla',
     ready_by_switching_in: n => `si accende tra ${n} min`, ready_by_switching_now: 'si accende ora',
@@ -123,6 +126,7 @@ const STRINGS = {
     steam_mode: 'Mode vapeur', water_low: p => `Eau presque vide (${p}%)`,
     descaling_mode: 'Détartrage en cours',
     preheat_ready: 'Prêt à infuser', preheat_heating: 'Chauffage …',
+    machine_standby: 'Veille',
     ready_by_set_label: 'Prêt avant', ready_by_set: 'Définir',
     ready_by_target: hhmm => `Prêt avant ${hhmm}`, ready_by_cancel: 'Annuler',
     ready_by_switching_in: n => `s'allume dans ${n} min`, ready_by_switching_now: "s'allume maintenant",
@@ -154,6 +158,7 @@ const STRINGS = {
     steam_mode: 'Modo vapor', water_low: p => `Agua casi vacía (${p}%)`,
     descaling_mode: 'Descalcificación en curso',
     preheat_ready: 'Listo para extraer', preheat_heating: 'Calentando …',
+    machine_standby: 'En espera',
     ready_by_set_label: 'Listo antes de', ready_by_set: 'Fijar',
     ready_by_target: hhmm => `Listo antes de las ${hhmm}`, ready_by_cancel: 'Cancelar',
     ready_by_switching_in: n => `se enciende en ${n} min`, ready_by_switching_now: 'se enciende ahora',
@@ -185,6 +190,7 @@ const STRINGS = {
     steam_mode: 'Stoommodus', water_low: p => `Water bijna leeg (${p}%)`,
     descaling_mode: 'Ontkalken',
     preheat_ready: 'Klaar om te zetten', preheat_heating: 'Opwarmen …',
+    machine_standby: 'Stand-by',
     ready_by_set_label: 'Klaar voor', ready_by_set: 'Instellen',
     ready_by_target: hhmm => `Klaar voor ${hhmm}`, ready_by_cancel: 'Annuleren',
     ready_by_switching_in: n => `schakelt in over ${n} min`, ready_by_switching_now: 'schakelt nu in',
@@ -2443,6 +2449,23 @@ class GlpCard extends HTMLElement {
     this._render();
   }
 
+  // #195: the switch-only "off" rule — a configured switch reported `off` or
+  // `unavailable`. Drives the power button, whose click toggles the switch, so
+  // standby must not influence it.
+  _isSwitchOff(switchState) {
+    return !!(this._switchEntity &&
+      (switchState?.state === 'off' || switchState?.state === 'unavailable'));
+  }
+
+  // #195: a GaggiMate in standby keeps its switch reported `on`, so it used
+  // to fall through to the warm-up view and look frozen. Standby is a
+  // distinct `effectively off` signal (binary_sensor.<prefix>machine_standby
+  // from glp-integration#219); a missing entity or any other state keeps the
+  // switch-only rule.
+  _isMachineOff(switchState, standbyState) {
+    return this._isSwitchOff(switchState) || standbyState?.state === 'on';
+  }
+
   _render() {
     if (!this._hass || !this._config) return;
     this._pendingRender = false;
@@ -2465,8 +2488,12 @@ class GlpCard extends HTMLElement {
     const uptimePreheatEl = parseFloat(this._val('preheat_elapsed', null));
     this._machineOnSince = (switchState?.state === 'on' && !isNaN(uptimePreheatEl))
       ? Date.now() - uptimePreheatEl * 1000 : null;
-    const machineOff  = !!(this._switchEntity &&
-      (switchState?.state === 'off' || switchState?.state === 'unavailable'));
+    const standbyState = this._hass.states[bsPrefix + 'machine_standby'];
+    const machineOff  = this._isMachineOff(switchState, standbyState);
+    // The power button toggles the switch (not standby), so its class/label
+    // follow the switch-only rule — otherwise a standby machine would offer
+    // "Power on" while the click actually cuts the switch.
+    const switchOff   = this._isSwitchOff(switchState);
 
     // ready-by preheat scheduler (#61) — only meaningful while the machine is
     // off; moot once it's on/warming/ready, so it's only rendered below in
@@ -2476,8 +2503,8 @@ class GlpCard extends HTMLElement {
     this._readyByTargetAt = readyByTargetAt;
 
     const _powerBtn = this._switchEntity ? `
-      <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
-              title="${machineOff ? T('power_on') : T('power_off')}">
+      <button class="power-btn ${switchOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
+              title="${switchOff ? T('power_on') : T('power_off')}">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
@@ -2501,7 +2528,7 @@ class GlpCard extends HTMLElement {
               ${esc(this._config.title)}
             </div>
             <div class="header-right">
-              <span class="off-label">${T('off_label')}</span>${_powerBtn}
+              <span class="off-label">${standbyState?.state === 'on' ? T('machine_standby') : T('off_label')}</span>${_powerBtn}
             </div>
           </div>
           ${readyByHtml}
