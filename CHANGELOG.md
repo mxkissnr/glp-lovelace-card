@@ -10,8 +10,6 @@
 - **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
 - **The card is now built from a TypeScript source; the installed file and its behaviour are unchanged.** Part of #180
 - **The card now updates only the parts that changed instead of redrawing itself, so open pickers, typed times and animations survive Home Assistant updates.** Part of #180
-- **The GLP-SHARED blocks and the helper modules are now typed in lockstep with the Order Card's TypeScript sources; tooling only, no card change.** The typed `app-theme-lookup`, `machine-match` and `contrast` blocks in `src/glp-card.ts` and `machine-icon`/`icons` in `src/icons.ts` are copied byte-identically from the Order Card, the shared shapes live in the new type-only `src/types.ts`, and `src/helpers.ts`/`src/icons.ts` drop their `@ts-nocheck`. The generated `glp-card.js` is unchanged. Part of #180
-- **The bundle build passes `--preserve-symlinks`, so `npm run build` reproduces the committed `glp-card.js` even when `node_modules` is a symlink** (e.g. the review pipeline's shared dependency cache); a no-op when `node_modules` is a real directory. `package.json`, tooling only, no card change. Part of #180
 
 ## [2.21.1] – 2026-09-26
 ### Fixed
