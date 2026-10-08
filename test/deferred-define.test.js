@@ -60,6 +60,10 @@ function loadCard(customElements) {
     HTMLElement,
     customElements,
     window: {},
+    // The bundle now inlines Lit's runtime, which calls
+    // document.createTreeWalker while its module graph loads. This stub is
+    // required by Lit itself, not a missing-package shim; no render runs here.
+    document: { createTreeWalker() { return {}; } },
     console: { info() {} },
     URL,
     setTimeout,

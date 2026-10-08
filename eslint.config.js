@@ -15,8 +15,11 @@ const commonRules = {
 module.exports = [
   {
     // src/** is not linted yet — a later slice of #180 adds TS-aware linting of
-    // the card sources; the generated glp-card.js stands in for now.
-    ignores: ['node_modules/**', 'docs/**', 'graphify-out/**', 'src/**'],
+    // the card sources. The generated glp-card.js now inlines the Lit runtime,
+    // whose minified third-party code cannot be meaningfully linted, so it is
+    // ignored as well; the innerHTML assignment gate lives in CI
+    // (`grep -nE "(inner|outer)HTML\s*=" src/*.ts`).
+    ignores: ['node_modules/**', 'docs/**', 'graphify-out/**', 'src/**', 'glp-card.js'],
   },
   js.configs.recommended,
   {
@@ -38,17 +41,5 @@ module.exports = [
       globals: globals.node,
     },
     rules: commonRules,
-  },
-  {
-    files: ['glp-card.js'],
-    languageOptions: {
-      globals: globals.browser,
-    },
-    rules: {
-      ...commonRules,
-      // esbuild drops comments, so `catch { /* ... */ }` in src/ becomes an empty
-      // catch in the bundle and would otherwise trip no-empty.
-      'no-empty': ['error', { allowEmptyCatch: true }],
-    },
   },
 ];

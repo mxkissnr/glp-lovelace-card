@@ -3,6 +3,10 @@
 // leak into the shared document-global scope this card shares with
 // glp-order-card.js as a second classic <script src> in the same HA frontend
 // page (#141, glp-integration#157).
+import { render, html, nothing } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { STYLES } from './styles.ts';
 import { T, SUPPORTED_LANGS, setLang, getLang } from './i18n.ts';
 import { roastAgeDays, esc, safeUrl, parseTs, THEME_PRESETS, HEX_COLOR_RE } from './helpers.ts';
@@ -38,6 +42,10 @@ class GlpCard extends HTMLElement {
     this._prevShotIndex = -1;
     this._recentShots   = [];
     this._lastLatestId  = null;
+    // Last touch origin for the swipe-target gesture. The listener is now
+    // bound from the template, so the state lives here.
+    this._swipeSx = 0;
+    this._swipeSy = 0;
     // Tracks which historical shot the chart last drew, so the shot-load
     // curve-draw-in (#120) plays once per actual shot-load transition, not
     // on every incidental re-render an hass push triggers (same problem the
@@ -76,7 +84,9 @@ class GlpCard extends HTMLElement {
     this._lastKnownReadyByTargetAt = null;
     this._lastKnownReadyByPlannedAt = null;
 
-    // Delegated power-button/ready-by handlers on shadowRoot — survive every innerHTML replacement
+    // Delegated power-button/ready-by handlers on shadowRoot — attached once
+    // here (Lit patches the shadow DOM in place, so the host listener
+    // outlives every render).
     this.shadowRoot.addEventListener('pointerdown', e => {
       if (e.target.closest('[data-action="toggle-switch"]')) {
         e.preventDefault();
@@ -120,11 +130,9 @@ class GlpCard extends HTMLElement {
     this._bindTouchGuard();
   }
 
-  _bindPowerBtn() { /* no-op — handler is delegated on shadowRoot in constructor */ }
-
   // #147: the card root element (`this`) is never replaced by `_render()` —
-  // only `this.shadowRoot`'s content is — so this is bound once, here, and
-  // survives every re-render exactly like the delegated shadowRoot listener
+  // only its shadow DOM is patched — so this is bound once, here, and
+  // outlives every re-render exactly like the delegated shadowRoot listener
   // above. `{ passive: true }` on all three: these must never call
   // preventDefault(), or the very native scroll this guard exists to protect
   // would itself be blocked.
@@ -159,54 +167,37 @@ class GlpCard extends HTMLElement {
     this.addEventListener('touchcancel', onTouchEnd, { passive: true });
   }
 
-  _bindProfilePicker() {
-    const toggle = this.shadowRoot.querySelector('[data-action="toggle-profile"]');
-    if (toggle) {
-      toggle.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._profileOpen = !this._profileOpen;
-        this._profileInteracting = this._profileOpen;
-        this._render();
-      });
+  // Handlers bound from the Lit templates (elements survive renders now, so
+  // per-render addEventListener wiring would stack listeners). The delegated
+  // power/ready-by buttons stay on the constructor's shadowRoot listener.
+  _toggleProfilePicker() {
+    this._profileOpen = !this._profileOpen;
+    this._profileInteracting = this._profileOpen;
+    this._render();
+  }
+
+  _selectProfile(val) {
+    if (this._hass) {
+      const entityId = this._resolvePrefix().replace(/^sensor\./, 'select.') + 'profile';
+      this._hass.callService('select', 'select_option', { entity_id: entityId, option: val });
+      this._pendingProfile = val;   // optimistic: show immediately until the machine confirms
+      clearTimeout(this._pendingProfileTimer);
+      this._pendingProfileTimer = setTimeout(() => { this._pendingProfile = null; this._render(); }, 8000);
     }
-    this.shadowRoot.querySelectorAll('[data-profile-opt]').forEach(opt => {
-      opt.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        const val = e.currentTarget.dataset.profileOpt;
-        if (this._hass) {
-          const entityId = this._resolvePrefix().replace(/^sensor\./, 'select.') + 'profile';
-          this._hass.callService('select', 'select_option', { entity_id: entityId, option: val });
-          this._pendingProfile = val;   // optimistic: show immediately until the machine confirms
-          clearTimeout(this._pendingProfileTimer);
-          this._pendingProfileTimer = setTimeout(() => { this._pendingProfile = null; this._render(); }, 8000);
-        }
-        this._profileOpen = false;
-        this._profileInteracting = false;
-        this._render();
-      });
-    });
+    this._profileOpen = false;
+    this._profileInteracting = false;
+    this._render();
   }
 
-  _bindReadyByPicker() {
-    const input = this.shadowRoot.getElementById('glp-readyby-input');
-    if (!input) return;
-    input.addEventListener('focus', () => { this._readyByInteracting = true; });
-    input.addEventListener('blur', () => {
-      this._readyByInteracting = false;
-      if (this._pendingRender) this._requestRender();
-    });
+  // Ready-by input focus/blur (#64): a typed time must survive an hass update.
+  _readyByFocus() { this._readyByInteracting = true; }
+  _readyByBlur() {
+    this._readyByInteracting = false;
+    if (this._pendingRender) this._requestRender();
   }
 
-  _bindTabBtns() {
-    this.shadowRoot.querySelectorAll('[data-tab]').forEach(btn => {
-      btn.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        const tab = e.currentTarget.dataset.tab;
-        if (tab !== this._activeTab) { this._activeTab = tab; this._maintConfirm = null; this._render(); }
-      });
-    });
+  _selectTab(tab) {
+    if (tab !== this._activeTab) { this._activeTab = tab; this._maintConfirm = null; this._render(); }
   }
 
   _startUptimeTicker() {
@@ -328,18 +319,19 @@ class GlpCard extends HTMLElement {
   _buildReadyByHtml(targetAt, plannedAt) {
     if (targetAt) {
       const hhmm = targetAt.toLocaleTimeString(getLang(), { hour: '2-digit', minute: '2-digit' });
-      return `<div class="ready-by ready-by-set">
+      return html`<div class="ready-by ready-by-set">
         <div class="ready-by-info">
-          <span class="ready-by-label">${T('ready_by_target', esc(hhmm))}</span>
-          <span class="ready-by-countdown" id="glp-readyby-countdown">${esc(this._readyByCountdownText(plannedAt, targetAt))}</span>
+          <span class="ready-by-label">${T('ready_by_target', hhmm)}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown">${this._readyByCountdownText(plannedAt, targetAt)}</span>
         </div>
         <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T('ready_by_cancel')}</button>
       </div>`;
     }
-    return `<div class="ready-by ready-by-picker">
+    return html`<div class="ready-by ready-by-picker">
       <span class="ready-by-label">${T('ready_by_set_label')}</span>
       <div class="ready-by-picker-row">
-        <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
+        <input type="time" class="ready-by-time-input" id="glp-readyby-input"
+          @focus=${() => this._readyByFocus()} @blur=${() => this._readyByBlur()}/>
         <button class="ready-by-btn primary" data-action="set-ready-by">${T('ready_by_set')}</button>
       </div>
     </div>`;
@@ -383,93 +375,29 @@ class GlpCard extends HTMLElement {
   }
 
   _buildOrdersHtml() {
-    if (!this._orders.length) return `<div class="unavailable">${T('orders_none')}</div>`;
-    const declineRow = id => `<div class="ord-actions"><span class="ord-q">${T('ord_decline_q')}</span>
-      <button class="ord-btn danger" data-ord-decline-yes="${esc(id)}">${ICONS.of('check')} ${T('ord_yes')}</button>
-      <button class="ord-btn ghost" data-ord-cancel="1">${ICONS.of('close')}</button></div>`;
-    return `<div class="ord-list">${this._orders.map(o => {
+    if (!this._orders.length) return html`<div class="unavailable">${T('orders_none')}</div>`;
+    const tap = fn => (e) => { e.preventDefault(); e.stopPropagation(); fn(); };
+    const cancel = tap(() => { this._orderEtaFor = null; this._orderDeclineFor = null; this._render(); });
+    const declineRow = id => html`<div class="ord-actions"><span class="ord-q">${T('ord_decline_q')}</span>
+      <button class="ord-btn danger" data-ord-decline-yes=${id} @pointerdown=${tap(() => this._orderAction(id, 'decline', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
+      <button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`;
+    return html`<div class="ord-list">${this._orders.map(o => {
       const label = o.variant ? `${o.item} · ${o.variant}` : o.item;
-      const head = `<div class="ord-top"><span class="ord-item">${ICONS.of('coffee')} ${esc(label)}</span>${o.customer ? `<span class="ord-who">${esc(o.customer)}</span>` : ''}</div>
-        ${o.note ? `<div class="ord-note">„${esc(o.note)}"</div>` : ''}`;
+      const head = html`<div class="ord-top"><span class="ord-item">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} ${label}</span>${o.customer ? html`<span class="ord-who">${o.customer}</span>` : nothing}</div>
+        ${o.note ? html`<div class="ord-note">„${o.note}"</div>` : nothing}`;
       if (o.status === 'pending') {
         const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
           : this._orderEtaFor === o.id
-            ? `<div class="ord-actions"><span class="ord-q">${T('ord_done_in')}</span>${[3,5,8,10].map(m => `<button class="ord-btn eta" data-ord-accept="${esc(o.id)}" data-eta="${m}">${m} min</button>`).join('')}<button class="ord-btn ghost" data-ord-cancel="1">${ICONS.of('close')}</button></div>`
-            : `<div class="ord-actions"><button class="ord-btn primary" data-ord-eta="${esc(o.id)}">${ICONS.of('check')} ${T('ord_accept')}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T('ord_decline')}</button></div>`;
-        return `<div class="ord-row pending">${head}${actions}</div>`;
+            ? html`<div class="ord-actions"><span class="ord-q">${T('ord_done_in')}</span>${[3,5,8,10].map(m => html`<button class="ord-btn eta" data-ord-accept=${o.id} data-eta=${m} @pointerdown=${tap(() => this._orderAction(o.id, 'accept', { eta: m }))}>${m} min</button>`)}<button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`
+            : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-eta=${o.id} @pointerdown=${tap(() => { this._orderEtaFor = o.id; this._render(); })}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_accept')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @pointerdown=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
+        return html`<div class="ord-row pending">${head}${actions}</div>`;
       }
       const minsLeft = (o.acceptedAt && o.eta) ? Math.max(0, Math.ceil((o.acceptedAt + o.eta * 60000 - Date.now()) / 60000)) : null;
       const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
-        : `<div class="ord-actions"><button class="ord-btn primary" data-ord-done="${esc(o.id)}">${ICONS.of('check')} ${T('ord_done')}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T('ord_decline')}</button></div>`;
-      return `<div class="ord-row accepted">${head}
+        : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-done=${o.id} @pointerdown=${tap(() => this._orderAction(o.id, 'complete', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_done')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @pointerdown=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
+      return html`<div class="ord-row accepted">${head}
         <div class="ord-sub">${minsLeft != null ? T('ord_ready_in', minsLeft) : T('ord_preparing')}</div>${actions}</div>`;
-    }).join('')}</div>`;
-  }
-
-  _bindOrderBtns() {
-    const tap = (sel, fn) => this.shadowRoot.querySelectorAll(sel).forEach(b =>
-      b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(b); }));
-    tap('[data-ord-eta]',         b => { this._orderEtaFor = b.dataset.ordEta; this._render(); });
-    tap('[data-ord-accept]',      b => this._orderAction(b.dataset.ordAccept, 'accept', { eta: parseInt(b.dataset.eta) }));
-    tap('[data-ord-done]',        b => this._orderAction(b.dataset.ordDone, 'complete', {}));
-    tap('[data-ord-decline]',     b => { this._orderDeclineFor = b.dataset.ordDecline; this._render(); });
-    tap('[data-ord-decline-yes]', b => this._orderAction(b.dataset.ordDeclineYes, 'decline', {}));
-    tap('[data-ord-cancel]',      ()  => { this._orderEtaFor = null; this._orderDeclineFor = null; this._render(); });
-  }
-
-  _bindMaintRows() {
-    this.shadowRoot.querySelectorAll('[data-maint-task]').forEach(el => {
-      el.addEventListener('pointerdown', e => {
-        if (e.target.closest('[data-maint-done],[data-maint-cancel]')) return;
-        e.preventDefault();
-        const task = el.dataset.maintTask;
-        this._maintConfirm = this._maintConfirm === task ? null : task;
-        this._render();
-      });
-    });
-    this.shadowRoot.querySelectorAll('[data-maint-done]').forEach(b => {
-      b.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        const task = b.dataset.maintDone;
-        if (this._hass && task)
-          this._hass.callService('gaggiuino_profiler', 'maintenance_done', { task });
-        this._maintConfirm = null;
-        this._render();
-      });
-    });
-    this.shadowRoot.querySelectorAll('[data-maint-cancel]').forEach(b => {
-      b.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._maintConfirm = null;
-        this._render();
-      });
-    });
-  }
-
-  _bindNavBtns() {
-    this.shadowRoot.querySelectorAll('[data-nav]').forEach(btn => {
-      btn.addEventListener('pointerdown', e => {
-        if (btn.hasAttribute('disabled')) return;
-        e.preventDefault();
-        this._navShot(btn.dataset.nav);
-      });
-    });
-  }
-
-  _bindSwipe() {
-    const el = this.shadowRoot.querySelector('.swipe-target');
-    if (!el) return;
-    let sx = 0, sy = 0;
-    el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-    el.addEventListener('touchend', e => {
-      if (this._profileOpen) return;
-      const dx = e.changedTouches[0].clientX - sx;
-      const dy = e.changedTouches[0].clientY - sy;
-      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-      this._navShot(dx > 0 ? 'next' : 'prev');
-    }, { passive: true });
+    })}</div>`;
   }
 
   _navShot(dir) {
@@ -484,7 +412,7 @@ class GlpCard extends HTMLElement {
     const oldContent = this.shadowRoot.querySelector('.swipe-content');
     const oldClone   = oldContent ? oldContent.cloneNode(true) : null;
 
-    // Guard set hass() from re-rendering (and wiping the animation) until it finishes
+    // Guard set hass() from re-rendering (and clobbering the animation) until it finishes
     this._animating = true;
     this._shotIndex = newIndex;
     this._render();
@@ -679,17 +607,17 @@ class GlpCard extends HTMLElement {
   _beanExtraHtml(coffee, beanId) {
     const bean = (beanId != null && this._beansInfoById?.get(beanId))
       || this._beansInfo?.get(String(coffee || '').toLowerCase());
-    if (!bean) return '';
+    if (!bean) return nothing;
     // flagEmoji() dropped without replacement (#120) — the flag rendered
     // via regional-indicator codepoints, changed shape per OS, and carried
     // no information the coffee name/variety text next to it didn't already.
     const parts = [];
-    if (bean.variety) parts.push(esc(bean.variety));
+    if (bean.variety) parts.push(bean.variety);
     const age = roastAgeDays(bean.roastDate);
     if (age != null) parts.push(`${age}d`);
-    if (!parts.length) return '';
+    if (!parts.length) return nothing;
     const title = age != null ? T('bean_roasted_ago', age) : '';
-    return `<span class="shot-bean-extra"${title ? ` title="${esc(title)}"` : ''}>${parts.join(' · ')}</span>`;
+    return html`<span class="shot-bean-extra" title=${ifDefined(title || undefined)}>${parts.join(' · ')}</span>`;
   }
 
   // machine (#50): optional config option naming/slugging a specific
@@ -790,24 +718,30 @@ class GlpCard extends HTMLElement {
         shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null,
       ].filter(Boolean).join(' · ');
       const confirming = task && this._maintConfirm === task;
-      return `<div class="maint-row${confirming ? ' confirming' : ''}"${task ? ` data-maint-task="${esc(task)}" role="button"` : ''}>
+      return html`<div class="maint-row${confirming ? ' confirming' : ''}" data-maint-task=${ifDefined(task || undefined)} role=${ifDefined(task ? 'button' : undefined)} @pointerdown=${(e) => {
+        if (!task) return;
+        if (e.target.closest('[data-maint-done],[data-maint-cancel]')) return;
+        e.preventDefault();
+        this._maintConfirm = this._maintConfirm === task ? null : task;
+        this._render();
+      }}>
         <div class="maint-row-top">
-          ${ICONS.of(icon)}
-          <span class="maint-name">${esc(name)}</span>
-          <span class="maint-pill ${cls}">${pillIcon[cls] ? ICONS.of(pillIcon[cls]) : ''}${pills[status] || '—'}</span>
+          ${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of(icon))}
+          <span class="maint-name">${name}</span>
+          <span class="maint-pill ${cls}">${pillIcon[cls] ? unsafeHTML(ICONS.of(pillIcon[cls])) : nothing}${pills[status] || '—'}</span>
         </div>
-        ${sub ? `<div class="maint-sub">${esc(sub)}</div>` : ''}
+        ${sub ? html`<div class="maint-sub">${sub}</div>` : nothing}
         <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
-        ${confirming ? `<div class="maint-confirm">
+        ${confirming ? html`<div class="maint-confirm">
           <span class="maint-confirm-q">${T('maint_confirm_q')}</span>
-          <button class="maint-confirm-yes" data-maint-done="${esc(task)}">${ICONS.of('check')} ${T('ord_yes')}</button>
-          <button class="maint-confirm-no" data-maint-cancel="1">${ICONS.of('close')}</button>
-        </div>` : ''}
+          <button class="maint-confirm-yes" data-maint-done=${task} @pointerdown=${(e) => { e.preventDefault(); e.stopPropagation(); if (this._hass && task) this._hass.callService('gaggiuino_profiler', 'maintenance_done', { task }); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
+          <button class="maint-confirm-no" data-maint-cancel="1" @pointerdown=${(e) => { e.preventDefault(); e.stopPropagation(); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button>
+        </div>` : nothing}
       </div>`;
     };
     const rows = GlpCard.MAINT_TASKS.map(([suffix, nameKey, icon, task]) => {
       const s = this._s(suffix);
-      if (!s || s.state === 'unavailable' || s.state === 'unknown') return '';
+      if (!s || s.state === 'unavailable' || s.state === 'unknown') return null;
       const a = s.attributes || {};
       return row(icon, T(nameKey), s.state, a.pct, a.days_since, a.shots_since, task);
     }).filter(Boolean);
@@ -816,10 +750,10 @@ class GlpCard extends HTMLElement {
       .filter(([, v]) => v && typeof v === 'object' && 'status' in v)
       .map(([name, v]) => row('gear', name, v.status, v.pct, v.days_since, v.shots_since, v.task));
     if (!rows.length && !gRows.length)
-      return `<div class="unavailable">${T('maint_none')}</div>`;
-    return `<div class="maint-list">
-      ${rows.join('')}
-      ${gRows.length ? `<div class="maint-section-label">${T('maint_grinders')}</div>${gRows.join('')}` : ''}
+      return html`<div class="unavailable">${T('maint_none')}</div>`;
+    return html`<div class="maint-list">
+      ${rows}
+      ${gRows.length ? html`<div class="maint-section-label">${T('maint_grinders')}</div>${gRows}` : nothing}
     </div>`;
   }
 
@@ -992,8 +926,8 @@ class GlpCard extends HTMLElement {
   // Derives every value the render needs from `hass`/config, in the same order
   // and with the same side effects the single-method _render() had. The
   // machine-off branch returns before the recent-shot/tab derivations run,
-  // exactly as before. Nothing here builds HTML or touches the DOM — the
-  // section methods below turn this one plain object into the section strings.
+  // exactly as before. Nothing here touches the DOM or writes an HTML string —
+  // the section methods below turn this one plain object into Lit templates.
   _viewModel() {
     const prefix    = this._resolvePrefix();
     const bsPrefix  = prefix.replace(/^sensor\./, 'binary_sensor.');
@@ -1027,13 +961,13 @@ class GlpCard extends HTMLElement {
     this._readyByPlannedAt = readyByPlannedAt;
     this._readyByTargetAt = readyByTargetAt;
 
-    const _powerBtn = this._switchEntity ? `
+    const _powerBtn = this._switchEntity ? html`
       <button class="power-btn ${switchOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
-              title="${switchOff ? T('power_on') : T('power_off')}">
+              title=${switchOff ? T('power_on') : T('power_off')}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
-      </button>` : '';
+      </button>` : nothing;
 
     const vm = {
       prefix, bsPrefix, selPrefix,
@@ -1206,24 +1140,24 @@ class GlpCard extends HTMLElement {
     });
   }
 
-  // ── section builders (each returns the same string the old single-method
-  // _render() produced for that section, from the _viewModel() object) ────────
+  // ── section builders (each returns a Lit TemplateResult built from the
+  // _viewModel() object) ─────────────────────────────────────────────────────
 
   _machineOffHtml(vm) {
     const { standbyState, _powerBtn } = vm;
     const readyByHtml = this._buildReadyByHtml(vm.readyByTargetAt, vm.readyByPlannedAt);
-      const offOrders = this._orders.length > 0 ? `
+      const offOrders = this._orders.length > 0 ? html`
         <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
           <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T('tab_orders')}</div>
           ${this._buildOrdersHtml()}
-        </div>` : '';
-      return `
+        </div>` : nothing;
+      return html`
         <style>${STYLES}</style>
         <ha-card><div class="card collapsed">
           <div class="header">
             <div class="title">
-              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-              ${esc(this._config.title)}
+              <span class="machine-icon-badge">${/* MACHINE_ICON_MINI() emits fixed SVG geometry, no user input */ unsafeSVG(MACHINE_ICON_MINI(this._iconGradId, this._appMachineType()))}</span>
+              ${this._config.title}
             </div>
             <div class="header-right">
               <span class="off-label">${standbyState?.state === 'on' ? T('machine_standby') : T('off_label')}</span>${_powerBtn}
@@ -1236,35 +1170,35 @@ class GlpCard extends HTMLElement {
 
   _tabBarHtml(vm) {
     const { maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders } = vm;
-    return (maintAvailable || ordersTabAvail) ? `
+    return (maintAvailable || ordersTabAvail) ? html`
       <div class="tab-bar">
-        <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot">${ICONS.of('coffee')} Shot</button>
-        ${ordersTabAvail ? `<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders">${ICONS.of('cart')} ${T('tab_orders')}${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ''}</button>` : ''}
-        ${maintAvailable ? `<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint">${ICONS.of('wrench')} ${T('tab_maint')}${this._maintAnyDue() ? ` ${ICONS.of('warning', 'due')}` : ''}</button>` : ''}
-      </div>` : '';
+        <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot" @pointerdown=${(e) => { e.preventDefault(); this._selectTab('shot'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} Shot</button>
+        ${ordersTabAvail ? html`<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders" @pointerdown=${(e) => { e.preventDefault(); this._selectTab('orders'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('cart'))} ${T('tab_orders')}${pendingOrders ? html` <span class="tab-badge">${pendingOrders}</span>` : nothing}</button>` : nothing}
+        ${maintAvailable ? html`<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint" @pointerdown=${(e) => { e.preventDefault(); this._selectTab('maint'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('wrench'))} ${T('tab_maint')}${this._maintAnyDue() ? html` ${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('warning', 'due'))}` : nothing}</button>` : nothing}
+      </div>` : nothing;
   }
 
   _navHtml(vm) {
     const { indexChanged, showNav, totalShots, shotObj } = vm;
-    let navHtml = '';
+    let navHtml = nothing;
     if (showNav) {
       const dots = this._recentShots.slice(0, 10).map((_, i) => {
         const active = i === this._shotIndex;
-        return `<span class="nav-dot${active ? ` active${indexChanged ? ' changed' : ''}` : ''}"></span>`;
-      }).join('');
-      const prevDis = this._shotIndex >= totalShots - 1 ? ' disabled' : '';
-      const nextDis = this._shotIndex <= 0             ? ' disabled' : '';
-      let tsLine = '';
+        return html`<span class="nav-dot${active ? ` active${indexChanged ? ' changed' : ''}` : ''}"></span>`;
+      });
+      const prevDis = this._shotIndex >= totalShots - 1;
+      const nextDis = this._shotIndex <= 0;
+      let tsLine = nothing;
       if (this._shotIndex > 0 && shotObj?.ts) {
         const d = parseTs(shotObj.ts);
         if (d && !isNaN(d))
-          tsLine = `<div class="nav-ts">${d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})} ${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>`;
+          tsLine = html`<div class="nav-ts">${d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})} ${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>`;
       }
-      navHtml = `
+      navHtml = html`
         <div class="nav-row">
-          <button class="nav-arrow" data-nav="next"${nextDis}>‹</button>
+          <button class="nav-arrow" data-nav="next" ?disabled=${nextDis} @pointerdown=${(e) => { if (e.currentTarget.hasAttribute('disabled')) return; e.preventDefault(); this._navShot('next'); }}>‹</button>
           <div class="nav-dots">${dots}</div>
-          <button class="nav-arrow" data-nav="prev"${prevDis}>›</button>
+          <button class="nav-arrow" data-nav="prev" ?disabled=${prevDis} @pointerdown=${(e) => { if (e.currentTarget.hasAttribute('disabled')) return; e.preventDefault(); this._navShot('prev'); }}>›</button>
         </div>${tsLine}`;
     }
     return navHtml;
@@ -1272,21 +1206,21 @@ class GlpCard extends HTMLElement {
 
   _profilePickerHtml(vm) {
     const { brewing, showMaint, profileAvailable, currentProfile, profileSwitching, profileOptions } = vm;
-    return !brewing && !showMaint && profileAvailable ? `
+    return !brewing && !showMaint && profileAvailable ? html`
       <div class="profile-picker">
-        <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile">
+        <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile" @pointerdown=${(e) => { e.preventDefault(); e.stopPropagation(); this._toggleProfilePicker(); }}>
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
             <span class="profile-label-small">${T('profile_label')}</span>
-            <span class="profile-current-name">${esc(currentProfile || '—')}${profileSwitching ? `<span style="color:var(--amber);font-weight:500;font-size:var(--glp-fs-1)"> · ${T('profile_switching')}</span>` : ''}</span>
+            <span class="profile-current-name">${currentProfile || '—'}${profileSwitching ? html`<span style="color:var(--amber);font-weight:500;font-size:var(--glp-fs-1)"> · ${T('profile_switching')}</span>` : nothing}</span>
           </div>
           <span class="profile-chevron${this._profileOpen?' open':''}">▾</span>
         </button>
-        ${this._profileOpen ? `<div class="profile-opts">
+        ${this._profileOpen ? html`<div class="profile-opts">
           ${profileOptions.map(p =>
-            `<button class="profile-opt${p===currentProfile?' active':''}" data-profile-opt="${esc(p)}">${esc(p)}</button>`
-          ).join('')}
-        </div>` : ''}
-      </div>` : '';
+            html`<button class="profile-opt${p===currentProfile?' active':''}" data-profile-opt=${p} @pointerdown=${(e) => { e.preventDefault(); e.stopPropagation(); this._selectProfile(p); }}>${p}</button>`
+          )}
+        </div>` : nothing}
+      </div>` : nothing;
   }
 
   // Star rating: drawn ICONS.of('star') replaces the ★ text character —
@@ -1294,11 +1228,11 @@ class GlpCard extends HTMLElement {
   _ratingHtml(vm) {
     const { rating } = vm;
     return (() => {
-      if (!rating || rating < 1 || rating > 5) return '';
+      if (!rating || rating < 1 || rating > 5) return nothing;
       const cls = rating >= 4 ? 'high' : rating >= 3 ? 'mid' : 'low';
       const stars = Array.from({length:5}, (_,i) =>
-        ICONS.of('star', i < rating ? `on ${cls}` : '')).join('');
-      return `<div class="rating-row">${stars}</div>`;
+        unsafeHTML(ICONS.of('star', i < rating ? `on ${cls}` : '')));
+      return html`<div class="rating-row">${stars}</div>`;
     })();
   }
 
@@ -1307,11 +1241,11 @@ class GlpCard extends HTMLElement {
   // came out — recipe/process/result, see metricLineHtml() above.
   _metricTrioHtml(vm) {
     const { ratio, duration, weight } = vm;
-    return metricLineHtml([
+    return html`${/* metricLineHtml() escapes its own input and emits fixed markup */ unsafeHTML(metricLineHtml([
       ratio    ? { role: 'recipe',  num: `1:${ratio}`, unit: '',  label: 'Ratio'          } : null,
       duration ? { role: 'process', num: duration,      unit: 's', label: T('m_duration') } : null,
       weight   ? { role: 'result',  num: weight,        unit: 'g', label: T('m_yield')    } : null,
-    ]);
+    ]))}`;
   }
 
   _secondaryHtml(vm) {
@@ -1321,13 +1255,13 @@ class GlpCard extends HTMLElement {
         pressure   !== null ? { label: T('m_pressure'), val: `${pressure} bar` }  : null,
         shotTemp   !== null ? { label: T('m_temp'),     val: `${shotTemp}°` }     : null,
       ].filter(Boolean);
-      if (!pills.length) return '';
-      return `<div class="stats-secondary">
-        ${pills.map(p => `
+      if (!pills.length) return nothing;
+      return html`<div class="stats-secondary">
+        ${pills.map(p => html`
           <div class="stat-pill">
             <span class="stat-pill-label">${p.label}</span>
-            <span class="stat-pill-value">${esc(p.val)}</span>
-          </div>`).join('')}
+            <span class="stat-pill-value">${p.val}</span>
+          </div>`)}
       </div>`;
     })();
   }
@@ -1335,13 +1269,13 @@ class GlpCard extends HTMLElement {
   _liveSvgHtml(vm) {
     const { brewing, liveDatapoints, liveDur } = vm;
     return brewing && liveDatapoints
-      ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : '';
+      ? html`<div class="chart-wrap">${/* buildLiveChart() emits fixed SVG from numeric data */ unsafeSVG(buildLiveChart(liveDatapoints))}</div>${/* chartLegendHtml() escapes its own input */ unsafeHTML(chartLegendHtml(liveDatapoints, liveDur))}` : nothing;
   }
 
   _histSvgHtml(vm) {
     const { histDp, shotObj, animateChart } = vm;
     return histDp
-      ? `<div class="chart-wrap">${buildShotChart(histDp.p||[], histDp.t||[], histDp.w||[], histDp.f||[], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : '';
+      ? html`<div class="chart-wrap">${/* buildShotChart() emits fixed SVG from numeric data */ unsafeSVG(buildShotChart(histDp.p||[], histDp.t||[], histDp.w||[], histDp.f||[], shotObj?.duration, animateChart))}</div>${/* chartLegendHtml() escapes its own input */ unsafeHTML(chartLegendHtml(histDp, shotObj?.duration))}` : nothing;
   }
 
   // ── live brewing stats ──────────────────────────────────────────────────
@@ -1354,65 +1288,65 @@ class GlpCard extends HTMLElement {
   // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
   _liveStatsHtml(vm) {
     const { brewing, temp, livePressure, liveWeight } = vm;
-    return brewing ? metricLineHtml([
+    return brewing ? html`${/* metricLineHtml() escapes its own input and emits fixed markup */ unsafeHTML(metricLineHtml([
       temp         !== null ? { role: 'recipe',  num: temp,         unit: '°', label: T('leg_temp')     } : null,
       livePressure !== null ? { role: 'process', num: livePressure, unit: 'bar', label: T('leg_pressure') } : null,
       liveWeight   !== null ? { role: 'result',  num: liveWeight,   unit: 'g', label: T('leg_weight')   } : null,
-    ]) : '';
+    ]))}` : nothing;
   }
 
   _liveMachineHtml(vm) {
     const { brewing, showMaint, lmTiles } = vm;
-    return (!brewing && !showMaint && lmTiles.length) ? `
+    return (!brewing && !showMaint && lmTiles.length) ? html`
       <div class="live-machine">
         <div class="lm-head"><span class="lm-live-dot"></span>${T('lm_live')}</div>
         <div class="lm-tiles">
-          ${lmTiles.map(t => `
+          ${lmTiles.map(t => html`
             <div class="lm-tile${t.warm ? ' warming' : ''}">
-              <div class="lm-val">${esc(String(t.val))}<span class="lm-unit">${t.unit}</span></div>
-              <div class="lm-lbl">${esc(t.lbl)}</div>
-            </div>`).join('')}
+              <div class="lm-val">${String(t.val)}<span class="lm-unit">${t.unit}</span></div>
+              <div class="lm-lbl">${t.lbl}</div>
+            </div>`)}
         </div>
-      </div>` : '';
+      </div>` : nothing;
   }
 
   _preheatHtml(vm) {
     const { brewing, showMaint, preheatHasEnt, preheatReady, preheatPct, preheatMinLeft } = vm;
     return !brewing && !showMaint && preheatHasEnt ? (
       preheatReady
-        ? `<div class="preheat-ready">${ICONS.of('check')} ${T('preheat_ready')}</div>`
-        : preheatPct !== null ? `
+        ? html`<div class="preheat-ready">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('preheat_ready')}</div>`
+        : preheatPct !== null ? html`
           <div class="preheat-warming">
             <div class="preheat-warming-label">
-              <span>${ICONS.of('heat')} ${T('preheat_heating')}</span>
+              <span>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('heat'))} ${T('preheat_heating')}</span>
               <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ''}</span>
             </div>
             <div class="preheat-bar-bg">
               <div class="preheat-bar-fill" style="width:${Math.round(preheatPct*100)}%"></div>
             </div>
-          </div>` : ''
-    ) : '';
+          </div>` : nothing
+    ) : nothing;
   }
 
   _shotSectionHtml(vm) {
     const { brewing, showMaint, profile, drinkType, coffee, grinder, grind, shotObj, score, scoreCls, verdictWord } = vm;
     const scoreBadge = score != null
-      ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${esc(score)}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>`
-      : '';
-    return !brewing && !showMaint ? `
+      ? html`<div class="verdict ${scoreCls}"><span class="verdict-num">${score}</span><span class="verdict-sep"> · </span><span class="verdict-word">${verdictWord}</span></div>`
+      : nothing;
+    return !brewing && !showMaint ? html`
       ${profile
-        ? `<div class="shot-hero">
+        ? html`<div class="shot-hero">
             <div class="shot-hero-main">
-              <div class="shot-profile">${esc(profile)}</div>
+              <div class="shot-profile">${profile}</div>
               <div class="shot-meta">
-                ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ''}
-                ${coffee    ? `<span class="shot-coffee">${ICONS.of('coffee')} ${esc(coffee)}</span>${this._beanExtraHtml(coffee, shotObj?.beanId)}` : ''}
+                ${drinkType ? html`<span class="shot-drink">${drinkType}</span>` : nothing}
+                ${coffee    ? html`<span class="shot-coffee">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} ${coffee}</span>${this._beanExtraHtml(coffee, shotObj?.beanId)}` : nothing}
               </div>
-              ${(grinder || grind) ? `<div class="shot-grind">${ICONS.of('gear')} ${esc([grinder, grind].filter(Boolean).join(' · '))}</div>` : ''}
+              ${(grinder || grind) ? html`<div class="shot-grind">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('gear'))} ${[grinder, grind].filter(Boolean).join(' · ')}</div>` : nothing}
             </div>
             ${scoreBadge}
           </div>`
-        : `<div class="no-shot">
+        : html`<div class="no-shot">
             <div class="no-shot-label">${T('no_shot_label')}</div>
             <div class="no-shot-hint">${T('no_shot_hint')}</div>
           </div>`}
@@ -1420,18 +1354,18 @@ class GlpCard extends HTMLElement {
       ${this._metricTrioHtml(vm)}
       ${this._secondaryHtml(vm)}
       ${this._histSvgHtml(vm)}
-    ` : '';
+    ` : nothing;
   }
 
   _footerHtml(vm) {
     const { today, waterLevel, syncTime, glpUrl } = vm;
-    return `
+    return html`
       <div class="footer">
-        <span class="footer-item">${ICONS.of('coffee')} ${T('footer_today', today)}</span>
-        ${waterLevel !== null ? `<span class="footer-item">${ICONS.of('droplet')} ${waterLevel}%</span>` : '<span></span>'}
+        <span class="footer-item">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} ${T('footer_today', today)}</span>
+        ${waterLevel !== null ? html`<span class="footer-item">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('droplet'))} ${waterLevel}%</span>` : html`<span></span>`}
         <span class="footer-item">
-          ${syncTime ? `${syncTime}` : ''}
-          ${glpUrl ? `${syncTime ? ' · ' : ''}<a href="${esc(glpUrl)}" target="_blank" rel="noopener noreferrer">GLP ↗</a>` : ''}
+          ${syncTime ? syncTime : nothing}
+          ${glpUrl ? html`${syncTime ? ' · ' : ''}<a href=${glpUrl} target="_blank" rel="noopener noreferrer">GLP ↗</a>` : nothing}
         </span>
       </div>`;
   }
@@ -1445,46 +1379,51 @@ class GlpCard extends HTMLElement {
     // ── machine off ──────────────────────────────────────────────────────────
     if (vm.machineOff) {
       this._profileOpen = false;
-      this.shadowRoot.innerHTML = this._machineOffHtml(vm);
+      render(this._machineOffHtml(vm), this.shadowRoot);
       this._applyMachineTheme();
       this._applySemanticColorContrast();
-      this._bindPowerBtn();
-      this._bindReadyByPicker();
       this._startReadyByTicker();
-      if (this._orders.length > 0) this._bindOrderBtns();
       return;
     }
 
-    this.shadowRoot.innerHTML = `
+    render(html`
       <style>${STYLES}</style>
       <ha-card><div class="card">
 
         <div class="header">
           <div class="title">
-            <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-            ${esc(this._config.title)}
+            <span class="machine-icon-badge">${/* MACHINE_ICON_MINI() emits fixed SVG geometry, no user input */ unsafeSVG(MACHINE_ICON_MINI(this._iconGradId, this._appMachineType()))}</span>
+            ${this._config.title}
           </div>
           <div class="header-right">
-            ${this._machineOnSince ? `<span class="machine-uptime" title="${T('uptime_title')}">${ICONS.of('plug')}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : ''}
+            ${this._machineOnSince ? html`<span class="machine-uptime" title=${T('uptime_title')}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('plug'))}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : nothing}
             <div class="status-dot ${vm.dotClass}"></div>
             ${vm._powerBtn}
           </div>
         </div>
 
         ${this._tabBarHtml(vm)}
-        ${vm.isDescaling && !vm.brewing ? `<div class="descaling-banner">${ICONS.of('descale')} ${T('descaling_mode')}</div>` : ''}
-        ${vm.steamOn && !vm.brewing ? `<div class="steam-banner">${ICONS.of('steam')} ${T('steam_mode')}</div>` : ''}
-        ${vm.waterLevel !== null && vm.waterLevel < 20 ? `<div class="water-low">${ICONS.of('droplet')} ${T('water_low', vm.waterLevel)}</div>` : ''}
+        ${vm.isDescaling && !vm.brewing ? html`<div class="descaling-banner">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('descale'))} ${T('descaling_mode')}</div>` : nothing}
+        ${vm.steamOn && !vm.brewing ? html`<div class="steam-banner">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('steam'))} ${T('steam_mode')}</div>` : nothing}
+        ${vm.waterLevel !== null && vm.waterLevel < 20 ? html`<div class="water-low">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('droplet'))} ${T('water_low', vm.waterLevel)}</div>` : nothing}
         ${this._preheatHtml(vm)}
         ${this._profilePickerHtml(vm)}
         ${this._liveMachineHtml(vm)}
         ${this._navHtml(vm)}
 
-        <div class="swipe-target">
+        <div class="swipe-target"
+          @touchstart=${{ handleEvent: (e) => { this._swipeSx = e.touches[0].clientX; this._swipeSy = e.touches[0].clientY; }, passive: true }}
+          @touchend=${{ handleEvent: (e) => {
+            if (this._profileOpen) return;
+            const dx = e.changedTouches[0].clientX - this._swipeSx;
+            const dy = e.changedTouches[0].clientY - this._swipeSy;
+            if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+            this._navShot(dx > 0 ? 'next' : 'prev');
+          }, passive: true }}>
           <div class="swipe-content">
-            ${vm.brewing ? `
-              <div class="brewing-banner">${ICONS.of('coffee')} ${T('brewing')}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : ' …'}</div>
-              ${vm.liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(vm.liveProfile)}</div></div>` : ''}
+            ${vm.brewing ? html`
+              <div class="brewing-banner">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} ${T('brewing')}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : ' …'}</div>
+              ${vm.liveProfile ? html`<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${vm.liveProfile}</div></div>` : nothing}
               ${this._liveSvgHtml(vm)}
               ${this._liveStatsHtml(vm)}
             ` : vm.showMaint ? this._buildMaintHtml() : vm.showOrders ? this._buildOrdersHtml() : this._shotSectionHtml(vm)}
@@ -1493,16 +1432,9 @@ class GlpCard extends HTMLElement {
 
         ${this._footerHtml(vm)}
 
-      </div></ha-card>`;
+      </div></ha-card>`, this.shadowRoot);
     this._applyMachineTheme();
     this._applySemanticColorContrast();
-    this._bindPowerBtn();
-    this._bindProfilePicker();
-    this._bindTabBtns();
-    this._bindMaintRows();
-    this._bindOrderBtns();
-    this._bindNavBtns();
-    this._bindSwipe();
     this._startUptimeTicker();
   }
 

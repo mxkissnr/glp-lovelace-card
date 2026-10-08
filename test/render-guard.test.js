@@ -3,7 +3,7 @@
 // glp-card.js in a vm sandbox and exposes GlpCard.prototype methods directly,
 // without a real shadow DOM/customElements.
 //
-// `_render()` itself (full shadow-DOM rebuild) is out of scope here, same
+// `_render()` itself (full shadow-DOM render) is out of scope here, same
 // boundary as the rest of this suite (see ready-by.test.js) — it is spied on
 // instead of exercised for real; visual correctness is verified separately
 // via `npm run screenshot`. The spy also clears `_pendingRender`, mirroring
@@ -33,8 +33,7 @@ function makeInstance() {
 
 // Stands in for the constructor's `this.addEventListener(...)` calls (the
 // fake HTMLElement in this vm context has none) so `_bindTouchGuard()` can be
-// exercised directly, same approach as the fake shadowRoot input further
-// below for `_bindReadyByPicker()`.
+// exercised directly.
 function bindFakeTouchGuard(inst) {
   const listeners = {};
   inst.addEventListener = (type, handler) => { listeners[type] = handler; };
@@ -94,12 +93,7 @@ test('a blocked render is replayed exactly once once the blocking interaction en
   const inst = makeInstance();
   const renderCount = spyOnRender(inst);
 
-  const listeners = {};
-  const fakeInput = { addEventListener(type, handler) { listeners[type] = handler; } };
-  inst.shadowRoot = { getElementById: id => (id === 'glp-readyby-input' ? fakeInput : null) };
-  inst._bindReadyByPicker();
-
-  listeners.focus();
+  inst._readyByFocus();
   assert.equal(inst._readyByInteracting, true);
 
   // A render request arrives mid-interaction — must be deferred, not dropped.
@@ -108,15 +102,15 @@ test('a blocked render is replayed exactly once once the blocking interaction en
   assert.equal(inst._pendingRender, true);
 
   // Interaction ends — the deferred render is replayed exactly once.
-  listeners.blur();
+  inst._readyByBlur();
   assert.equal(inst._readyByInteracting, false);
   assert.equal(renderCount(), 1);
   assert.equal(inst._pendingRender, false);
 
   // A second, unrelated blur (no pending render outstanding) must not
   // trigger another render.
-  listeners.focus();
-  listeners.blur();
+  inst._readyByFocus();
+  inst._readyByBlur();
   assert.equal(renderCount(), 1);
 });
 
@@ -124,13 +118,8 @@ test('blur with nothing pending does not force a render (no-op catch-up)', () =>
   const inst = makeInstance();
   const renderCount = spyOnRender(inst);
 
-  const listeners = {};
-  const fakeInput = { addEventListener(type, handler) { listeners[type] = handler; } };
-  inst.shadowRoot = { getElementById: id => (id === 'glp-readyby-input' ? fakeInput : null) };
-  inst._bindReadyByPicker();
-
-  listeners.focus();
-  listeners.blur();
+  inst._readyByFocus();
+  inst._readyByBlur();
   assert.equal(renderCount(), 0);
 });
 
@@ -139,19 +128,14 @@ test('a render requested while blocked by one flag is still deferred if another 
   inst._profileInteracting = true;
   const renderCount = spyOnRender(inst);
 
-  const listeners = {};
-  const fakeInput = { addEventListener(type, handler) { listeners[type] = handler; } };
-  inst.shadowRoot = { getElementById: id => (id === 'glp-readyby-input' ? fakeInput : null) };
-  inst._bindReadyByPicker();
-
-  listeners.focus(); // _readyByInteracting = true too, now two flags block
+  inst._readyByFocus(); // _readyByInteracting = true too, now two flags block
   inst._requestRender();
   assert.equal(renderCount(), 0);
   assert.equal(inst._pendingRender, true);
 
   // Only the ready-by interaction ends — _profileInteracting is still true,
   // so the render must stay deferred rather than firing early.
-  listeners.blur();
+  inst._readyByBlur();
   assert.equal(renderCount(), 0);
   assert.equal(inst._pendingRender, true);
 
@@ -163,7 +147,7 @@ test('a render requested while blocked by one flag is still deferred if another 
 });
 
 // ── touch guard (#147 — iOS: page couldn't scroll past the card because a
-// `set hass()`-triggered innerHTML rebuild mid-gesture aborted the WKWebView
+// `set hass()`-triggered DOM render mid-gesture aborted the WKWebView
 // touch-scroll) ──────────────────────────────────────────────────────────────
 
 test('_bindTouchGuard(): touchstart sets _touchActive, touchend (last finger) clears it', () => {

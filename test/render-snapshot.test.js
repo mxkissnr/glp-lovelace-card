@@ -216,9 +216,42 @@ if (UPDATE || !fs.existsSync(SNAPSHOT_PATH)) {
 
 const expected = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
 
+// Lit leaves comment markers in the rendered DOM (its part/boundary markers,
+// `<!--?lit$123$-->` / `<!---->`, and the SVG comments unsafeSVG drops), and it
+// sets a bound attribute after the static ones it cloned — so the rendered DOM
+// can list `data-action` before `class` where the old string-building render
+// wrote `class` first. The fixture predates the Lit render, so compare with the
+// comments stripped and each tag's attributes sorted; the fixture file itself
+// is left untouched. This walks the parsed DOM rather than matching the markup
+// with regular expressions, so the normalization stays linear and complete.
+const COMMENT_NODE = 8;
+
+function removeComments(node) {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === COMMENT_NODE) child.remove();
+    else removeComments(child);
+  }
+}
+
+function sortAttributes(el) {
+  const attrs = el.getAttributeNames()
+    .map(name => [name, el.getAttribute(name)])
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  for (const [name] of attrs) el.removeAttribute(name);
+  for (const [name, value] of attrs) el.setAttribute(name, value);
+}
+
+function normalizeSnapshot(html) {
+  const container = window.document.createElement('div');
+  container.innerHTML = html;
+  removeComments(container);
+  for (const el of Array.from(container.querySelectorAll('*'))) sortAttributes(el);
+  return container.innerHTML;
+}
+
 for (const scenario of SCENARIOS) {
   test(`render snapshot: ${scenario.name}`, () => {
-    assert.equal(results[scenario.name], expected[scenario.name],
+    assert.equal(normalizeSnapshot(results[scenario.name]), normalizeSnapshot(expected[scenario.name]),
       `render output for "${scenario.name}" changed; regenerate with UPDATE_SNAPSHOTS=1 only if the change is intentional`);
   });
 }

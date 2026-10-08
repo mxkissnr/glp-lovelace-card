@@ -29,7 +29,13 @@ function makeStyleStub() {
   };
 }
 
-const fakeDocument = { createElement() { return { style: makeStyleStub(), remove() {} }; } };
+const fakeDocument = {
+  createElement() { return { style: makeStyleStub(), remove() {} }; },
+  // Lit calls document.createTreeWalker while it is imported. This stub is
+  // required by Lit itself, not a missing-package shim; this test never calls
+  // render(), so the rest of the DOM surface is not needed.
+  createTreeWalker() { return {}; },
+};
 const { GlpCard } = loadCard({
   context: {
     document: fakeDocument,

@@ -8,6 +8,7 @@
 ### Changed
 - **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
 - **The card is now built from a TypeScript source; the installed file and its behaviour are unchanged.** Part of #180
+- **The card now updates only the parts that changed instead of redrawing itself, so open pickers, typed times and animations survive Home Assistant updates.** Part of #180
 
 ## [2.21.1] – 2026-09-26
 ### Fixed
