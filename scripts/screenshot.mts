@@ -6,7 +6,7 @@
 // mock `hass` object (machine on, profile selected, preheat ready, a recent
 // shot with a full pressure/flow/temp/weight curve, maintenance rows), waits
 // for the card's shadow DOM to render, then screenshots just the card
-// element at 2x scale. Run on demand: `node scripts/screenshot.mjs`.
+// element at 2x scale. Run on demand: `node scripts/screenshot.mts`.
 //
 // Two independent axes (deliberately decoupled — the card's contrast fix for
 // --glp-ok/--glp-warn/--glp-err keys off the ACTUAL resolved --glp-bg via
@@ -37,11 +37,11 @@
 import path from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
-import { repoRoot, startServer } from './e2e-harness.mjs';
+import { repoRoot, startServer } from './e2e-harness.mts';
 
-function flag(name, envVar, fallback) {
+function flag(name: string, envVar: string, fallback: string): string {
     const eq = process.argv.find(a => a.startsWith(`--${name}=`));
-    if (eq) return eq.split('=')[1];
+    if (eq) return eq.split('=')[1] ?? fallback;
     if (process.env[envVar]) return process.env[envVar];
     return fallback;
 }
@@ -77,7 +77,7 @@ const THEME_VARS = HA_THEME === 'light' ? `
 mkdirSync(outDir, { recursive: true });
 
 // ── Synthetic espresso shot curve (28s, 0.1s resolution, x10-scaled like real datapoints) ──
-function makeShotDp() {
+function makeShotDp(): { p: number[]; t: number[]; w: number[]; f: number[] } {
     const t = [], p = [], f = [], w = [];
     for (let i = 0; i <= 280; i++) {
         const s = i / 10; // seconds
@@ -196,7 +196,9 @@ ${THEME_VARS}  }
 
 async function main() {
     const server = await startServer(PAGE_HTML);
-    const { port } = server.address();
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('screenshot: server has no TCP address');
+    const baseUrl = `http://127.0.0.1:${address.port}`;
     const browser = await chromium.launch();
     try {
         // colorScheme is intentionally independent from HA_THEME/THEME_VARS —
@@ -209,7 +211,7 @@ async function main() {
             viewport: { width: 460, height: 900 },
             colorScheme: OS_SCHEME === 'light' ? 'light' : 'dark',
         });
-        await page.goto(`http://127.0.0.1:${port}/__harness.html`, { waitUntil: 'load' });
+        await page.goto(`${baseUrl}/__harness.html`, { waitUntil: 'load' });
         await page.waitForTimeout(500);
         const card = page.locator('#card');
         await card.waitFor({ state: 'attached' });

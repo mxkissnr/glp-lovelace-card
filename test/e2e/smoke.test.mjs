@@ -1,5 +1,5 @@
 // Minimal Playwright E2E smoke test. Reuses the static-server harness from
-// scripts/e2e-harness.mjs (shared with scripts/screenshot.mjs) to render the
+// scripts/e2e-harness.mts (shared with scripts/screenshot.mts) to render the
 // real glp-card.js in a headless Chromium tab -- not a vm sandbox -- so it
 // can exercise real custom-element lifecycle, shadow DOM and pointerdown
 // event wiring that vm.runInContext-based unit tests structurally can't
@@ -20,7 +20,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { startServer } from '../../scripts/e2e-harness.mjs';
+import { startServer } from '../../scripts/e2e-harness.mts';
 
 const PREFIX = 'sensor.gaggiuino_local_profiler_';
 
