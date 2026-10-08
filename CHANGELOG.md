@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **After setting or cancelling a ready-by time, the card keeps showing your choice until Home Assistant confirms it instead of briefly jumping back.** Closes #214
 - **The uptime and ready-by countdowns no longer crash the card's render.** Both spans bound their text as a Lit child part, but the per-second tickers overwrite `textContent`, which deletes the child part's marker comments; the next Home Assistant update then threw `TypeError: can't access property "data", this._$AA.nextSibling is null` and Home Assistant replaced the card with its "Configuration error" card after a few seconds. Both spans now bind the text as a property (`.textContent=`), which has no markers to lose. `glp-card.js`, `test/e2e/smoke.test.mjs`. Part of #180
 - **Touches, open pickers and typed times no longer delay or lose live updates.** Part of #180
 - **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195

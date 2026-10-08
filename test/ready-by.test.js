@@ -1,17 +1,37 @@
-// Ready-by preheat scheduler tests (#61). Card loaded via the shared test
-// helper (test/helpers/load-card.cjs), which evaluates the real glp-card.js
-// and exposes GlpCard.prototype methods to the test directly, without a real
-// shadow DOM/customElements — covers only the pure-logic pieces
-// (_resolveReadyByTarget's today/tomorrow date math, _readReadyBy's
-// hass.states parsing), per this suite's existing boundary of not testing
-// markup or hass.callService invocation.
+// Ready-by preheat scheduler tests (#61, #214). Most of the suite drives the
+// pure logic directly (_resolveReadyByTarget's today/tomorrow date math,
+// _readReadyBy's hass.states parsing) on an Object.create(GlpCard.prototype)
+// instance. The #214 fallback-timer tests need the real pointerdown handler —
+// which is where _pendingReadyByTimer is armed — so those render the card into
+// a real happy-dom document (like test/render-guard.test.js), dispatch
+// pointerdown and advance the clock with node:test's fake timers.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { Window } = require('happy-dom');
 const { loadCard } = require('./helpers/load-card.cjs');
 
-const { GlpCard } = loadCard();
+// One happy-dom Window for the whole file: node --test loads the card (and
+// therefore Lit) once per process, and Lit binds to whatever global document
+// exists when it is first imported. The window must be installed before
+// loadCard() requires the card.
+const window = new Window();
+// Publish `home-assistant` first so the card's deferred define (#184) fires
+// and registers `glp-card` in this window's registry.
+window.customElements.define('home-assistant', class extends window.HTMLElement {});
+const { GlpCard } = loadCard({
+  context: {
+    document: window.document,
+    window,
+    HTMLElement: window.HTMLElement,
+    customElements: window.customElements,
+    navigator: window.navigator,
+    getComputedStyle: window.getComputedStyle.bind(window),
+    localStorage: window.localStorage,
+  },
+});
+assert.equal(typeof GlpCard, 'function', 'the card must register in the happy-dom window');
 
 function makeInstance({ config = {}, states = {} } = {}) {
   const inst = Object.create(GlpCard.prototype);
@@ -301,3 +321,129 @@ test('_readyByCountdownText() returns the scheduling placeholder when a target i
 // The ready-by input is left uncontrolled in the Lit template, so a typed time
 // survives an hass update without any focus/blur render guard; that behaviour
 // is covered by test/render-guard.test.js.
+
+// ── optimistic Set/Cancel fallback timing (#214) ────────────────────────────
+// The card shows the picked/cancelled value immediately and clears it as soon
+// as _readReadyBy() sees the sensor confirm it. The armed timer is only the
+// fallback for a service call the backend never applied; #214 sized it to the
+// 60 s default poll because the integration's post-call refresh is debounced
+// (~10 s) and the sensor regularly confirmed later than the old 8 s.
+
+const P = 'sensor.gaggiuino_local_profiler_';
+
+// Machine off with nothing scheduled: the ready-by picker is rendered.
+function offHass(extra = {}) {
+  return {
+    language: 'en',
+    callService: () => {},
+    states: {
+      'switch.gaggiuino': { state: 'off' },
+      [`${P}machine_status`]: { state: 'offline', attributes: {} },
+      [`${P}preheat_elapsed`]: { state: '0' },
+      ...extra,
+    },
+  };
+}
+
+// A target the sensor already reports — the stale read a Cancel has to
+// override until the backend confirms the cancel.
+function staleTarget() {
+  return {
+    [`${P}preheat_ready_by_target_at`]: { state: '2026-07-28T07:00:00.000Z' },
+    [`${P}preheat_planned_switch_on_at`]: { state: '2026-07-28T06:40:00.000Z' },
+  };
+}
+
+function makeLiveCard(hass) {
+  const card = window.document.createElement('glp-card');
+  card._config = { title: 'Gaggiuino', entity_prefix: P, switch_entity: 'switch.gaggiuino' };
+  card._hass = hass;
+  // The fake hass carries no fetchWithAuth, and _render() would otherwise arm
+  // the setInterval tickers that keep node --test alive; these tests render on
+  // demand and drive setTimeout themselves.
+  card._startOrdersPoll = () => {};
+  card._startReadyByTicker = () => {};
+  card._render();
+  return card;
+}
+
+// Fires the constructor's delegated pointerdown handler — the same path a real
+// tap takes (the card binds on 'pointerdown', not 'click').
+function press(card, action) {
+  const btn = card.shadowRoot.querySelector(`[data-action="${action}"]`);
+  assert.ok(btn, `the ${action} button is rendered`);
+  btn.dispatchEvent(new window.Event('pointerdown', { bubbles: true, cancelable: true, composed: true }));
+}
+
+test('a pending Set holds through 15 s of unconfirmed hass updates, then clears on the matching sensor value (#214)', (t) => {
+  const card = makeLiveCard(offHass());
+  card.shadowRoot.getElementById('glp-readyby-input').value = '07:30';
+
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  press(card, 'set-ready-by');
+  const pending = card._pendingReadyByTargetAt;
+  assert.ok(pending, 'the Set is shown optimistically right after the press');
+
+  // The backend is slow: hass keeps arriving with the target sensor still
+  // 'unknown'. The old fixed 8 s timer dropped the optimistic value inside
+  // this window; the 60 s fallback must hold it.
+  for (let elapsed = 5000; elapsed <= 15000; elapsed += 5000) {
+    card.hass = offHass();
+    t.mock.timers.tick(5000);
+    assert.equal(card._readReadyBy().targetAt, pending, `still pending after ${elapsed} ms`);
+  }
+
+  // The sensor catches up with the matching value — the override clears.
+  card.hass = offHass({
+    [`${P}preheat_ready_by_target_at`]: { state: pending.toISOString() },
+    [`${P}preheat_planned_switch_on_at`]: { state: pending.toISOString() },
+  });
+  assert.equal(card._pendingReadyByTargetAt, null, 'the matching sensor value clears the override');
+  assert.equal(card._readReadyBy().targetAt.toISOString(), pending.toISOString());
+});
+
+test('a pending Set falls back after 60 s when the sensor never confirms (#214)', (t) => {
+  const card = makeLiveCard(offHass());
+  card.shadowRoot.getElementById('glp-readyby-input').value = '07:30';
+
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  press(card, 'set-ready-by');
+  assert.ok(card._pendingReadyByTargetAt, 'pending right after the press');
+
+  t.mock.timers.tick(59999);
+  assert.ok(card._pendingReadyByTargetAt, 'still pending just before the 60 s fallback');
+
+  t.mock.timers.tick(1);
+  assert.equal(card._pendingReadyByTargetAt, null, 'the 60 s fallback clears the override');
+});
+
+test('a pending Cancel holds while the sensor is still stale, then clears on confirmation (#214)', (t) => {
+  const card = makeLiveCard(offHass(staleTarget()));
+
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  press(card, 'cancel-ready-by');
+  assert.strictEqual(card._pendingReadyByTargetAt, false, 'the Cancel is shown optimistically');
+
+  for (let elapsed = 5000; elapsed <= 15000; elapsed += 5000) {
+    card.hass = offHass(staleTarget());
+    t.mock.timers.tick(5000);
+    assert.strictEqual(card._pendingReadyByTargetAt, false, `still cancelling after ${elapsed} ms`);
+    assert.equal(card._readReadyBy().targetAt, null, 'the picker is still shown while stale');
+  }
+
+  card.hass = offHass();   // sensor confirms: nothing scheduled
+  assert.equal(card._pendingReadyByTargetAt, null, 'the confirming (unknown) sensor clears the Cancel');
+});
+
+test('a pending Cancel falls back after 60 s when the sensor never confirms (#214)', (t) => {
+  const card = makeLiveCard(offHass(staleTarget()));
+
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  press(card, 'cancel-ready-by');
+
+  t.mock.timers.tick(59999);
+  assert.strictEqual(card._pendingReadyByTargetAt, false, 'still cancelling just before the 60 s fallback');
+
+  t.mock.timers.tick(1);
+  assert.equal(card._pendingReadyByTargetAt, null, 'the 60 s fallback clears the Cancel');
+});
