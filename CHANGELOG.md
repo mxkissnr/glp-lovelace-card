@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Touches, open pickers and typed times no longer delay or lose live updates.** Part of #180
 - **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
 - **The power button now follows the switch, not standby.** With a GaggiMate in standby the switch stays reported `on` while the machine reads as off (above), so the header button's class and title wrongly showed "Power on" even though its click calls `switch.toggle` and would cut power to the machine. The button's state and label now use the switch-only rule; the click behavior is unchanged. `glp-card.js`, `test/machine-standby.test.js`. Part of #195
 
