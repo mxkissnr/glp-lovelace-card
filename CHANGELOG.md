@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **The uptime and ready-by countdowns no longer crash the card's render.** Both spans bound their text as a Lit child part, but the per-second tickers overwrite `textContent`, which deletes the child part's marker comments; the next Home Assistant update then threw `TypeError: can't access property "data", this._$AA.nextSibling is null` and Home Assistant replaced the card with its "Configuration error" card after a few seconds. Both spans now bind the text as a property (`.textContent=`), which has no markers to lose. `glp-card.js`, `test/e2e/smoke.test.mjs`. Part of #180
 - **Touches, open pickers and typed times no longer delay or lose live updates.** Part of #180
 - **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
 - **The power button now follows the switch, not standby.** With a GaggiMate in standby the switch stays reported `on` while the machine reads as off (above), so the header button's class and title wrongly showed "Power on" even though its click calls `switch.toggle` and would cut power to the machine. The button's state and label now use the switch-only rule; the click behavior is unchanged. `glp-card.js`, `test/machine-standby.test.js`. Part of #195
