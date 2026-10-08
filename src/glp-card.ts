@@ -1160,6 +1160,7 @@ class GlpCard extends HTMLElement {
 
     // ── chart ──────────────────────────────────────────────────────────────────
     const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length
+      ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
 
     const histDp = !brewing && shotObj?.dp || null;
     const shotChartKey = shotObj ? (shotObj.id ?? `idx:${this._shotIndex}`) : null;

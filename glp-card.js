@@ -2610,7 +2610,7 @@
       const indexChanged = this._shotIndex !== this._prevShotIndex;
       this._prevShotIndex = this._shotIndex;
       const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
-      const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length;
+      const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
       const histDp = !brewing && shotObj?.dp || null;
       const shotChartKey = shotObj ? shotObj.id ?? `idx:${this._shotIndex}` : null;
       const animateChart = this._shotChartKeyChanged(this._lastChartShotKey, shotChartKey);
