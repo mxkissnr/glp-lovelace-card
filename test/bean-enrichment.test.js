@@ -1,33 +1,16 @@
 // Shot-card bean enrichment (#55, follow-up to gaggiuino-local-profiler#456):
 // _beanExtraHtml() must prefer the stable beanId over the free-text coffee
 // name, falling back to name matching only when beanId isn't available.
-// Same vm-context approach as ready-by.test.js/machine-config.test.js: loads
-// the real glp-card.js into a sandboxed vm context and exercises
-// GlpCard.prototype methods directly.
+// Card loaded via the shared test helper (test/helpers/load-card.cjs), which
+// evaluates the real glp-card.js and exposes GlpCard.prototype methods to the
+// test directly.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
-function loadGlpCard() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard;"
-  );
-
-  class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } }, window: {}, console, URL, setTimeout, clearTimeout };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-  return context.__GlpCard;
-}
-
-const GlpCard = loadGlpCard();
+const { GlpCard } = loadCard();
 
 function makeInstance({ beansInfoById = [], beansInfo = [] } = {}) {
   const inst = Object.create(GlpCard.prototype);
