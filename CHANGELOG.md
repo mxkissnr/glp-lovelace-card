@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [2.22.0] – 2026-10-08
+### Changed
+- **The card now updates only the parts that changed instead of redrawing itself, so touches, open pickers, typed times and animations no longer delay or lose live updates when Home Assistant refreshes.** Part of #180
+- **The card is now built from a strictly typed TypeScript source, with the build and checks against the Order Card's shared code running as TypeScript tooling; the installed file behaves as before.** Part of #180, #197
+
+### Fixed
+- **After setting or cancelling a ready-by time, the card keeps showing your choice until Home Assistant confirms it instead of briefly jumping back.** Closes #214
+- **A GaggiMate in standby now shows as off instead of a frozen warm-up.** Closes #195
+- **The header power button now follows the machine's power switch rather than standby, so its label no longer says "Power on" for a machine that is still powered.** Part of #195
+
 ## [2.21.1] – 2026-09-26
 ### Fixed
 - **The card no longer fails with "Custom element doesn't exist" when it loads before Home Assistant's frontend has finished starting up.** Closes #184

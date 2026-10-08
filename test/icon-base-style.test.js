@@ -14,7 +14,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
+// esbuild strips the GLP-SHARED marker comments, so read src/*.ts, not the bundle (#180).
+const SRC = fs.readdirSync(path.join(__dirname, '..', 'src'))
+  .filter((name) => name.endsWith('.ts'))
+  .sort()
+  .map((name) => fs.readFileSync(path.join(__dirname, '..', 'src', name), 'utf8'))
+  .join('\n');
 
 // Matches the BASE rule only. Anchoring on the line start with nothing but
 // indentation in front is what excludes a contextual override like

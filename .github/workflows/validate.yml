@@ -34,13 +34,22 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Fetch glp-order-card.js for shared-block sync test (#74)
-        # Only the raw file is needed (byte comparison of marked blocks) --
+        # Only the source text is needed (byte comparison of marked blocks) --
         # no full checkout, so it can live outside github.workspace where
         # node --test's default recursive discovery would otherwise pick up
         # glp-order-card's own test suite, including a Playwright e2e test
         # whose browser binary isn't installed here (hung CI for 8+ min,
         # see #83).
-        run: curl -fsSL -o "${{ runner.temp }}/glp-order-card.js" https://raw.githubusercontent.com/mxkissnr/glp-order-card/main/glp-order-card.js
+        # Since glp-order-card#143 its root file is an esbuild bundle without
+        # the GLP-SHARED markers; the blocks live in src/*.ts. Use those when
+        # main has them, the root file otherwise (#197).
+        run: |
+          git clone -q --depth 1 https://github.com/mxkissnr/glp-order-card "${{ runner.temp }}/glp-order-card-main"
+          if [ -d "${{ runner.temp }}/glp-order-card-main/src" ]; then
+            cat "${{ runner.temp }}"/glp-order-card-main/src/*.ts > "${{ runner.temp }}/glp-order-card.js"
+          else
+            cp "${{ runner.temp }}/glp-order-card-main/glp-order-card.js" "${{ runner.temp }}/glp-order-card.js"
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -73,10 +82,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Run tests
         run: npm run test:coverage
         env:
           GLP_ORDER_CARD_PATH: ${{ runner.temp }}/glp-order-card.js
 
-      - name: Build check (syntax)
-        run: npm run build
+      - name: Build and check the committed bundle
+        # glp-card.js is generated from src/ and committed (#180); a
+        # bundle that no longer matches its source fails here.
+        run: |
+          npm run build
+          git diff --exit-code glp-card.js || { echo "::error::glp-card.js is out of date, run npm run build and commit it"; exit 1; }

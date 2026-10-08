@@ -28,12 +28,44 @@ const path = require('node:path');
 // Overridable so CI can point this at wherever it checks out the neighbor
 // repo, without disturbing the local-dev default (a sibling checkout under
 // ~/Dokumente/Projekte/glp-project, per this machine's layout).
+//
+// GLP_ORDER_CARD_PATH, when set, is a single file path and wins as-is (CI
+// points it at the glp-order-card.js it checks out). The local default is
+// that sibling checkout's directory, and describes two cases: if it has a
+// src/ directory — the Order Card's TypeScript sources, since its shipped
+// glp-order-card.js is now an esbuild bundle without the GLP-SHARED markers —
+// the neighbor source is every src/*.ts file, sorted by name and joined with
+// '\n'; otherwise it is the checkout's root glp-order-card.js.
 const NEIGHBOR_PATH = process.env.GLP_ORDER_CARD_PATH
-  || path.join(os.homedir(), 'Dokumente', 'Projekte', 'glp-project', 'glp-order-card', 'glp-order-card.js');
+  || path.join(os.homedir(), 'Dokumente', 'Projekte', 'glp-project', 'glp-order-card');
+
+// Returns the neighbor's shared-block source text, or null when the neighbor
+// checkout (or the CI-provided file) is not present.
+function readNeighborSource() {
+  if (process.env.GLP_ORDER_CARD_PATH) {
+    return fs.existsSync(NEIGHBOR_PATH) ? fs.readFileSync(NEIGHBOR_PATH, 'utf8') : null;
+  }
+  const srcDir = path.join(NEIGHBOR_PATH, 'src');
+  if (fs.existsSync(srcDir)) {
+    return fs.readdirSync(srcDir)
+      .filter((name) => name.endsWith('.ts'))
+      .sort()
+      .map((name) => fs.readFileSync(path.join(srcDir, name), 'utf8'))
+      .join('\n');
+  }
+  const bundle = path.join(NEIGHBOR_PATH, 'glp-order-card.js');
+  return fs.existsSync(bundle) ? fs.readFileSync(bundle, 'utf8') : null;
+}
 
 const IN_CI = !!process.env.CI;
 
-const OWN_SRC = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
+// esbuild strips the GLP-SHARED/GLP-TOKENS marker comments, so the shared
+// blocks can only be extracted from the src/*.ts sources, not the bundle (#180).
+const OWN_SRC = fs.readdirSync(path.join(__dirname, '..', 'src'))
+  .filter((name) => name.endsWith('.ts'))
+  .sort()
+  .map((name) => fs.readFileSync(path.join(__dirname, '..', 'src', name), 'utf8'))
+  .join('\n');
 
 // Anchored on a short, stable prefix rather than the full marker sentence —
 // the marker's wording (it names both files) is itself part of the compared
@@ -92,8 +124,9 @@ function extractBlock(src, { start, end }) {
 
 for (const block of BLOCKS) {
   test(`${block.name} block is byte-identical with glp-order-card.js (fails in CI if the neighbor repo/block is missing)`, (t) => {
-    if (!fs.existsSync(NEIGHBOR_PATH)) {
-      const msg = `glp-order-card.js not found at ${NEIGHBOR_PATH}`;
+    const neighborSrc = readNeighborSource();
+    if (neighborSrc == null) {
+      const msg = `glp-order-card sources not found at ${NEIGHBOR_PATH} — expected its src/*.ts sources or its root glp-order-card.js`;
       if (IN_CI) { assert.fail(`${msg} — CI is expected to check out the neighbor repo for this test`); }
       t.skip(`${msg} — local-dev-only check, skipping`);
       return;
@@ -102,7 +135,6 @@ for (const block of BLOCKS) {
     const ownBlock = extractBlock(OWN_SRC, block);
     assert.ok(ownBlock, `glp-card.js must contain a ${block.name} block`);
 
-    const neighborSrc = fs.readFileSync(NEIGHBOR_PATH, 'utf8');
     const neighborBlock = extractBlock(neighborSrc, block);
     const inSync = neighborBlock != null && neighborBlock === ownBlock;
 

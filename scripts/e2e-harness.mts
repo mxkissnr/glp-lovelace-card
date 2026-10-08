@@ -1,25 +1,26 @@
 // Shared browser-test scaffolding: a throwaway http.createServer serving
 // this repo's root (so glp-card.js can be loaded without file:// CORS
-// issues) plus a `/__harness.html` route. Used by both scripts/screenshot.mjs
+// issues) plus a `/__harness.html` route. Used by both scripts/screenshot.mts
 // (README screenshots) and test/e2e/smoke.test.mjs (Playwright E2E smoke
 // test) so the two don't duplicate this setup — mirrors glp-order-card's
-// scripts/e2e-harness.mjs (same pattern, kept independent per repo since the
+// scripts/e2e-harness.mts (same pattern, kept independent per repo since the
 // two cards' mock-data shapes differ enough that a shared module would just
 // add indirection).
 
 import http from 'node:http';
+import type { Server } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const repoRoot = path.join(__dirname, '..');
+export const repoRoot: string = path.join(__dirname, '..');
 
-const MIME = { '.js': 'text/javascript', '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' };
+const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
-export function startServer(harnessHtml) {
+export function startServer(harnessHtml: string): Promise<Server> {
   const server = http.createServer((req, res) => {
-    const urlPath = req.url.split('?')[0];
+    const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
     if (urlPath === '/__harness.html') {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(harnessHtml);

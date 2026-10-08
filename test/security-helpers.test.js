@@ -1,45 +1,16 @@
-// Loads the real glp-card.js source into a sandboxed vm context (stubbing
-// only the browser globals it touches at top level: customElements, window,
-// console) and pulls the actual esc()/safeUrl() function declarations out of
-// it — so these tests exercise the shipped code, not a re-implementation.
-// glp-card.js stays a single, build-step-free file; nothing here changes how
-// it loads in HA.
+// Card loaded via the shared test helper (test/helpers/load-card.cjs), which
+// evaluates the real glp-card.js in a vm sandbox — so these tests exercise the
+// shipped esc()/safeUrl() function declarations, not a re-implementation. The
+// helper exposes them explicitly because glp-card.js is wrapped in an IIFE
+// (#141), so they don't auto-attach to the sandbox global. glp-card.js stays a
+// single, build-step-free file; nothing here changes how it loads in HA.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
-function loadCardHelpers() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  // #141: glp-card.js is wrapped in an IIFE to avoid a top-level const
-  // collision with the bundled glp-order-card.js, so esc()/safeUrl() no
-  // longer auto-attach to the vm context's global object — expose them
-  // explicitly for this test, same injection approach as __GlpCard below.
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.esc = esc; globalThis.safeUrl = safeUrl;"
-  );
-
-  class HTMLElement {}
-
-  const context = {
-    HTMLElement,
-    customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } },
-    window: {},
-    console,
-    URL,
-  };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-
-  return { esc: context.esc, safeUrl: context.safeUrl };
-}
-
-const { esc, safeUrl } = loadCardHelpers();
+const { esc, safeUrl } = loadCard({ expose: ['esc', 'safeUrl'] });
 
 test('esc() escapes HTML special characters', () => {
   assert.equal(esc('<script>alert(1)</script>'), '&lt;script&gt;alert(1)&lt;/script&gt;');
