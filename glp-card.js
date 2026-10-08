@@ -4,760 +4,7 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-  // src/glp-card.ts
-  var GLP_CARD_VERSION = "2.21.1";
-  var STRINGS = {
-    de: {
-      tab_orders: "Bestellungen",
-      tab_maint: "Wartung",
-      orders_none: "Keine offenen Bestellungen",
-      ord_decline_q: "Ablehnen?",
-      ord_done_in: "Fertig in:",
-      ord_yes: "Ja",
-      ord_accept: "Annehmen",
-      ord_decline: "Ablehnen",
-      ord_done: "Fertig",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `fertig in ~${n} min`, "ord_ready_in"),
-      ord_preparing: "in Zubereitung",
-      just_now: "gerade eben",
-      mins_ago: /* @__PURE__ */ __name((n) => `vor ${n} Min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `vor ${n} Std`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `vor ${n} Tagen`, "days_ago"),
-      maint_descaling: "Entkalken",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Gruppenkopf",
-      maint_gaskets: "Dichtungen & Siebe",
-      maint_waterfilter: "Wasserfilter",
-      maint_grinders: "Mühlen",
-      pill_ok: "OK",
-      pill_soon: "Bald fällig",
-      pill_due: "Fällig",
-      pill_never: "Nie erledigt",
-      maint_today: "heute",
-      maint_confirm_q: "Als erledigt markieren?",
-      maint_none: "Keine Wartungsdaten verfügbar",
-      power_on: "Einschalten",
-      power_off: "Ausschalten",
-      off_label: "Aus",
-      profile_label: "Profil",
-      profile_switching: "wechselt …",
-      lm_live: "Maschine live",
-      steam_mode: "Dampfmodus",
-      water_low: /* @__PURE__ */ __name((p) => `Wasser fast leer (${p}%)`, "water_low"),
-      descaling_mode: "Entkalkung läuft",
-      preheat_ready: "Brühbereit",
-      preheat_heating: "Aufheizen …",
-      machine_standby: "Standby",
-      ready_by_set_label: "Brühbereit bis",
-      ready_by_set: "Setzen",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Brühbereit bis ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Abbrechen",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schaltet in ${n} Min ein`, "ready_by_switching_in"),
-      ready_by_switching_now: "schaltet jetzt ein",
-      ready_by_scheduling: "Wird geplant …",
-      brewing: "Bezug läuft",
-      no_shot_label: "Noch kein Shot aufgezeichnet",
-      no_shot_hint: "Shots werden automatisch synchronisiert",
-      m_duration: "Dauer",
-      m_yield: "Ausbeute",
-      m_pressure: "Druck Ø",
-      m_temp: "Temp",
-      leg_pressure: "Druck",
-      leg_flow: "Flow",
-      leg_temp: "Temp",
-      leg_weight: "Gewicht",
-      ph_pre: "Vorinfusion",
-      ph_ext: "Extraktion",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} heute`, "footer_today"),
-      uptime_title: "Maschine an seit",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Geröstet vor ${d} Tagen`, "bean_roasted_ago"),
-      verdict_high: "stark",
-      verdict_mid: "gut",
-      verdict_low: "schwach"
-    },
-    en: {
-      tab_orders: "Orders",
-      tab_maint: "Maintenance",
-      orders_none: "No open orders",
-      ord_decline_q: "Decline?",
-      ord_done_in: "Ready in:",
-      ord_yes: "Yes",
-      ord_accept: "Accept",
-      ord_decline: "Decline",
-      ord_done: "Done",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `ready in ~${n} min`, "ord_ready_in"),
-      ord_preparing: "being prepared",
-      just_now: "just now",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min ago`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} h ago`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} days ago`, "days_ago"),
-      maint_descaling: "Descaling",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Group head",
-      maint_gaskets: "Gaskets & screens",
-      maint_waterfilter: "Water filter",
-      maint_grinders: "Grinders",
-      pill_ok: "OK",
-      pill_soon: "Due soon",
-      pill_due: "Due",
-      pill_never: "Never done",
-      maint_today: "today",
-      maint_confirm_q: "Mark as done?",
-      maint_none: "No maintenance data available",
-      power_on: "Turn on",
-      power_off: "Turn off",
-      off_label: "Off",
-      profile_label: "Profile",
-      profile_switching: "switching …",
-      lm_live: "Machine live",
-      steam_mode: "Steam mode",
-      water_low: /* @__PURE__ */ __name((p) => `Water almost empty (${p}%)`, "water_low"),
-      descaling_mode: "Descaling",
-      preheat_ready: "Ready to brew",
-      preheat_heating: "Warming up …",
-      machine_standby: "Standby",
-      ready_by_set_label: "Ready by",
-      ready_by_set: "Set",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Ready by ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Cancel",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `switching on in ${n}m`, "ready_by_switching_in"),
-      ready_by_switching_now: "switching on now",
-      ready_by_scheduling: "Scheduling…",
-      brewing: "Brewing",
-      no_shot_label: "No shot recorded yet",
-      no_shot_hint: "Shots sync automatically",
-      m_duration: "Duration",
-      m_yield: "Yield",
-      m_pressure: "Pressure Ø",
-      m_temp: "Temp",
-      leg_pressure: "Pressure",
-      leg_flow: "Flow",
-      leg_temp: "Temp",
-      leg_weight: "Weight",
-      ph_pre: "Preinfusion",
-      ph_ext: "Extraction",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} today`, "footer_today"),
-      uptime_title: "Machine on since",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Roasted ${d} days ago`, "bean_roasted_ago"),
-      verdict_high: "great",
-      verdict_mid: "good",
-      verdict_low: "weak"
-    },
-    it: {
-      tab_orders: "Ordini",
-      tab_maint: "Manutenzione",
-      orders_none: "Nessun ordine aperto",
-      ord_decline_q: "Rifiutare?",
-      ord_done_in: "Pronto tra:",
-      ord_yes: "Sì",
-      ord_accept: "Accetta",
-      ord_decline: "Rifiuta",
-      ord_done: "Fatto",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `pronto tra ~${n} min`, "ord_ready_in"),
-      ord_preparing: "in preparazione",
-      just_now: "proprio ora",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min fa`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} h fa`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} giorni fa`, "days_ago"),
-      maint_descaling: "Decalcificazione",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Gruppo erogazione",
-      maint_gaskets: "Guarnizioni & filtri",
-      maint_waterfilter: "Filtro acqua",
-      maint_grinders: "Macinacaffè",
-      pill_ok: "OK",
-      pill_soon: "In scadenza",
-      pill_due: "Scaduto",
-      pill_never: "Mai fatto",
-      maint_today: "oggi",
-      maint_confirm_q: "Segnare come fatto?",
-      maint_none: "Nessun dato di manutenzione disponibile",
-      power_on: "Accendi",
-      power_off: "Spegni",
-      off_label: "Spento",
-      profile_label: "Profilo",
-      profile_switching: "cambio in corso …",
-      lm_live: "Macchina in diretta",
-      steam_mode: "Modalità vapore",
-      water_low: /* @__PURE__ */ __name((p) => `Acqua quasi esaurita (${p}%)`, "water_low"),
-      descaling_mode: "Decalcificazione in corso",
-      preheat_ready: "Pronto per l'estrazione",
-      preheat_heating: "Riscaldamento …",
-      machine_standby: "Standby",
-      ready_by_set_label: "Pronto entro",
-      ready_by_set: "Imposta",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Pronto entro le ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Annulla",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `si accende tra ${n} min`, "ready_by_switching_in"),
-      ready_by_switching_now: "si accende ora",
-      ready_by_scheduling: "Pianificazione …",
-      brewing: "Estrazione in corso",
-      no_shot_label: "Nessuno shot ancora registrato",
-      no_shot_hint: "Gli shot si sincronizzano automaticamente",
-      m_duration: "Durata",
-      m_yield: "Resa",
-      m_pressure: "Pressione Ø",
-      m_temp: "Temp",
-      leg_pressure: "Pressione",
-      leg_flow: "Flusso",
-      leg_temp: "Temp",
-      leg_weight: "Peso",
-      ph_pre: "Preinfusione",
-      ph_ext: "Estrazione",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} oggi`, "footer_today"),
-      uptime_title: "Macchina accesa da",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostato ${d} giorni fa`, "bean_roasted_ago"),
-      verdict_high: "ottimo",
-      verdict_mid: "buono",
-      verdict_low: "debole"
-    },
-    fr: {
-      tab_orders: "Commandes",
-      tab_maint: "Entretien",
-      orders_none: "Aucune commande en cours",
-      ord_decline_q: "Refuser ?",
-      ord_done_in: "Prêt dans :",
-      ord_yes: "Oui",
-      ord_accept: "Accepter",
-      ord_decline: "Refuser",
-      ord_done: "Terminé",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `prêt dans ~${n} min`, "ord_ready_in"),
-      ord_preparing: "en préparation",
-      just_now: "à l'instant",
-      mins_ago: /* @__PURE__ */ __name((n) => `il y a ${n} min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `il y a ${n} h`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `il y a ${n} jours`, "days_ago"),
-      maint_descaling: "Détartrage",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Groupe de percolation",
-      maint_gaskets: "Joints & tamis",
-      maint_waterfilter: "Filtre à eau",
-      maint_grinders: "Moulins",
-      pill_ok: "OK",
-      pill_soon: "Bientôt requis",
-      pill_due: "Requis",
-      pill_never: "Jamais fait",
-      maint_today: "aujourd'hui",
-      maint_confirm_q: "Marquer comme fait ?",
-      maint_none: "Aucune donnée d'entretien disponible",
-      power_on: "Allumer",
-      power_off: "Éteindre",
-      off_label: "Éteint",
-      profile_label: "Profil",
-      profile_switching: "changement …",
-      lm_live: "Machine en direct",
-      steam_mode: "Mode vapeur",
-      water_low: /* @__PURE__ */ __name((p) => `Eau presque vide (${p}%)`, "water_low"),
-      descaling_mode: "Détartrage en cours",
-      preheat_ready: "Prêt à infuser",
-      preheat_heating: "Chauffage …",
-      machine_standby: "Veille",
-      ready_by_set_label: "Prêt avant",
-      ready_by_set: "Définir",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Prêt avant ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Annuler",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `s'allume dans ${n} min`, "ready_by_switching_in"),
-      ready_by_switching_now: "s'allume maintenant",
-      ready_by_scheduling: "Planification …",
-      brewing: "Extraction en cours",
-      no_shot_label: "Aucun shot enregistré pour l'instant",
-      no_shot_hint: "Les shots se synchronisent automatiquement",
-      m_duration: "Durée",
-      m_yield: "Rendement",
-      m_pressure: "Pression Ø",
-      m_temp: "Temp",
-      leg_pressure: "Pression",
-      leg_flow: "Débit",
-      leg_temp: "Temp",
-      leg_weight: "Poids",
-      ph_pre: "Préinfusion",
-      ph_ext: "Extraction",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} aujourd'hui`, "footer_today"),
-      uptime_title: "Machine allumée depuis",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Torréfié il y a ${d} jours`, "bean_roasted_ago"),
-      verdict_high: "excellent",
-      verdict_mid: "bon",
-      verdict_low: "faible"
-    },
-    es: {
-      tab_orders: "Pedidos",
-      tab_maint: "Mantenimiento",
-      orders_none: "No hay pedidos abiertos",
-      ord_decline_q: "¿Rechazar?",
-      ord_done_in: "Listo en:",
-      ord_yes: "Sí",
-      ord_accept: "Aceptar",
-      ord_decline: "Rechazar",
-      ord_done: "Listo",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `listo en ~${n} min`, "ord_ready_in"),
-      ord_preparing: "en preparación",
-      just_now: "justo ahora",
-      mins_ago: /* @__PURE__ */ __name((n) => `hace ${n} min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `hace ${n} h`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `hace ${n} días`, "days_ago"),
-      maint_descaling: "Descalcificación",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Grupo de erogación",
-      maint_gaskets: "Juntas y filtros",
-      maint_waterfilter: "Filtro de agua",
-      maint_grinders: "Molinillos",
-      pill_ok: "OK",
-      pill_soon: "Próximo",
-      pill_due: "Pendiente",
-      pill_never: "Nunca hecho",
-      maint_today: "hoy",
-      maint_confirm_q: "¿Marcar como hecho?",
-      maint_none: "No hay datos de mantenimiento disponibles",
-      power_on: "Encender",
-      power_off: "Apagar",
-      off_label: "Apagado",
-      profile_label: "Perfil",
-      profile_switching: "cambiando …",
-      lm_live: "Máquina en directo",
-      steam_mode: "Modo vapor",
-      water_low: /* @__PURE__ */ __name((p) => `Agua casi vacía (${p}%)`, "water_low"),
-      descaling_mode: "Descalcificación en curso",
-      preheat_ready: "Listo para extraer",
-      preheat_heating: "Calentando …",
-      machine_standby: "En espera",
-      ready_by_set_label: "Listo antes de",
-      ready_by_set: "Fijar",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Listo antes de las ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Cancelar",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `se enciende en ${n} min`, "ready_by_switching_in"),
-      ready_by_switching_now: "se enciende ahora",
-      ready_by_scheduling: "Programando …",
-      brewing: "Extracción en curso",
-      no_shot_label: "Aún no se ha registrado ningún shot",
-      no_shot_hint: "Los shots se sincronizan automáticamente",
-      m_duration: "Duración",
-      m_yield: "Rendimiento",
-      m_pressure: "Presión Ø",
-      m_temp: "Temp",
-      leg_pressure: "Presión",
-      leg_flow: "Flujo",
-      leg_temp: "Temp",
-      leg_weight: "Peso",
-      ph_pre: "Preinfusión",
-      ph_ext: "Extracción",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} hoy`, "footer_today"),
-      uptime_title: "Máquina encendida desde",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostado hace ${d} días`, "bean_roasted_ago"),
-      verdict_high: "excelente",
-      verdict_mid: "bueno",
-      verdict_low: "débil"
-    },
-    nl: {
-      tab_orders: "Bestellingen",
-      tab_maint: "Onderhoud",
-      orders_none: "Geen openstaande bestellingen",
-      ord_decline_q: "Afwijzen?",
-      ord_done_in: "Klaar over:",
-      ord_yes: "Ja",
-      ord_accept: "Accepteren",
-      ord_decline: "Afwijzen",
-      ord_done: "Klaar",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `klaar over ~${n} min`, "ord_ready_in"),
-      ord_preparing: "in bereiding",
-      just_now: "zojuist",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min geleden`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} u geleden`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} dagen geleden`, "days_ago"),
-      maint_descaling: "Ontkalken",
-      maint_backflush: "Backflush",
-      maint_grouphead: "Groepkop",
-      maint_gaskets: "Afdichtingen & zeven",
-      maint_waterfilter: "Waterfilter",
-      maint_grinders: "Molens",
-      pill_ok: "OK",
-      pill_soon: "Binnenkort nodig",
-      pill_due: "Nodig",
-      pill_never: "Nooit gedaan",
-      maint_today: "vandaag",
-      maint_confirm_q: "Als voltooid markeren?",
-      maint_none: "Geen onderhoudsgegevens beschikbaar",
-      power_on: "Inschakelen",
-      power_off: "Uitschakelen",
-      off_label: "Uit",
-      profile_label: "Profiel",
-      profile_switching: "wisselt …",
-      lm_live: "Machine live",
-      steam_mode: "Stoommodus",
-      water_low: /* @__PURE__ */ __name((p) => `Water bijna leeg (${p}%)`, "water_low"),
-      descaling_mode: "Ontkalken",
-      preheat_ready: "Klaar om te zetten",
-      preheat_heating: "Opwarmen …",
-      machine_standby: "Stand-by",
-      ready_by_set_label: "Klaar voor",
-      ready_by_set: "Instellen",
-      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Klaar voor ${hhmm}`, "ready_by_target"),
-      ready_by_cancel: "Annuleren",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schakelt in over ${n} min`, "ready_by_switching_in"),
-      ready_by_switching_now: "schakelt nu in",
-      ready_by_scheduling: "Wordt gepland …",
-      brewing: "Bereiden",
-      no_shot_label: "Nog geen shot geregistreerd",
-      no_shot_hint: "Shots synchroniseren automatisch",
-      m_duration: "Duur",
-      m_yield: "Opbrengst",
-      m_pressure: "Druk Ø",
-      m_temp: "Temp",
-      leg_pressure: "Druk",
-      leg_flow: "Flow",
-      leg_temp: "Temp",
-      leg_weight: "Gewicht",
-      ph_pre: "Voorinfusie",
-      ph_ext: "Extractie",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} vandaag`, "footer_today"),
-      uptime_title: "Machine aan sinds",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `${d} dagen geleden gebrand`, "bean_roasted_ago"),
-      verdict_high: "sterk",
-      verdict_mid: "goed",
-      verdict_low: "zwak"
-    }
-  };
-  var SUPPORTED_LANGS = ["de", "en", "it", "fr", "es", "nl"];
-  var LANG = "de";
-  function T(key, ...args) {
-    const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
-    return typeof v === "function" ? v(...args) : v;
-  }
-  __name(T, "T");
-  function roastAgeDays(str) {
-    if (!str || typeof str !== "string") return null;
-    let d = null;
-    let m = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
-    if (m) {
-      const y = m[3].length === 2 ? 2e3 + parseInt(m[3]) : parseInt(m[3]);
-      d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
-    } else {
-      m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (m) d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-    }
-    if (!d || isNaN(d)) return null;
-    const days = Math.floor((Date.now() - d.getTime()) / 864e5);
-    return days >= 0 && days <= 730 ? days : null;
-  }
-  __name(roastAgeDays, "roastAgeDays");
-  function esc(s) {
-    if (s == null) return "";
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-  __name(esc, "esc");
-  function safeUrl(url) {
-    if (!url) return null;
-    try {
-      const u = new URL(url);
-      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
-    } catch {
-      return null;
-    }
-  }
-  __name(safeUrl, "safeUrl");
-  function parseTs(val) {
-    if (!val && val !== 0) return null;
-    if (typeof val === "number") return new Date(val > 1e10 ? val : val * 1e3);
-    return new Date(val);
-  }
-  __name(parseTs, "parseTs");
-  function downsample(arr, maxPts) {
-    if (!arr || arr.length <= maxPts) return arr || [];
-    const step = Math.ceil(arr.length / maxPts);
-    const out = arr.filter((_, i) => i % step === 0);
-    if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
-    return out;
-  }
-  __name(downsample, "downsample");
-  var CC = { pres: "#0072b2", flow: "#c77000", temp: "#c0392b", wt: "#009e73" };
-  var THEME_PRESETS = {
-    "amber-americano": { a: "#f59e0b", b: "#f59e0b" },
-    "ruby-ristretto": { a: "#7f1d1d", b: "#7f1d1d" },
-    "copper-cortado": { a: "#c2703d", b: "#e8b4a0" },
-    "twilight-turkish": { a: "#0891b2", b: "#4338ca" },
-    "marbled-macchiato": { a: "#f59e0b", b: "#ec4899" },
-    "ember-espresso": { a: "#dc4a1f", b: "#f5a623" },
-    "mulberry-mocha": { a: "#5b21b6", b: "#db2777" },
-    "frosty-flat-white": { a: "#0f766e", b: "#38bdf8" }
-  };
-  var HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
-  var MACHINE_BODY = /* @__PURE__ */ __name((id, mini, type = "gaggiuino") => `
-    <!-- Seitenwand rechts inkl. Kantenlicht, volle Hoehe -->
-    <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="url(#${id})"/>
-    <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="#000" opacity=".26"/>
-    <path d="M93.2 8.6 L100 11 L100 130 L90 149 L93.2 142 Z" fill="#fff" opacity=".13"/>
-
-    <!-- Frontflaeche Korpus -->
-    <path d="M13 2.4 L72.2 2.3 L72.2 71.9 L10.2 71.9 L10.2 5.2 A2.8 2.8 0 0 1 13 2.4 Z" fill="url(#${id})"/>
-    <path d="M72.2 3 L72.2 71" stroke="#fff" opacity=".22" stroke-width="3"/>
-
-    <!-- Mittelblock: Korpus kragt links darueber, dort ragt der Siebtraeger ins Freie -->
-    <path d="M20 72 L94 72 L94 122 L24 122 Z" fill="#2b2b31"/>
-    <path d="M20 72 L94 72 L94 77 L20.6 77 Z" fill="#000" opacity=".3"/>
-
-    <!-- Bruehgruppe + Siebtraeger (ragt nach links ins Freie) -->
-    <rect x="42" y="71.5" width="16" height="10.5" rx="2.2" fill="#b9bec5"/>
-    ${mini ? "" : '<path d="M47 82 L53 82 L52 87.5 L48 87.5 Z" fill="#8f959d"/>'}
-    <path d="M20.5 91 L45 84" stroke="#26262c" stroke-width="6.6" stroke-linecap="round"/>
-    <circle cx="18.6" cy="91.6" r="5.9" fill="#ded8ca" stroke="#26262c" stroke-width="1.2"/>
-
-    <!-- Dampflanze RECHTS: Gummimanschette oben, Chromrohr nach unten -->
-    <path d="M84.2 72 C85.2 78 84.6 82 84 88" stroke="#26262c" stroke-width="5" stroke-linecap="round"/>
-    <path d="M84 88 C83.5 101 83 115 83.5 130" stroke="#a3a9b1" stroke-width="2.6" stroke-linecap="round"/>
-    ${mini ? "" : '<path d="M21.5 97 L21.5 130" stroke="#9aa0a8" stroke-width="2" stroke-linecap="round"/>'}
-
-    <!-- Tropfschale: silbernes Lochblech in dunklem Rahmen, breiter als der Korpus -->
-    <path d="M17 122 L93 122 L80 134 L0 134 Z" fill="#25252b"/>
-    <path d="M20.5 123.4 L88.5 123.4 L77 132.6 L4 132.6 Z" fill="url(#${id}-steel)"/>
-    ${mini ? "" : `
-    <circle cx="28" cy="126" r="1.5" fill="#4a4a52"/>
-    <circle cx="39" cy="126" r="1.5" fill="#4a4a52"/>
-    <circle cx="50" cy="126" r="1.5" fill="#4a4a52"/>
-    <circle cx="61" cy="126" r="1.5" fill="#4a4a52"/>
-    <circle cx="72" cy="126" r="1.5" fill="#4a4a52"/>
-    <circle cx="21" cy="130.4" r="1.5" fill="#4a4a52"/>
-    <circle cx="32" cy="130.4" r="1.5" fill="#4a4a52"/>
-    <circle cx="43" cy="130.4" r="1.5" fill="#4a4a52"/>
-    <circle cx="54" cy="130.4" r="1.5" fill="#4a4a52"/>
-    <circle cx="65" cy="130.4" r="1.5" fill="#4a4a52"/>`}
-
-    <!-- Sockelfront: senkrecht, rechte Kante trifft die Seitenwand -->
-    <path d="M0 134 L80 134 L84 155 L0 155 Z" fill="#2b2b31"/>
-    <path d="M0 134 L80 134 L80.8 138 L0 138 Z" fill="#fff" opacity=".07"/>
-
-    <!-- Fuesse -->
-    <rect x="4.5" y="155" width="7.5" height="4.4" rx="1.5" fill="#26262c"/>
-    <rect x="66" y="155" width="7.5" height="4.4" rx="1.5" fill="#26262c"/>
-
-    ${type === "gaggimate" ? `
-    <!-- GaggiMate: runder Puck mit Chromgehaeuse ersetzt Wipptasten +
-         Dampfknopf (mxkissnr/glp-lovelace-card#127 / mxkissnr/glp-order-card#97) -->
-    <circle cx="41" cy="24" r="14" fill="#cfd4d9"/>
-    <circle cx="41" cy="24" r="14" fill="none" stroke="#8f959d" stroke-width=".9"/>
-    <circle cx="41" cy="24" r="11.4" fill="#17171b"/>
-    <circle cx="41" cy="24" r="10.2" fill="#0b0d12"/>
-    ${mini ? "" : `
-    <path d="M31.1 14.1 A14 14 0 0 1 45 10.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".65"/>
-    <path d="M33.4 16.4 A10.7 10.7 0 0 1 48.6 16.4" fill="none" stroke="#e8452a" stroke-width="1.3" stroke-linecap="round" opacity=".9"/>
-    <path d="M42.6 13.4 A10.7 10.7 0 0 1 48.6 16.4" fill="none" stroke="#6aa9d8" stroke-width="1.3" stroke-linecap="round"/>`}` : `
-    <!-- Bedienfeld: 3 Wipptasten -->
-    <rect x="20.5" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
-    <rect x="33" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
-    <rect x="45.5" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
-    ${mini ? "" : `
-    <rect x="21.6" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
-    <rect x="34.1" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
-    <rect x="46.6" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
-    <rect x="23.7" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>
-    <rect x="36.2" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>
-    <rect x="48.7" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>`}
-
-    <!-- Dampfknopf: liegender Zylinder auf der Seitenwand -->
-    <rect x="74" y="23.4" width="9" height="8" fill="#26262c"/>
-    <rect x="80.7" y="20.5" width="17" height="13.6" rx="6.8" fill="#212126"/>
-    <ellipse cx="82.6" cy="27.3" rx="2.4" ry="6.8" fill="#3b3b43"/>
-    ${mini ? "" : '<rect x="81.4" y="23.4" width="1.7" height="7.8" rx=".85" fill="#fff" opacity=".2"/>'}`}`, "MACHINE_BODY");
-  var MACHINE_ICON_MINI = /* @__PURE__ */ __name((id, type = "gaggiuino") => `
-    <svg viewBox="0 0 100 162" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="${id}" x1="6" y1="0" x2="92" y2="145" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="var(--glp-accent-start)"/>
-          <stop offset="1" stop-color="var(--glp-accent-end)"/>
-        </linearGradient>
-        <linearGradient id="${id}-steel" x1="0" y1="123" x2="0" y2="133" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#d3d6db"/>
-          <stop offset="1" stop-color="#9ba1a9"/>
-        </linearGradient>
-      </defs>
-      ${MACHINE_BODY(id, true, type)}
-    </svg>`, "MACHINE_ICON_MINI");
-  var GLP_ICON_PATHS = {
-    // --- drinks -----------------------------------------------------------
-    // One shared demitasse silhouette for the three straight espresso drinks;
-    // they differ only in fill level, which is the honest difference between
-    // them (same basket, same cup, more or less water through it).
-    ristretto: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M6.5 15.2h8.6"/>',
-    espresso: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.6 13.2h10.4"/>',
-    lungo: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.1 10.6h11.2"/>',
-    // Cappuccino: domed foam cap standing proud of the rim.
-    cappuccino: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.4 8.5a5.8 5.8 0 0 1 11 0"/><path d="M5.8 12h10"/>',
-    // Latte macchiato: tall glass, layered.
-    latte: '<path d="M7.5 4.5h9l-1 14a2 2 0 0 1-2 1.8h-3a2 2 0 0 1-2-1.8l-1-14z"/><path d="M7.9 9h8.2M8.2 13h7.6"/>',
-    // Flat white: wide shallow cup, thin microfoam layer, latte-art dot.
-    flat_white: '<path d="M17.5 9.5h1a2.2 2.2 0 0 1 0 4.4h-1"/><path d="M3.5 9.5h14v3.6a4.4 4.4 0 0 1-4.4 4.4H7.9a4.4 4.4 0 0 1-4.4-4.4V9.5z"/><path d="M4.2 12h12.6"/><circle cx="10.5" cy="14.4" r="1.1"/>',
-    // --- state, action, status --------------------------------------------
-    coffee: '<path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/><path d="M8 2v2M12 2v2"/>',
-    check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
-    close: '<path d="M6 6l12 12M18 6 6 18"/>',
-    heat: '<path d="M12 3.5c3 3.2 4.5 5.8 4.5 8a4.5 4.5 0 0 1-9 0c0-2.2 1.5-4.8 4.5-8z"/><path d="M9.5 20.5h5"/>',
-    droplet: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
-    steam: '<path d="M7 20c0-2 1.6-2.4 1.6-4.4S7 12.6 7 10.6"/><path d="M12 20c0-2.4 1.8-2.9 1.8-5.3S12 10.3 12 8"/><path d="M17 20c0-2 1.6-2.4 1.6-4.4S17 12.6 17 10.6"/>',
-    warning: '<path d="M12 4.5 21 19.5H3L12 4.5z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r="0.6"/>',
-    gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
-    plug: '<path d="M9 3.5v5M15 3.5v5"/><path d="M6.5 8.5h11v3a5.5 5.5 0 0 1-11 0v-3z"/><path d="M12 17v3.5"/>',
-    cart: '<path d="M3 4.5h2.2l2.3 10.4h9.6l2.1-7.4H6.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/>',
-    shower: '<path d="M4.5 8.5h15v2.6a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3V8.5z"/><path d="M8 17.5v2M12 17.5v3M16 17.5v2"/>',
-    wrench: '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/>',
-    refresh: '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/>',
-    circle: '<circle cx="12" cy="12" r="8"/>',
-    // Waiting/queued. An hourglass rather than a clock: a clock reads as "when",
-    // an hourglass as "not yet" — and this marks an order sitting unconfirmed,
-    // not a time of day.
-    hourglass: '<path d="M7 3.5h10M7 20.5h10"/><path d="M8 3.5v3.2c0 1.6 1.2 2.9 4 5.3 2.8-2.4 4-3.7 4-5.3V3.5"/><path d="M8 20.5v-3.2c0-1.6 1.2-2.9 4-5.3 2.8 2.4 4 3.7 4 5.3v3.2"/>',
-    flask: '<path d="M10 3.5v6L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5v-6"/><path d="M9 3.5h6"/><path d="M7.4 14h9.2"/>',
-    // Not a party popper — a small burst, so it still reads at 16px and keeps
-    // the card's tone. Used for the completed-order confirmation.
-    celebrate: '<path d="M12 3v3.5M12 17.5V21M21 12h-3.5M6.5 12H3M18.4 5.6l-2.5 2.5M8.1 15.9l-2.5 2.5M18.4 18.4l-2.5-2.5M8.1 8.1 5.6 5.6"/>',
-    // Replaces the ★/☆ text characters in the rating row. The filled state is a
-    // class on the element, not a second path — it is the same shape either way.
-    star: '<path d="M12 3.8l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 10l5.9-.9L12 3.8z"/>'
-  };
-  var ICONS = {
-    has: /* @__PURE__ */ __name((name) => Object.prototype.hasOwnProperty.call(GLP_ICON_PATHS, name), "has"),
-    // Returns '' for an unknown name rather than an empty <svg>: callers fall
-    // back to other content (e.g. a stored emoji on a user-created menu entry),
-    // and an empty string is what makes `ICONS.of(x) || fallback` work.
-    of: /* @__PURE__ */ __name((name, cls = "") => ICONS.has(name) ? `<svg class="glp-i${cls ? " " + cls : ""}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLP_ICON_PATHS[name]}</svg>` : "", "of")
-  };
-  GLP_ICON_PATHS.descale = '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M8.3 13.6l1.5 1.7 1.4-2.3 1.5 1.7 1.5-2.3"/>';
-  function _scale(arr) {
-    return Array.isArray(arr) && arr.length ? arr.map((v) => v / 10) : [];
-  }
-  __name(_scale, "_scale");
-  function fmtClock(s) {
-    if (s == null || isNaN(s)) return "0:00";
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
-  }
-  __name(fmtClock, "fmtClock");
-  function fmtUptime(ms) {
-    if (ms == null || ms < 0 || isNaN(ms)) return "";
-    const s = Math.floor(ms / 1e3), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
-    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
-  }
-  __name(fmtUptime, "fmtUptime");
-  function detectPhases(times, pressures) {
-    if (!times?.length || !pressures || pressures.length < 5) return null;
-    const THRESH = 3.5;
-    let endIdx = -1;
-    for (let i = 0; i < pressures.length; i++) {
-      if (times[i] >= 1 && pressures[i] >= THRESH) {
-        endIdx = i;
-        break;
-      }
-    }
-    if (endIdx <= 0) return null;
-    const preinfusion = times[endIdx];
-    if (preinfusion < 1.5) return null;
-    return { preinfusion, extraction: times[times.length - 1] - preinfusion };
-  }
-  __name(detectPhases, "detectPhases");
-  function buildShotChart(pres, temp, wt, flow, durationSec, animate = false) {
-    const W = 320, H = 150, L = 30, R = 30, TOP = 12, BOT = 24;
-    const plotW = W - L - R, plotH = H - TOP - BOT;
-    const pr = _scale(downsample(pres || [], 150));
-    const te = _scale(downsample(temp || [], 150));
-    const we = _scale(downsample(wt || [], 150));
-    const fl = _scale(downsample(flow || [], 150));
-    const n = Math.max(pr.length, te.length, we.length, fl.length);
-    if (n < 2) return "";
-    const dur = durationSec && durationSec > 0 ? durationSec : n - 1;
-    const times = Array.from({ length: n }, (_, i) => i / (n - 1) * dur);
-    const PMAX = 12;
-    const rMax = Math.max(110, Math.ceil(((te.length ? Math.max(...te) : 0) + 5) / 10) * 10);
-    const xAt = /* @__PURE__ */ __name((i) => L + i / (n - 1) * plotW, "xAt");
-    const xT = /* @__PURE__ */ __name((s) => L + Math.max(0, Math.min(dur, s)) / dur * plotW, "xT");
-    const yL = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(PMAX, v)) / PMAX * plotH, "yL");
-    const yR = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(rMax, v)) / rMax * plotH, "yR");
-    const line = /* @__PURE__ */ __name((arr, map, color, sw, series) => arr.length < 2 ? "" : `<polyline points="${arr.map((v, i) => `${xAt(i).toFixed(1)},${map(v).toFixed(1)}`).join(" ")}"
-      class="${animate ? `glp-curve-line s-${series}` : ""}"
-      fill="none" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`, "line");
-    const ph = detectPhases(times, pr);
-    let phases = "";
-    if (ph) {
-      const xp = xT(ph.preinfusion);
-      const phaseCls = animate ? ' class="glp-curve-phase"' : "";
-      phases = `<rect${phaseCls} x="${L}" y="${TOP}" width="${(xp - L).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-pres, ${CC.pres}) 13%, transparent)"/><rect${phaseCls} x="${xp.toFixed(1)}" y="${TOP}" width="${(L + plotW - xp).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-flow, ${CC.flow}) 10%, transparent)"/>`;
-    }
-    const endpoint = animate && we.length ? `<circle class="glp-curve-endpoint" cx="${xAt(we.length - 1).toFixed(1)}" cy="${yR(we[we.length - 1]).toFixed(1)}" r="2.6" fill="${CC.wt}"/>` : "";
-    let grid = "", leftLbl = "";
-    [0, 3, 6, 9, 12].forEach((b) => {
-      const y = yL(b);
-      grid += `<line x1="${L}" y1="${y.toFixed(1)}" x2="${L + plotW}" y2="${y.toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 6%, transparent)" stroke-width="0.5"/>`;
-      leftLbl += `<text x="${L - 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="var(--glp-sub, #a1a1aa)">${b}</text>`;
-    });
-    let rightLbl = "";
-    [0, 0.5, 1].forEach((fr) => {
-      const val = Math.round(rMax * fr), y = yR(val);
-      rightLbl += `<text x="${L + plotW + 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="start" font-size="7" fill="var(--glp-sub, #a1a1aa)">${val}</text>`;
-    });
-    const step = dur <= 15 ? 3 : dur <= 30 ? 5 : dur <= 60 ? 10 : 15;
-    let ticks = "";
-    for (let s = 0; s <= dur + 1e-3; s += step) {
-      const x = xT(s);
-      ticks += `<line x1="${x.toFixed(1)}" y1="${TOP + plotH}" x2="${x.toFixed(1)}" y2="${(TOP + plotH + 3).toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 18%, transparent)" stroke-width="0.5"/><text x="${x.toFixed(1)}" y="${(TOP + plotH + 13).toFixed(1)}" text-anchor="middle" font-size="7" fill="var(--glp-sub, #a1a1aa)">${Math.round(s)}s</text>`;
-    }
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" class="${animate ? "glp-anim" : ""}">
-    <rect x="${L}" y="${TOP}" width="${plotW}" height="${plotH}" fill="color-mix(in srgb, var(--glp-text, #e4e4e7) 3%, transparent)"/>
-    ${phases}${grid}
-    <line x1="${L}" y1="${TOP + plotH}" x2="${L + plotW}" y2="${TOP + plotH}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 22%, transparent)" stroke-width="0.6"/>
-    ${line(we, yR, CC.wt, 1.6, "weight")}
-    ${line(fl, yL, CC.flow, 1.8, "flow")}
-    ${line(pr, yL, CC.pres, 2.2, "pressure")}
-    ${line(te, yR, CC.temp, 2, "temp")}
-    ${endpoint}
-    ${leftLbl}${rightLbl}${ticks}
-    <text x="${L - 2}" y="${TOP - 3}" text-anchor="start" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">bar</text>
-    <text x="${L + plotW + 2}" y="${TOP - 3}" text-anchor="end" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">°C · g</text>
-  </svg>`;
-  }
-  __name(buildShotChart, "buildShotChart");
-  function buildLiveChart(dp) {
-    const ti = dp.timeInShot;
-    const dur = Array.isArray(ti) && ti.length ? ti[ti.length - 1] / 10 : null;
-    return buildShotChart(
-      dp.pressure || [],
-      dp.temperature || [],
-      dp.shotWeight || dp.weight || [],
-      dp.pumpFlow || dp.weightFlow || [],
-      dur
-    );
-  }
-  __name(buildLiveChart, "buildLiveChart");
-  function chartLegendHtml(dp, durationSec) {
-    const p = _scale(dp.p || dp.pressure), t = _scale(dp.t || dp.temperature), w = _scale(dp.w || dp.shotWeight || dp.weight), f = _scale(dp.f || dp.pumpFlow || dp.weightFlow);
-    const mx = /* @__PURE__ */ __name((a) => a.length ? Math.max(...a) : null, "mx");
-    const last = /* @__PURE__ */ __name((a) => a.length ? a[a.length - 1] : null, "last");
-    const items = [
-      p.length ? { c: CC.pres, l: T("leg_pressure"), v: `${mx(p).toFixed(1)} bar` } : null,
-      f.length ? { c: CC.flow, l: T("leg_flow"), v: `${mx(f).toFixed(1)} ml/s` } : null,
-      t.length ? { c: CC.temp, l: T("leg_temp"), v: `${mx(t).toFixed(0)}°` } : null,
-      w.length ? { c: CC.wt, l: T("leg_weight"), v: `${last(w).toFixed(1)} g` } : null
-    ].filter(Boolean);
-    let phaseTags = "";
-    if (p.length > 1) {
-      const dur = durationSec && durationSec > 0 ? durationSec : p.length - 1;
-      const times = Array.from({ length: p.length }, (_, i) => i / (p.length - 1) * dur);
-      const ph = detectPhases(times, p);
-      if (ph) phaseTags = `<div class="chart-phases">
-      <span class="ph-tag ph-pre">${T("ph_pre")} ${fmtClock(ph.preinfusion)}</span>
-      <span class="ph-tag ph-ext">${T("ph_ext")} ${fmtClock(ph.extraction)}</span></div>`;
-    }
-    return `<div class="chart-legend2">${items.map(
-      (i) => `<span class="cl-item"><span class="cl-dot" style="background:${i.c}"></span>${i.l} <b>${esc(i.v)}</b></span>`
-    ).join("")}</div>${phaseTags}`;
-  }
-  __name(chartLegendHtml, "chartLegendHtml");
-  function metricLineHtml(items) {
-    const tiles = items.filter(Boolean);
-    if (!tiles.length) return "";
-    return `<div class="metric-line">
-    ${tiles.map((t) => `
-      <div class="metric-item role-${t.role}">
-        <div class="num">${esc(t.num)}${t.unit ? `<span class="unit">${esc(t.unit)}</span>` : ""}</div>
-        <div class="lbl">${esc(t.label)}</div>
-      </div>`).join("")}
-  </div>`;
-  }
-  __name(metricLineHtml, "metricLineHtml");
+  // src/styles.ts
   var STYLES = `
   /* GLP-TOKENS v1 — shared contract between glp-card.js and glp-order-card.js, keep byte-identical */
   :host {
@@ -1581,6 +828,761 @@
     .glp-curve-phase, .glp-curve-endpoint { opacity: 1; }
   }
 `;
+
+  // src/glp-card.ts
+  var GLP_CARD_VERSION = "2.21.1";
+  var STRINGS = {
+    de: {
+      tab_orders: "Bestellungen",
+      tab_maint: "Wartung",
+      orders_none: "Keine offenen Bestellungen",
+      ord_decline_q: "Ablehnen?",
+      ord_done_in: "Fertig in:",
+      ord_yes: "Ja",
+      ord_accept: "Annehmen",
+      ord_decline: "Ablehnen",
+      ord_done: "Fertig",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `fertig in ~${n} min`, "ord_ready_in"),
+      ord_preparing: "in Zubereitung",
+      just_now: "gerade eben",
+      mins_ago: /* @__PURE__ */ __name((n) => `vor ${n} Min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `vor ${n} Std`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `vor ${n} Tagen`, "days_ago"),
+      maint_descaling: "Entkalken",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Gruppenkopf",
+      maint_gaskets: "Dichtungen & Siebe",
+      maint_waterfilter: "Wasserfilter",
+      maint_grinders: "Mühlen",
+      pill_ok: "OK",
+      pill_soon: "Bald fällig",
+      pill_due: "Fällig",
+      pill_never: "Nie erledigt",
+      maint_today: "heute",
+      maint_confirm_q: "Als erledigt markieren?",
+      maint_none: "Keine Wartungsdaten verfügbar",
+      power_on: "Einschalten",
+      power_off: "Ausschalten",
+      off_label: "Aus",
+      profile_label: "Profil",
+      profile_switching: "wechselt …",
+      lm_live: "Maschine live",
+      steam_mode: "Dampfmodus",
+      water_low: /* @__PURE__ */ __name((p) => `Wasser fast leer (${p}%)`, "water_low"),
+      descaling_mode: "Entkalkung läuft",
+      preheat_ready: "Brühbereit",
+      preheat_heating: "Aufheizen …",
+      machine_standby: "Standby",
+      ready_by_set_label: "Brühbereit bis",
+      ready_by_set: "Setzen",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Brühbereit bis ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Abbrechen",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schaltet in ${n} Min ein`, "ready_by_switching_in"),
+      ready_by_switching_now: "schaltet jetzt ein",
+      ready_by_scheduling: "Wird geplant …",
+      brewing: "Bezug läuft",
+      no_shot_label: "Noch kein Shot aufgezeichnet",
+      no_shot_hint: "Shots werden automatisch synchronisiert",
+      m_duration: "Dauer",
+      m_yield: "Ausbeute",
+      m_pressure: "Druck Ø",
+      m_temp: "Temp",
+      leg_pressure: "Druck",
+      leg_flow: "Flow",
+      leg_temp: "Temp",
+      leg_weight: "Gewicht",
+      ph_pre: "Vorinfusion",
+      ph_ext: "Extraktion",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} heute`, "footer_today"),
+      uptime_title: "Maschine an seit",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Geröstet vor ${d} Tagen`, "bean_roasted_ago"),
+      verdict_high: "stark",
+      verdict_mid: "gut",
+      verdict_low: "schwach"
+    },
+    en: {
+      tab_orders: "Orders",
+      tab_maint: "Maintenance",
+      orders_none: "No open orders",
+      ord_decline_q: "Decline?",
+      ord_done_in: "Ready in:",
+      ord_yes: "Yes",
+      ord_accept: "Accept",
+      ord_decline: "Decline",
+      ord_done: "Done",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `ready in ~${n} min`, "ord_ready_in"),
+      ord_preparing: "being prepared",
+      just_now: "just now",
+      mins_ago: /* @__PURE__ */ __name((n) => `${n} min ago`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `${n} h ago`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `${n} days ago`, "days_ago"),
+      maint_descaling: "Descaling",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Group head",
+      maint_gaskets: "Gaskets & screens",
+      maint_waterfilter: "Water filter",
+      maint_grinders: "Grinders",
+      pill_ok: "OK",
+      pill_soon: "Due soon",
+      pill_due: "Due",
+      pill_never: "Never done",
+      maint_today: "today",
+      maint_confirm_q: "Mark as done?",
+      maint_none: "No maintenance data available",
+      power_on: "Turn on",
+      power_off: "Turn off",
+      off_label: "Off",
+      profile_label: "Profile",
+      profile_switching: "switching …",
+      lm_live: "Machine live",
+      steam_mode: "Steam mode",
+      water_low: /* @__PURE__ */ __name((p) => `Water almost empty (${p}%)`, "water_low"),
+      descaling_mode: "Descaling",
+      preheat_ready: "Ready to brew",
+      preheat_heating: "Warming up …",
+      machine_standby: "Standby",
+      ready_by_set_label: "Ready by",
+      ready_by_set: "Set",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Ready by ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Cancel",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `switching on in ${n}m`, "ready_by_switching_in"),
+      ready_by_switching_now: "switching on now",
+      ready_by_scheduling: "Scheduling…",
+      brewing: "Brewing",
+      no_shot_label: "No shot recorded yet",
+      no_shot_hint: "Shots sync automatically",
+      m_duration: "Duration",
+      m_yield: "Yield",
+      m_pressure: "Pressure Ø",
+      m_temp: "Temp",
+      leg_pressure: "Pressure",
+      leg_flow: "Flow",
+      leg_temp: "Temp",
+      leg_weight: "Weight",
+      ph_pre: "Preinfusion",
+      ph_ext: "Extraction",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} today`, "footer_today"),
+      uptime_title: "Machine on since",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Roasted ${d} days ago`, "bean_roasted_ago"),
+      verdict_high: "great",
+      verdict_mid: "good",
+      verdict_low: "weak"
+    },
+    it: {
+      tab_orders: "Ordini",
+      tab_maint: "Manutenzione",
+      orders_none: "Nessun ordine aperto",
+      ord_decline_q: "Rifiutare?",
+      ord_done_in: "Pronto tra:",
+      ord_yes: "Sì",
+      ord_accept: "Accetta",
+      ord_decline: "Rifiuta",
+      ord_done: "Fatto",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `pronto tra ~${n} min`, "ord_ready_in"),
+      ord_preparing: "in preparazione",
+      just_now: "proprio ora",
+      mins_ago: /* @__PURE__ */ __name((n) => `${n} min fa`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `${n} h fa`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `${n} giorni fa`, "days_ago"),
+      maint_descaling: "Decalcificazione",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Gruppo erogazione",
+      maint_gaskets: "Guarnizioni & filtri",
+      maint_waterfilter: "Filtro acqua",
+      maint_grinders: "Macinacaffè",
+      pill_ok: "OK",
+      pill_soon: "In scadenza",
+      pill_due: "Scaduto",
+      pill_never: "Mai fatto",
+      maint_today: "oggi",
+      maint_confirm_q: "Segnare come fatto?",
+      maint_none: "Nessun dato di manutenzione disponibile",
+      power_on: "Accendi",
+      power_off: "Spegni",
+      off_label: "Spento",
+      profile_label: "Profilo",
+      profile_switching: "cambio in corso …",
+      lm_live: "Macchina in diretta",
+      steam_mode: "Modalità vapore",
+      water_low: /* @__PURE__ */ __name((p) => `Acqua quasi esaurita (${p}%)`, "water_low"),
+      descaling_mode: "Decalcificazione in corso",
+      preheat_ready: "Pronto per l'estrazione",
+      preheat_heating: "Riscaldamento …",
+      machine_standby: "Standby",
+      ready_by_set_label: "Pronto entro",
+      ready_by_set: "Imposta",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Pronto entro le ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Annulla",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `si accende tra ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_now: "si accende ora",
+      ready_by_scheduling: "Pianificazione …",
+      brewing: "Estrazione in corso",
+      no_shot_label: "Nessuno shot ancora registrato",
+      no_shot_hint: "Gli shot si sincronizzano automaticamente",
+      m_duration: "Durata",
+      m_yield: "Resa",
+      m_pressure: "Pressione Ø",
+      m_temp: "Temp",
+      leg_pressure: "Pressione",
+      leg_flow: "Flusso",
+      leg_temp: "Temp",
+      leg_weight: "Peso",
+      ph_pre: "Preinfusione",
+      ph_ext: "Estrazione",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} oggi`, "footer_today"),
+      uptime_title: "Macchina accesa da",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostato ${d} giorni fa`, "bean_roasted_ago"),
+      verdict_high: "ottimo",
+      verdict_mid: "buono",
+      verdict_low: "debole"
+    },
+    fr: {
+      tab_orders: "Commandes",
+      tab_maint: "Entretien",
+      orders_none: "Aucune commande en cours",
+      ord_decline_q: "Refuser ?",
+      ord_done_in: "Prêt dans :",
+      ord_yes: "Oui",
+      ord_accept: "Accepter",
+      ord_decline: "Refuser",
+      ord_done: "Terminé",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `prêt dans ~${n} min`, "ord_ready_in"),
+      ord_preparing: "en préparation",
+      just_now: "à l'instant",
+      mins_ago: /* @__PURE__ */ __name((n) => `il y a ${n} min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `il y a ${n} h`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `il y a ${n} jours`, "days_ago"),
+      maint_descaling: "Détartrage",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Groupe de percolation",
+      maint_gaskets: "Joints & tamis",
+      maint_waterfilter: "Filtre à eau",
+      maint_grinders: "Moulins",
+      pill_ok: "OK",
+      pill_soon: "Bientôt requis",
+      pill_due: "Requis",
+      pill_never: "Jamais fait",
+      maint_today: "aujourd'hui",
+      maint_confirm_q: "Marquer comme fait ?",
+      maint_none: "Aucune donnée d'entretien disponible",
+      power_on: "Allumer",
+      power_off: "Éteindre",
+      off_label: "Éteint",
+      profile_label: "Profil",
+      profile_switching: "changement …",
+      lm_live: "Machine en direct",
+      steam_mode: "Mode vapeur",
+      water_low: /* @__PURE__ */ __name((p) => `Eau presque vide (${p}%)`, "water_low"),
+      descaling_mode: "Détartrage en cours",
+      preheat_ready: "Prêt à infuser",
+      preheat_heating: "Chauffage …",
+      machine_standby: "Veille",
+      ready_by_set_label: "Prêt avant",
+      ready_by_set: "Définir",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Prêt avant ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Annuler",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `s'allume dans ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_now: "s'allume maintenant",
+      ready_by_scheduling: "Planification …",
+      brewing: "Extraction en cours",
+      no_shot_label: "Aucun shot enregistré pour l'instant",
+      no_shot_hint: "Les shots se synchronisent automatiquement",
+      m_duration: "Durée",
+      m_yield: "Rendement",
+      m_pressure: "Pression Ø",
+      m_temp: "Temp",
+      leg_pressure: "Pression",
+      leg_flow: "Débit",
+      leg_temp: "Temp",
+      leg_weight: "Poids",
+      ph_pre: "Préinfusion",
+      ph_ext: "Extraction",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} aujourd'hui`, "footer_today"),
+      uptime_title: "Machine allumée depuis",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Torréfié il y a ${d} jours`, "bean_roasted_ago"),
+      verdict_high: "excellent",
+      verdict_mid: "bon",
+      verdict_low: "faible"
+    },
+    es: {
+      tab_orders: "Pedidos",
+      tab_maint: "Mantenimiento",
+      orders_none: "No hay pedidos abiertos",
+      ord_decline_q: "¿Rechazar?",
+      ord_done_in: "Listo en:",
+      ord_yes: "Sí",
+      ord_accept: "Aceptar",
+      ord_decline: "Rechazar",
+      ord_done: "Listo",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `listo en ~${n} min`, "ord_ready_in"),
+      ord_preparing: "en preparación",
+      just_now: "justo ahora",
+      mins_ago: /* @__PURE__ */ __name((n) => `hace ${n} min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `hace ${n} h`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `hace ${n} días`, "days_ago"),
+      maint_descaling: "Descalcificación",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Grupo de erogación",
+      maint_gaskets: "Juntas y filtros",
+      maint_waterfilter: "Filtro de agua",
+      maint_grinders: "Molinillos",
+      pill_ok: "OK",
+      pill_soon: "Próximo",
+      pill_due: "Pendiente",
+      pill_never: "Nunca hecho",
+      maint_today: "hoy",
+      maint_confirm_q: "¿Marcar como hecho?",
+      maint_none: "No hay datos de mantenimiento disponibles",
+      power_on: "Encender",
+      power_off: "Apagar",
+      off_label: "Apagado",
+      profile_label: "Perfil",
+      profile_switching: "cambiando …",
+      lm_live: "Máquina en directo",
+      steam_mode: "Modo vapor",
+      water_low: /* @__PURE__ */ __name((p) => `Agua casi vacía (${p}%)`, "water_low"),
+      descaling_mode: "Descalcificación en curso",
+      preheat_ready: "Listo para extraer",
+      preheat_heating: "Calentando …",
+      machine_standby: "En espera",
+      ready_by_set_label: "Listo antes de",
+      ready_by_set: "Fijar",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Listo antes de las ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Cancelar",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `se enciende en ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_now: "se enciende ahora",
+      ready_by_scheduling: "Programando …",
+      brewing: "Extracción en curso",
+      no_shot_label: "Aún no se ha registrado ningún shot",
+      no_shot_hint: "Los shots se sincronizan automáticamente",
+      m_duration: "Duración",
+      m_yield: "Rendimiento",
+      m_pressure: "Presión Ø",
+      m_temp: "Temp",
+      leg_pressure: "Presión",
+      leg_flow: "Flujo",
+      leg_temp: "Temp",
+      leg_weight: "Peso",
+      ph_pre: "Preinfusión",
+      ph_ext: "Extracción",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} hoy`, "footer_today"),
+      uptime_title: "Máquina encendida desde",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostado hace ${d} días`, "bean_roasted_ago"),
+      verdict_high: "excelente",
+      verdict_mid: "bueno",
+      verdict_low: "débil"
+    },
+    nl: {
+      tab_orders: "Bestellingen",
+      tab_maint: "Onderhoud",
+      orders_none: "Geen openstaande bestellingen",
+      ord_decline_q: "Afwijzen?",
+      ord_done_in: "Klaar over:",
+      ord_yes: "Ja",
+      ord_accept: "Accepteren",
+      ord_decline: "Afwijzen",
+      ord_done: "Klaar",
+      ord_ready_in: /* @__PURE__ */ __name((n) => `klaar over ~${n} min`, "ord_ready_in"),
+      ord_preparing: "in bereiding",
+      just_now: "zojuist",
+      mins_ago: /* @__PURE__ */ __name((n) => `${n} min geleden`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n) => `${n} u geleden`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n) => `${n} dagen geleden`, "days_ago"),
+      maint_descaling: "Ontkalken",
+      maint_backflush: "Backflush",
+      maint_grouphead: "Groepkop",
+      maint_gaskets: "Afdichtingen & zeven",
+      maint_waterfilter: "Waterfilter",
+      maint_grinders: "Molens",
+      pill_ok: "OK",
+      pill_soon: "Binnenkort nodig",
+      pill_due: "Nodig",
+      pill_never: "Nooit gedaan",
+      maint_today: "vandaag",
+      maint_confirm_q: "Als voltooid markeren?",
+      maint_none: "Geen onderhoudsgegevens beschikbaar",
+      power_on: "Inschakelen",
+      power_off: "Uitschakelen",
+      off_label: "Uit",
+      profile_label: "Profiel",
+      profile_switching: "wisselt …",
+      lm_live: "Machine live",
+      steam_mode: "Stoommodus",
+      water_low: /* @__PURE__ */ __name((p) => `Water bijna leeg (${p}%)`, "water_low"),
+      descaling_mode: "Ontkalken",
+      preheat_ready: "Klaar om te zetten",
+      preheat_heating: "Opwarmen …",
+      machine_standby: "Stand-by",
+      ready_by_set_label: "Klaar voor",
+      ready_by_set: "Instellen",
+      ready_by_target: /* @__PURE__ */ __name((hhmm) => `Klaar voor ${hhmm}`, "ready_by_target"),
+      ready_by_cancel: "Annuleren",
+      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schakelt in over ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_now: "schakelt nu in",
+      ready_by_scheduling: "Wordt gepland …",
+      brewing: "Bereiden",
+      no_shot_label: "Nog geen shot geregistreerd",
+      no_shot_hint: "Shots synchroniseren automatisch",
+      m_duration: "Duur",
+      m_yield: "Opbrengst",
+      m_pressure: "Druk Ø",
+      m_temp: "Temp",
+      leg_pressure: "Druk",
+      leg_flow: "Flow",
+      leg_temp: "Temp",
+      leg_weight: "Gewicht",
+      ph_pre: "Voorinfusie",
+      ph_ext: "Extractie",
+      footer_today: /* @__PURE__ */ __name((n) => `${n} vandaag`, "footer_today"),
+      uptime_title: "Machine aan sinds",
+      bean_roasted_ago: /* @__PURE__ */ __name((d) => `${d} dagen geleden gebrand`, "bean_roasted_ago"),
+      verdict_high: "sterk",
+      verdict_mid: "goed",
+      verdict_low: "zwak"
+    }
+  };
+  var SUPPORTED_LANGS = ["de", "en", "it", "fr", "es", "nl"];
+  var LANG = "de";
+  function T(key, ...args) {
+    const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
+    return typeof v === "function" ? v(...args) : v;
+  }
+  __name(T, "T");
+  function roastAgeDays(str) {
+    if (!str || typeof str !== "string") return null;
+    let d = null;
+    let m = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
+    if (m) {
+      const y = m[3].length === 2 ? 2e3 + parseInt(m[3]) : parseInt(m[3]);
+      d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
+    } else {
+      m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    }
+    if (!d || isNaN(d)) return null;
+    const days = Math.floor((Date.now() - d.getTime()) / 864e5);
+    return days >= 0 && days <= 730 ? days : null;
+  }
+  __name(roastAgeDays, "roastAgeDays");
+  function esc(s) {
+    if (s == null) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  __name(esc, "esc");
+  function safeUrl(url) {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+    } catch {
+      return null;
+    }
+  }
+  __name(safeUrl, "safeUrl");
+  function parseTs(val) {
+    if (!val && val !== 0) return null;
+    if (typeof val === "number") return new Date(val > 1e10 ? val : val * 1e3);
+    return new Date(val);
+  }
+  __name(parseTs, "parseTs");
+  function downsample(arr, maxPts) {
+    if (!arr || arr.length <= maxPts) return arr || [];
+    const step = Math.ceil(arr.length / maxPts);
+    const out = arr.filter((_, i) => i % step === 0);
+    if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
+    return out;
+  }
+  __name(downsample, "downsample");
+  var CC = { pres: "#0072b2", flow: "#c77000", temp: "#c0392b", wt: "#009e73" };
+  var THEME_PRESETS = {
+    "amber-americano": { a: "#f59e0b", b: "#f59e0b" },
+    "ruby-ristretto": { a: "#7f1d1d", b: "#7f1d1d" },
+    "copper-cortado": { a: "#c2703d", b: "#e8b4a0" },
+    "twilight-turkish": { a: "#0891b2", b: "#4338ca" },
+    "marbled-macchiato": { a: "#f59e0b", b: "#ec4899" },
+    "ember-espresso": { a: "#dc4a1f", b: "#f5a623" },
+    "mulberry-mocha": { a: "#5b21b6", b: "#db2777" },
+    "frosty-flat-white": { a: "#0f766e", b: "#38bdf8" }
+  };
+  var HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+  var MACHINE_BODY = /* @__PURE__ */ __name((id, mini, type = "gaggiuino") => `
+    <!-- Seitenwand rechts inkl. Kantenlicht, volle Hoehe -->
+    <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="url(#${id})"/>
+    <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="#000" opacity=".26"/>
+    <path d="M93.2 8.6 L100 11 L100 130 L90 149 L93.2 142 Z" fill="#fff" opacity=".13"/>
+
+    <!-- Frontflaeche Korpus -->
+    <path d="M13 2.4 L72.2 2.3 L72.2 71.9 L10.2 71.9 L10.2 5.2 A2.8 2.8 0 0 1 13 2.4 Z" fill="url(#${id})"/>
+    <path d="M72.2 3 L72.2 71" stroke="#fff" opacity=".22" stroke-width="3"/>
+
+    <!-- Mittelblock: Korpus kragt links darueber, dort ragt der Siebtraeger ins Freie -->
+    <path d="M20 72 L94 72 L94 122 L24 122 Z" fill="#2b2b31"/>
+    <path d="M20 72 L94 72 L94 77 L20.6 77 Z" fill="#000" opacity=".3"/>
+
+    <!-- Bruehgruppe + Siebtraeger (ragt nach links ins Freie) -->
+    <rect x="42" y="71.5" width="16" height="10.5" rx="2.2" fill="#b9bec5"/>
+    ${mini ? "" : '<path d="M47 82 L53 82 L52 87.5 L48 87.5 Z" fill="#8f959d"/>'}
+    <path d="M20.5 91 L45 84" stroke="#26262c" stroke-width="6.6" stroke-linecap="round"/>
+    <circle cx="18.6" cy="91.6" r="5.9" fill="#ded8ca" stroke="#26262c" stroke-width="1.2"/>
+
+    <!-- Dampflanze RECHTS: Gummimanschette oben, Chromrohr nach unten -->
+    <path d="M84.2 72 C85.2 78 84.6 82 84 88" stroke="#26262c" stroke-width="5" stroke-linecap="round"/>
+    <path d="M84 88 C83.5 101 83 115 83.5 130" stroke="#a3a9b1" stroke-width="2.6" stroke-linecap="round"/>
+    ${mini ? "" : '<path d="M21.5 97 L21.5 130" stroke="#9aa0a8" stroke-width="2" stroke-linecap="round"/>'}
+
+    <!-- Tropfschale: silbernes Lochblech in dunklem Rahmen, breiter als der Korpus -->
+    <path d="M17 122 L93 122 L80 134 L0 134 Z" fill="#25252b"/>
+    <path d="M20.5 123.4 L88.5 123.4 L77 132.6 L4 132.6 Z" fill="url(#${id}-steel)"/>
+    ${mini ? "" : `
+    <circle cx="28" cy="126" r="1.5" fill="#4a4a52"/>
+    <circle cx="39" cy="126" r="1.5" fill="#4a4a52"/>
+    <circle cx="50" cy="126" r="1.5" fill="#4a4a52"/>
+    <circle cx="61" cy="126" r="1.5" fill="#4a4a52"/>
+    <circle cx="72" cy="126" r="1.5" fill="#4a4a52"/>
+    <circle cx="21" cy="130.4" r="1.5" fill="#4a4a52"/>
+    <circle cx="32" cy="130.4" r="1.5" fill="#4a4a52"/>
+    <circle cx="43" cy="130.4" r="1.5" fill="#4a4a52"/>
+    <circle cx="54" cy="130.4" r="1.5" fill="#4a4a52"/>
+    <circle cx="65" cy="130.4" r="1.5" fill="#4a4a52"/>`}
+
+    <!-- Sockelfront: senkrecht, rechte Kante trifft die Seitenwand -->
+    <path d="M0 134 L80 134 L84 155 L0 155 Z" fill="#2b2b31"/>
+    <path d="M0 134 L80 134 L80.8 138 L0 138 Z" fill="#fff" opacity=".07"/>
+
+    <!-- Fuesse -->
+    <rect x="4.5" y="155" width="7.5" height="4.4" rx="1.5" fill="#26262c"/>
+    <rect x="66" y="155" width="7.5" height="4.4" rx="1.5" fill="#26262c"/>
+
+    ${type === "gaggimate" ? `
+    <!-- GaggiMate: runder Puck mit Chromgehaeuse ersetzt Wipptasten +
+         Dampfknopf (mxkissnr/glp-lovelace-card#127 / mxkissnr/glp-order-card#97) -->
+    <circle cx="41" cy="24" r="14" fill="#cfd4d9"/>
+    <circle cx="41" cy="24" r="14" fill="none" stroke="#8f959d" stroke-width=".9"/>
+    <circle cx="41" cy="24" r="11.4" fill="#17171b"/>
+    <circle cx="41" cy="24" r="10.2" fill="#0b0d12"/>
+    ${mini ? "" : `
+    <path d="M31.1 14.1 A14 14 0 0 1 45 10.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".65"/>
+    <path d="M33.4 16.4 A10.7 10.7 0 0 1 48.6 16.4" fill="none" stroke="#e8452a" stroke-width="1.3" stroke-linecap="round" opacity=".9"/>
+    <path d="M42.6 13.4 A10.7 10.7 0 0 1 48.6 16.4" fill="none" stroke="#6aa9d8" stroke-width="1.3" stroke-linecap="round"/>`}` : `
+    <!-- Bedienfeld: 3 Wipptasten -->
+    <rect x="20.5" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
+    <rect x="33" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
+    <rect x="45.5" y="13.6" width="9" height="14.8" rx="2.1" fill="#26262c"/>
+    ${mini ? "" : `
+    <rect x="21.6" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
+    <rect x="34.1" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
+    <rect x="46.6" y="14.9" width="6.8" height="5.4" rx="1.4" fill="#fff" opacity=".13"/>
+    <rect x="23.7" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>
+    <rect x="36.2" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>
+    <rect x="48.7" y="31.8" width="2.6" height="2.2" rx=".8" fill="#d9422e"/>`}
+
+    <!-- Dampfknopf: liegender Zylinder auf der Seitenwand -->
+    <rect x="74" y="23.4" width="9" height="8" fill="#26262c"/>
+    <rect x="80.7" y="20.5" width="17" height="13.6" rx="6.8" fill="#212126"/>
+    <ellipse cx="82.6" cy="27.3" rx="2.4" ry="6.8" fill="#3b3b43"/>
+    ${mini ? "" : '<rect x="81.4" y="23.4" width="1.7" height="7.8" rx=".85" fill="#fff" opacity=".2"/>'}`}`, "MACHINE_BODY");
+  var MACHINE_ICON_MINI = /* @__PURE__ */ __name((id, type = "gaggiuino") => `
+    <svg viewBox="0 0 100 162" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="${id}" x1="6" y1="0" x2="92" y2="145" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="var(--glp-accent-start)"/>
+          <stop offset="1" stop-color="var(--glp-accent-end)"/>
+        </linearGradient>
+        <linearGradient id="${id}-steel" x1="0" y1="123" x2="0" y2="133" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#d3d6db"/>
+          <stop offset="1" stop-color="#9ba1a9"/>
+        </linearGradient>
+      </defs>
+      ${MACHINE_BODY(id, true, type)}
+    </svg>`, "MACHINE_ICON_MINI");
+  var GLP_ICON_PATHS = {
+    // --- drinks -----------------------------------------------------------
+    // One shared demitasse silhouette for the three straight espresso drinks;
+    // they differ only in fill level, which is the honest difference between
+    // them (same basket, same cup, more or less water through it).
+    ristretto: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M6.5 15.2h8.6"/>',
+    espresso: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.6 13.2h10.4"/>',
+    lungo: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.1 10.6h11.2"/>',
+    // Cappuccino: domed foam cap standing proud of the rim.
+    cappuccino: '<path d="M16.5 8.5h1a2.5 2.5 0 0 1 0 5h-1"/><path d="M5 8.5h11.5v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M5.4 8.5a5.8 5.8 0 0 1 11 0"/><path d="M5.8 12h10"/>',
+    // Latte macchiato: tall glass, layered.
+    latte: '<path d="M7.5 4.5h9l-1 14a2 2 0 0 1-2 1.8h-3a2 2 0 0 1-2-1.8l-1-14z"/><path d="M7.9 9h8.2M8.2 13h7.6"/>',
+    // Flat white: wide shallow cup, thin microfoam layer, latte-art dot.
+    flat_white: '<path d="M17.5 9.5h1a2.2 2.2 0 0 1 0 4.4h-1"/><path d="M3.5 9.5h14v3.6a4.4 4.4 0 0 1-4.4 4.4H7.9a4.4 4.4 0 0 1-4.4-4.4V9.5z"/><path d="M4.2 12h12.6"/><circle cx="10.5" cy="14.4" r="1.1"/>',
+    // --- state, action, status --------------------------------------------
+    coffee: '<path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/><path d="M8 2v2M12 2v2"/>',
+    check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    heat: '<path d="M12 3.5c3 3.2 4.5 5.8 4.5 8a4.5 4.5 0 0 1-9 0c0-2.2 1.5-4.8 4.5-8z"/><path d="M9.5 20.5h5"/>',
+    droplet: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    steam: '<path d="M7 20c0-2 1.6-2.4 1.6-4.4S7 12.6 7 10.6"/><path d="M12 20c0-2.4 1.8-2.9 1.8-5.3S12 10.3 12 8"/><path d="M17 20c0-2 1.6-2.4 1.6-4.4S17 12.6 17 10.6"/>',
+    warning: '<path d="M12 4.5 21 19.5H3L12 4.5z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r="0.6"/>',
+    gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
+    plug: '<path d="M9 3.5v5M15 3.5v5"/><path d="M6.5 8.5h11v3a5.5 5.5 0 0 1-11 0v-3z"/><path d="M12 17v3.5"/>',
+    cart: '<path d="M3 4.5h2.2l2.3 10.4h9.6l2.1-7.4H6.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/>',
+    shower: '<path d="M4.5 8.5h15v2.6a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3V8.5z"/><path d="M8 17.5v2M12 17.5v3M16 17.5v2"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/>',
+    refresh: '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/>',
+    circle: '<circle cx="12" cy="12" r="8"/>',
+    // Waiting/queued. An hourglass rather than a clock: a clock reads as "when",
+    // an hourglass as "not yet" — and this marks an order sitting unconfirmed,
+    // not a time of day.
+    hourglass: '<path d="M7 3.5h10M7 20.5h10"/><path d="M8 3.5v3.2c0 1.6 1.2 2.9 4 5.3 2.8-2.4 4-3.7 4-5.3V3.5"/><path d="M8 20.5v-3.2c0-1.6 1.2-2.9 4-5.3 2.8 2.4 4 3.7 4 5.3v3.2"/>',
+    flask: '<path d="M10 3.5v6L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5v-6"/><path d="M9 3.5h6"/><path d="M7.4 14h9.2"/>',
+    // Not a party popper — a small burst, so it still reads at 16px and keeps
+    // the card's tone. Used for the completed-order confirmation.
+    celebrate: '<path d="M12 3v3.5M12 17.5V21M21 12h-3.5M6.5 12H3M18.4 5.6l-2.5 2.5M8.1 15.9l-2.5 2.5M18.4 18.4l-2.5-2.5M8.1 8.1 5.6 5.6"/>',
+    // Replaces the ★/☆ text characters in the rating row. The filled state is a
+    // class on the element, not a second path — it is the same shape either way.
+    star: '<path d="M12 3.8l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 10l5.9-.9L12 3.8z"/>'
+  };
+  var ICONS = {
+    has: /* @__PURE__ */ __name((name) => Object.prototype.hasOwnProperty.call(GLP_ICON_PATHS, name), "has"),
+    // Returns '' for an unknown name rather than an empty <svg>: callers fall
+    // back to other content (e.g. a stored emoji on a user-created menu entry),
+    // and an empty string is what makes `ICONS.of(x) || fallback` work.
+    of: /* @__PURE__ */ __name((name, cls = "") => ICONS.has(name) ? `<svg class="glp-i${cls ? " " + cls : ""}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLP_ICON_PATHS[name]}</svg>` : "", "of")
+  };
+  GLP_ICON_PATHS.descale = '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M8.3 13.6l1.5 1.7 1.4-2.3 1.5 1.7 1.5-2.3"/>';
+  function _scale(arr) {
+    return Array.isArray(arr) && arr.length ? arr.map((v) => v / 10) : [];
+  }
+  __name(_scale, "_scale");
+  function fmtClock(s) {
+    if (s == null || isNaN(s)) return "0:00";
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+  }
+  __name(fmtClock, "fmtClock");
+  function fmtUptime(ms) {
+    if (ms == null || ms < 0 || isNaN(ms)) return "";
+    const s = Math.floor(ms / 1e3), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
+  }
+  __name(fmtUptime, "fmtUptime");
+  function detectPhases(times, pressures) {
+    if (!times?.length || !pressures || pressures.length < 5) return null;
+    const THRESH = 3.5;
+    let endIdx = -1;
+    for (let i = 0; i < pressures.length; i++) {
+      if (times[i] >= 1 && pressures[i] >= THRESH) {
+        endIdx = i;
+        break;
+      }
+    }
+    if (endIdx <= 0) return null;
+    const preinfusion = times[endIdx];
+    if (preinfusion < 1.5) return null;
+    return { preinfusion, extraction: times[times.length - 1] - preinfusion };
+  }
+  __name(detectPhases, "detectPhases");
+  function buildShotChart(pres, temp, wt, flow, durationSec, animate = false) {
+    const W = 320, H = 150, L = 30, R = 30, TOP = 12, BOT = 24;
+    const plotW = W - L - R, plotH = H - TOP - BOT;
+    const pr = _scale(downsample(pres || [], 150));
+    const te = _scale(downsample(temp || [], 150));
+    const we = _scale(downsample(wt || [], 150));
+    const fl = _scale(downsample(flow || [], 150));
+    const n = Math.max(pr.length, te.length, we.length, fl.length);
+    if (n < 2) return "";
+    const dur = durationSec && durationSec > 0 ? durationSec : n - 1;
+    const times = Array.from({ length: n }, (_, i) => i / (n - 1) * dur);
+    const PMAX = 12;
+    const rMax = Math.max(110, Math.ceil(((te.length ? Math.max(...te) : 0) + 5) / 10) * 10);
+    const xAt = /* @__PURE__ */ __name((i) => L + i / (n - 1) * plotW, "xAt");
+    const xT = /* @__PURE__ */ __name((s) => L + Math.max(0, Math.min(dur, s)) / dur * plotW, "xT");
+    const yL = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(PMAX, v)) / PMAX * plotH, "yL");
+    const yR = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(rMax, v)) / rMax * plotH, "yR");
+    const line = /* @__PURE__ */ __name((arr, map, color, sw, series) => arr.length < 2 ? "" : `<polyline points="${arr.map((v, i) => `${xAt(i).toFixed(1)},${map(v).toFixed(1)}`).join(" ")}"
+      class="${animate ? `glp-curve-line s-${series}` : ""}"
+      fill="none" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`, "line");
+    const ph = detectPhases(times, pr);
+    let phases = "";
+    if (ph) {
+      const xp = xT(ph.preinfusion);
+      const phaseCls = animate ? ' class="glp-curve-phase"' : "";
+      phases = `<rect${phaseCls} x="${L}" y="${TOP}" width="${(xp - L).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-pres, ${CC.pres}) 13%, transparent)"/><rect${phaseCls} x="${xp.toFixed(1)}" y="${TOP}" width="${(L + plotW - xp).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-flow, ${CC.flow}) 10%, transparent)"/>`;
+    }
+    const endpoint = animate && we.length ? `<circle class="glp-curve-endpoint" cx="${xAt(we.length - 1).toFixed(1)}" cy="${yR(we[we.length - 1]).toFixed(1)}" r="2.6" fill="${CC.wt}"/>` : "";
+    let grid = "", leftLbl = "";
+    [0, 3, 6, 9, 12].forEach((b) => {
+      const y = yL(b);
+      grid += `<line x1="${L}" y1="${y.toFixed(1)}" x2="${L + plotW}" y2="${y.toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 6%, transparent)" stroke-width="0.5"/>`;
+      leftLbl += `<text x="${L - 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="var(--glp-sub, #a1a1aa)">${b}</text>`;
+    });
+    let rightLbl = "";
+    [0, 0.5, 1].forEach((fr) => {
+      const val = Math.round(rMax * fr), y = yR(val);
+      rightLbl += `<text x="${L + plotW + 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="start" font-size="7" fill="var(--glp-sub, #a1a1aa)">${val}</text>`;
+    });
+    const step = dur <= 15 ? 3 : dur <= 30 ? 5 : dur <= 60 ? 10 : 15;
+    let ticks = "";
+    for (let s = 0; s <= dur + 1e-3; s += step) {
+      const x = xT(s);
+      ticks += `<line x1="${x.toFixed(1)}" y1="${TOP + plotH}" x2="${x.toFixed(1)}" y2="${(TOP + plotH + 3).toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 18%, transparent)" stroke-width="0.5"/><text x="${x.toFixed(1)}" y="${(TOP + plotH + 13).toFixed(1)}" text-anchor="middle" font-size="7" fill="var(--glp-sub, #a1a1aa)">${Math.round(s)}s</text>`;
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" class="${animate ? "glp-anim" : ""}">
+    <rect x="${L}" y="${TOP}" width="${plotW}" height="${plotH}" fill="color-mix(in srgb, var(--glp-text, #e4e4e7) 3%, transparent)"/>
+    ${phases}${grid}
+    <line x1="${L}" y1="${TOP + plotH}" x2="${L + plotW}" y2="${TOP + plotH}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 22%, transparent)" stroke-width="0.6"/>
+    ${line(we, yR, CC.wt, 1.6, "weight")}
+    ${line(fl, yL, CC.flow, 1.8, "flow")}
+    ${line(pr, yL, CC.pres, 2.2, "pressure")}
+    ${line(te, yR, CC.temp, 2, "temp")}
+    ${endpoint}
+    ${leftLbl}${rightLbl}${ticks}
+    <text x="${L - 2}" y="${TOP - 3}" text-anchor="start" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">bar</text>
+    <text x="${L + plotW + 2}" y="${TOP - 3}" text-anchor="end" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">°C · g</text>
+  </svg>`;
+  }
+  __name(buildShotChart, "buildShotChart");
+  function buildLiveChart(dp) {
+    const ti = dp.timeInShot;
+    const dur = Array.isArray(ti) && ti.length ? ti[ti.length - 1] / 10 : null;
+    return buildShotChart(
+      dp.pressure || [],
+      dp.temperature || [],
+      dp.shotWeight || dp.weight || [],
+      dp.pumpFlow || dp.weightFlow || [],
+      dur
+    );
+  }
+  __name(buildLiveChart, "buildLiveChart");
+  function chartLegendHtml(dp, durationSec) {
+    const p = _scale(dp.p || dp.pressure), t = _scale(dp.t || dp.temperature), w = _scale(dp.w || dp.shotWeight || dp.weight), f = _scale(dp.f || dp.pumpFlow || dp.weightFlow);
+    const mx = /* @__PURE__ */ __name((a) => a.length ? Math.max(...a) : null, "mx");
+    const last = /* @__PURE__ */ __name((a) => a.length ? a[a.length - 1] : null, "last");
+    const items = [
+      p.length ? { c: CC.pres, l: T("leg_pressure"), v: `${mx(p).toFixed(1)} bar` } : null,
+      f.length ? { c: CC.flow, l: T("leg_flow"), v: `${mx(f).toFixed(1)} ml/s` } : null,
+      t.length ? { c: CC.temp, l: T("leg_temp"), v: `${mx(t).toFixed(0)}°` } : null,
+      w.length ? { c: CC.wt, l: T("leg_weight"), v: `${last(w).toFixed(1)} g` } : null
+    ].filter(Boolean);
+    let phaseTags = "";
+    if (p.length > 1) {
+      const dur = durationSec && durationSec > 0 ? durationSec : p.length - 1;
+      const times = Array.from({ length: p.length }, (_, i) => i / (p.length - 1) * dur);
+      const ph = detectPhases(times, p);
+      if (ph) phaseTags = `<div class="chart-phases">
+      <span class="ph-tag ph-pre">${T("ph_pre")} ${fmtClock(ph.preinfusion)}</span>
+      <span class="ph-tag ph-ext">${T("ph_ext")} ${fmtClock(ph.extraction)}</span></div>`;
+    }
+    return `<div class="chart-legend2">${items.map(
+      (i) => `<span class="cl-item"><span class="cl-dot" style="background:${i.c}"></span>${i.l} <b>${esc(i.v)}</b></span>`
+    ).join("")}</div>${phaseTags}`;
+  }
+  __name(chartLegendHtml, "chartLegendHtml");
+  function metricLineHtml(items) {
+    const tiles = items.filter(Boolean);
+    if (!tiles.length) return "";
+    return `<div class="metric-line">
+    ${tiles.map((t) => `
+      <div class="metric-item role-${t.role}">
+        <div class="num">${esc(t.num)}${t.unit ? `<span class="unit">${esc(t.unit)}</span>` : ""}</div>
+        <div class="lbl">${esc(t.label)}</div>
+      </div>`).join("")}
+  </div>`;
+  }
+  __name(metricLineHtml, "metricLineHtml");
   var GlpCard = class _GlpCard extends HTMLElement {
     static {
       __name(this, "GlpCard");
