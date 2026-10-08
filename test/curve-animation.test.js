@@ -1,32 +1,15 @@
-// Guided metric line + curve draw-in animation gating (#120). Same
-// vm-context approach as the other suites (see security-helpers.test.js /
-// render-guard.test.js): loads the real glp-card.js into a sandboxed vm
-// context and exercises the shipped function/prototype-method declarations
-// directly, without a real shadow DOM/customElements.
+// Guided metric line + curve draw-in animation gating (#120). Card loaded via
+// the shared test helper (test/helpers/load-card.cjs), which evaluates the real
+// glp-card.js in a vm sandbox and exposes the shipped function/prototype-method
+// declarations (metricLineHtml, GlpCard) directly, without a real shadow
+// DOM/customElements.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
-function loadCard() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard; globalThis.metricLineHtml = metricLineHtml;"
-  );
-
-  class HTMLElement {}
-  const context = { HTMLElement, customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } }, window: {}, console, URL, setTimeout, clearTimeout };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-  return { GlpCard: context.__GlpCard, metricLineHtml: context.metricLineHtml };
-}
-
-const { GlpCard, metricLineHtml } = loadCard();
+const { GlpCard, metricLineHtml } = loadCard({ expose: ['metricLineHtml'] });
 
 function makeInstance() {
   return Object.create(GlpCard.prototype);

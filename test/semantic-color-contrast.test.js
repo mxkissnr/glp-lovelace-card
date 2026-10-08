@@ -2,20 +2,21 @@
 // --glp-ok/--glp-warn/--glp-err (by --glp-bg luminance) and --glp-accent-text
 // (by the DARKER of --glp-accent-start/--glp-accent-end's luminance,
 // independently — #87's per-machine gradient theme) — not just that the
-// method exists. Same vm-sandbox + Object.create(prototype) approach as
-// machine-config.test.js: avoids needing a full custom-element/shadow-DOM
-// constructor, just a minimal style/shadowRoot stub sufficient to drive the
-// method end-to-end. Real color normalization (hex/named-color -> rgb()) is
-// exactly what the browser's engine does and is NOT re-implemented here —
-// that layer is covered by scripts/screenshot.mjs's real Playwright renders
-// instead; this test only proves the luminance-decision logic itself fires.
+// method exists. Card loaded via the shared test helper
+// (test/helpers/load-card.cjs), which evaluates the real glp-card.js; the
+// helper's `context` option supplies this suite's extra document/
+// getComputedStyle stubs, and makeInstance() adds a minimal style/shadowRoot
+// stub sufficient to drive the method end-to-end without a full custom-
+// element/shadow-DOM constructor. Real color normalization (hex/named-color
+// -> rgb()) is exactly what the browser's engine does and is NOT
+// re-implemented here — that layer is covered by scripts/screenshot.mjs's
+// real Playwright renders instead; this test only proves the
+// luminance-decision logic itself fires.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { loadCard } = require('./helpers/load-card.cjs');
 
 function makeStyleStub() {
   const props = new Map();
@@ -28,31 +29,13 @@ function makeStyleStub() {
   };
 }
 
-function loadGlpCard() {
-  let src = fs.readFileSync(path.join(__dirname, '..', 'glp-card.js'), 'utf8');
-  src = src.replace(
-    "customElements.define('glp-card', GlpCard);",
-    "customElements.define('glp-card', GlpCard); globalThis.__GlpCard = GlpCard;"
-  );
-
-  class HTMLElement {}
-  const fakeDocument = { createElement() { return { style: makeStyleStub(), remove() {} }; } };
-  const context = {
-    HTMLElement,
-    customElements: { define() {}, get() {}, whenDefined() { return new Promise(() => {}); } },
-    window: {},
+const fakeDocument = { createElement() { return { style: makeStyleStub(), remove() {} }; } };
+const { GlpCard } = loadCard({
+  context: {
     document: fakeDocument,
     getComputedStyle(el) { return el.style; },
-    console,
-    URL,
-  };
-  context.globalThis = context;
-  vm.createContext(context);
-  vm.runInContext(src, context, { filename: path.join(__dirname, '..', 'glp-card.js') });
-  return context.__GlpCard;
-}
-
-const GlpCard = loadGlpCard();
+  },
+});
 
 function makeInstance() {
   const inst = Object.create(GlpCard.prototype);
