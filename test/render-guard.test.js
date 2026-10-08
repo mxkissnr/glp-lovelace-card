@@ -1,290 +1,137 @@
-// Render-guard centralization + pending-render catch-up (#72). Card loaded via
-// the shared test helper (test/helpers/load-card.cjs), which evaluates the real
-// glp-card.js in a vm sandbox and exposes GlpCard.prototype methods directly,
-// without a real shadow DOM/customElements.
-//
-// `_render()` itself (full shadow-DOM render) is out of scope here, same
-// boundary as the rest of this suite (see ready-by.test.js) — it is spied on
-// instead of exercised for real; visual correctness is verified separately
-// via `npm run screenshot`. The spy also clears `_pendingRender`, mirroring
-// the real `_render()`'s own contract (glp-card.js: it resets
-// `this._pendingRender = false` as soon as an actual render happens) so the
-// "replayed exactly once" assertions below are meaningful.
+// Render-guard contract after the move to Lit templates (#180). The card used
+// to rebuild its whole shadow DOM from an innerHTML string on every `hass`
+// update, so it deferred those renders while an open picker, a focused input,
+// an in-flight touch or an animation could be destroyed by the rebuild. Lit's
+// render() patches the existing DOM in place, so those deferral guards are gone
+// and interactive state simply survives the update. These tests render the card
+// into a real DOM (happy-dom, like test/render-escaping.test.js) and prove that
+// an open profile picker, a pending maintenance confirmation and a typed
+// ready-by time each survive a `hass` update.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { Window } = require('happy-dom');
 const { loadCard } = require('./helpers/load-card.cjs');
 
-const { GlpCard } = loadCard();
-
-function makeInstance() {
-  const inst = Object.create(GlpCard.prototype);
-  inst._profileInteracting = false;
-  inst._animating = false;
-  inst._maintConfirm = null;
-  inst._readyByInteracting = false;
-  inst._touchActive = false;
-  inst._touchGuardTimer = null;
-  inst._touchGuardTimeoutMs = 1000;
-  inst._pendingRender = false;
-  return inst;
-}
-
-// Stands in for the constructor's `this.addEventListener(...)` calls (the
-// fake HTMLElement in this vm context has none) so `_bindTouchGuard()` can be
-// exercised directly.
-function bindFakeTouchGuard(inst) {
-  const listeners = {};
-  inst.addEventListener = (type, handler) => { listeners[type] = handler; };
-  inst._bindTouchGuard();
-  return listeners;
-}
-
-// Replaces `_render` with a counting spy that also clears `_pendingRender`,
-// mirroring the real method's contract (see file header).
-function spyOnRender(inst) {
-  let count = 0;
-  inst._render = () => { count++; inst._pendingRender = false; };
-  return () => count;
-}
-
-// ── _renderBlocked() ────────────────────────────────────────────────────────
-
-test('_renderBlocked() is false when no guard flag is set', () => {
-  const inst = makeInstance();
-  assert.equal(inst._renderBlocked(), false);
+// One happy-dom Window for the whole file: node --test loads the card (and
+// therefore Lit) once per process, and Lit binds to whatever global document
+// exists when it is first imported. The window must be installed before
+// loadCard() requires the card.
+const window = new Window();
+// Publish `home-assistant` first so the card's deferred define (#184) fires
+// synchronously and registers `glp-card` in this window's registry.
+window.customElements.define('home-assistant', class extends window.HTMLElement {});
+const { GlpCard } = loadCard({
+  context: {
+    document: window.document,
+    window,
+    HTMLElement: window.HTMLElement,
+    customElements: window.customElements,
+    navigator: window.navigator,
+    getComputedStyle: window.getComputedStyle.bind(window),
+    localStorage: window.localStorage,
+  },
 });
+assert.equal(typeof GlpCard, 'function', 'the card must register in the happy-dom window');
 
-test('_renderBlocked() is true for each guard flag independently', () => {
-  const flags = ['_profileInteracting', '_animating', '_readyByInteracting', '_touchActive'];
-  for (const flag of flags) {
-    const inst = makeInstance();
-    inst[flag] = true;
-    assert.equal(inst._renderBlocked(), true, `expected blocked when ${flag} is true`);
+const P = 'sensor.gaggiuino_local_profiler_';
+const S = 'select.gaggiuino_local_profiler_';
+
+// Machine on and idle: the shot tab with the profile picker available.
+function onStates(extra = {}) {
+  return {
+    language: 'en',
+    states: {
+      'switch.gaggiuino': { state: 'on' },
+      [`${P}machine_status`]: { state: 'online', attributes: { recent_shots: [] } },
+      [`${P}preheat_elapsed`]: { state: '600' },
+      [`${S}profile`]: { state: 'Espresso', attributes: { options: ['Espresso', 'Flat White'] } },
+      ...extra,
+    },
+  };
+}
+
+// Machine off: the ready-by picker (its time input) is shown.
+function offStates() {
+  return {
+    language: 'en',
+    states: {
+      'switch.gaggiuino': { state: 'off' },
+      [`${P}machine_status`]: { state: 'offline', attributes: {} },
+      [`${P}preheat_elapsed`]: { state: '0' },
+    },
+  };
+}
+
+function makeCard(hass) {
+  // happy-dom forbids constructing its element classes with `new` directly, so
+  // the card is built and upgraded through its custom-element registry.
+  const card = window.document.createElement('glp-card');
+  card._config = { title: 'Gaggiuino', entity_prefix: P, switch_entity: 'switch.gaggiuino' };
+  card._hass = hass;
+  // These fakes carry no fetchWithAuth, so the orders poll would retry forever
+  // (and keep node --test alive); the poll is not what these tests exercise.
+  card._startOrdersPoll = () => {};
+  return card;
+}
+
+// Drives the real `set hass` path (not just `_render()`), so the update goes
+// through exactly the entry point that used to defer to the render guards.
+function pushHass(card, hass) {
+  card.hass = hass;
+}
+
+function stopTickers(card) {
+  for (const key of ['_uptimeTimer', '_readyByTimer', '_ordersPoll']) {
+    if (card[key]) { clearInterval(card[key]); card[key] = null; }
   }
-  const inst = makeInstance();
-  inst._maintConfirm = 'descale';
-  assert.equal(inst._renderBlocked(), true, 'expected blocked when _maintConfirm is set');
+}
+
+test('an open profile picker survives a hass update', () => {
+  const card = makeCard(onStates());
+  card._render();
+  card._toggleProfilePicker();
+  assert.ok(card.shadowRoot.querySelector('.profile-opts'), 'the profile picker opens');
+
+  pushHass(card, onStates({ [`${P}machine_temperature`]: { state: '93.0' } }));
+
+  assert.ok(card.shadowRoot.querySelector('.profile-opts'),
+    'the picker is still open after a hass update');
+  stopTickers(card);
 });
 
-// ── _requestRender() ────────────────────────────────────────────────────────
+test('a pending maintenance confirmation survives a hass update', () => {
+  const card = makeCard(onStates({
+    [`${P}maintenance_backflush`]: { state: 'ok', attributes: { pct: 0.2, days_since: 3, shots_since: 12 } },
+  }));
+  card._activeTab = 'maint';
+  card._render();
+  card._maintConfirm = 'backflush';   // what the row's pointerdown handler sets
+  card._render();
+  assert.ok(card.shadowRoot.querySelector('.maint-confirm'), 'the confirmation prompt is shown');
 
-test('_requestRender() renders immediately when nothing blocks (unchanged behavior)', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
-  inst._requestRender();
-  assert.equal(renderCount(), 1);
-  assert.equal(inst._pendingRender, false);
+  pushHass(card, onStates({
+    [`${P}maintenance_backflush`]: { state: 'ok', attributes: { pct: 0.2, days_since: 3, shots_since: 12 } },
+  }));
+
+  assert.ok(card.shadowRoot.querySelector('.maint-confirm'),
+    'the confirmation prompt is still shown after a hass update');
+  stopTickers(card);
 });
 
-test('_requestRender() defers via _pendingRender instead of rendering when blocked', () => {
-  const inst = makeInstance();
-  inst._profileInteracting = true;
-  const renderCount = spyOnRender(inst);
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-});
+test('a typed ready-by time survives a hass update', () => {
+  const card = makeCard(offStates());
+  card._render();
+  const input = card.shadowRoot.getElementById('glp-readyby-input');
+  assert.ok(input, 'the ready-by time input is shown while the machine is off');
 
-// ── catch-up on guard release ───────────────────────────────────────────────
+  input.value = '07:30';   // as a user typing into <input type="time"> would
 
-test('a blocked render is replayed exactly once once the blocking interaction ends (ready-by blur)', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
+  pushHass(card, offStates());
 
-  inst._readyByFocus();
-  assert.equal(inst._readyByInteracting, true);
-
-  // A render request arrives mid-interaction — must be deferred, not dropped.
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-
-  // Interaction ends — the deferred render is replayed exactly once.
-  inst._readyByBlur();
-  assert.equal(inst._readyByInteracting, false);
-  assert.equal(renderCount(), 1);
-  assert.equal(inst._pendingRender, false);
-
-  // A second, unrelated blur (no pending render outstanding) must not
-  // trigger another render.
-  inst._readyByFocus();
-  inst._readyByBlur();
-  assert.equal(renderCount(), 1);
-});
-
-test('blur with nothing pending does not force a render (no-op catch-up)', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
-
-  inst._readyByFocus();
-  inst._readyByBlur();
-  assert.equal(renderCount(), 0);
-});
-
-test('a render requested while blocked by one flag is still deferred if another flag remains set on release', () => {
-  const inst = makeInstance();
-  inst._profileInteracting = true;
-  const renderCount = spyOnRender(inst);
-
-  inst._readyByFocus(); // _readyByInteracting = true too, now two flags block
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-
-  // Only the ready-by interaction ends — _profileInteracting is still true,
-  // so the render must stay deferred rather than firing early.
-  inst._readyByBlur();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-
-  // Now the remaining flag clears too, and a fresh _requestRender() (as the
-  // real call sites would issue on their own next trigger) flushes it.
-  inst._profileInteracting = false;
-  inst._requestRender();
-  assert.equal(renderCount(), 1);
-});
-
-// ── touch guard (#147 — iOS: page couldn't scroll past the card because a
-// `set hass()`-triggered DOM render mid-gesture aborted the WKWebView
-// touch-scroll) ──────────────────────────────────────────────────────────────
-
-test('_bindTouchGuard(): touchstart sets _touchActive, touchend (last finger) clears it', () => {
-  const inst = makeInstance();
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  assert.equal(inst._touchActive, true);
-
-  listeners.touchend({ touches: [] });
-  assert.equal(inst._touchActive, false);
-});
-
-test('_bindTouchGuard(): touchcancel also clears _touchActive (e.g. an interrupted gesture)', () => {
-  const inst = makeInstance();
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  listeners.touchcancel({ touches: [] });
-  assert.equal(inst._touchActive, false);
-});
-
-test('a render requested while the finger is on the card is deferred, then replayed exactly once on touchend', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  inst._requestRender();
-  assert.equal(renderCount(), 0, 'must not rebuild the DOM while the finger is still on the card');
-  assert.equal(inst._pendingRender, true);
-
-  listeners.touchend({ touches: [] });
-  assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once on touchend');
-  assert.equal(inst._pendingRender, false);
-});
-
-test('touchcancel replays a pending render exactly once, same as touchend', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-
-  listeners.touchcancel({ touches: [] });
-  assert.equal(renderCount(), 1);
-});
-
-// A `touchend` fires once per finger lifted, not once all fingers are gone
-// (Touch Events spec) — e.g. an accidental second finger resting near the
-// card's edge while scrolling, or a pinch/zoom starting on the card. Lifting
-// the *first* finger must not release the guard while the second is still in
-// contact, or it reproduces the #147 mid-gesture rebuild for the
-// multi-touch case.
-test('_bindTouchGuard(): a second finger on the card keeps the guard held until touches.length reaches 0', () => {
-  const inst = makeInstance();
-  const renderCount = spyOnRender(inst);
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart(); // first finger down
-  listeners.touchstart(); // second finger down
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-
-  // First finger lifts — one touch point remains in contact.
-  listeners.touchend({ touches: [{}] });
-  assert.equal(inst._touchActive, true, 'guard must stay held while a second finger is still touching');
-  assert.equal(renderCount(), 0, 'must not rebuild the DOM while a finger is still on the card');
-
-  // Second (last) finger lifts — no touch points remain.
-  listeners.touchend({ touches: [] });
-  assert.equal(inst._touchActive, false);
-  assert.equal(renderCount(), 1, 'the deferred render must be replayed exactly once once all fingers are gone');
-  assert.equal(inst._pendingRender, false);
-});
-
-// #155: Android WebView can occasionally fail to deliver a matching
-// touchend/touchcancel (ghost/interrupted touch). Without a safety net,
-// _touchActive would stay true forever, permanently blocking every future
-// render — matching the reported "card sometimes isn't shown at all".
-test('_bindTouchGuard(): a watchdog timer force-clears _touchActive if touchend never arrives', async () => {
-  const inst = makeInstance();
-  inst._touchGuardTimeoutMs = 10; // real, short timer instead of mocking globals inside the vm sandbox
-  const renderCount = spyOnRender(inst);
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  inst._requestRender();
-  assert.equal(renderCount(), 0);
-  assert.equal(inst._pendingRender, true);
-
-  // No touchend/touchcancel ever arrives -- simulate a lost event.
-  await new Promise(resolve => setTimeout(resolve, 30));
-
-  assert.equal(inst._touchActive, false, 'watchdog must clear the stuck guard flag');
-  assert.equal(renderCount(), 1, 'the deferred render must be flushed once the watchdog fires');
-});
-
-test('_bindTouchGuard(): a real touchend cancels the watchdog timer (no double-clear/double-render)', async () => {
-  const inst = makeInstance();
-  inst._touchGuardTimeoutMs = 10;
-  const renderCount = spyOnRender(inst);
-  const listeners = bindFakeTouchGuard(inst);
-
-  listeners.touchstart();
-  listeners.touchend({ touches: [] });
-  assert.equal(inst._touchActive, false);
-
-  // Advancing past the watchdog window must not fire a second, stale
-  // clear/render now that the real touchend already handled it.
-  await new Promise(resolve => setTimeout(resolve, 30));
-  assert.equal(renderCount(), 0, 'no render was ever pending, so nothing should have fired');
-});
-
-test('set hass() pushes during an active touch do not rebuild the DOM, and touchend catches up with the latest hass state', () => {
-  const inst = makeInstance();
-  inst._startOrdersPoll = () => {};
-  inst._loadBeansInfo = () => {};
-  inst._ordersPoll = 1; // already "running" — set hass() must not try to start it again
-  const listeners = bindFakeTouchGuard(inst);
-
-  let renderedWith = null;
-  inst._render = () => { renderedWith = inst._hass; inst._pendingRender = false; };
-
-  listeners.touchstart();
-
-  inst.hass = { states: {}, language: 'en' }; // mid-scroll hass push #1
-  assert.equal(renderedWith, null, 'no rebuild while _touchActive is true');
-  assert.equal(inst._pendingRender, true);
-
-  const latest = { states: {}, language: 'en' };
-  inst.hass = latest; // hass push #2, still mid-gesture — still deferred
-  assert.equal(renderedWith, null);
-
-  listeners.touchend({ touches: [] });
-  assert.equal(renderedWith, latest, 'the catch-up render must see the latest hass state, not a stale one');
+  const after = card.shadowRoot.getElementById('glp-readyby-input');
+  assert.equal(after, input, 'the update reuses the same input element');
+  assert.equal(after.value, '07:30', 'the typed time is not reset by the update');
+  stopTickers(card);
 });

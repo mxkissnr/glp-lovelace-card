@@ -2239,14 +2239,7 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" });
-      this._profileInteracting = false;
-      this._readyByInteracting = false;
       this._profileOpen = false;
-      this._animating = false;
-      this._touchActive = false;
-      this._touchGuardTimer = null;
-      this._touchGuardTimeoutMs = 1e3;
-      this._pendingRender = false;
       this._shotIndex = 0;
       this._prevShotIndex = -1;
       this._recentShots = [];
@@ -2322,39 +2315,12 @@
           }
         }
       });
-      this._bindTouchGuard();
-    }
-    // #147: the card root element (`this`) is never replaced by `_render()` —
-    // only its shadow DOM is patched — so this is bound once, here, and
-    // outlives every re-render exactly like the delegated shadowRoot listener
-    // above. `{ passive: true }` on all three: these must never call
-    // preventDefault(), or the very native scroll this guard exists to protect
-    // would itself be blocked.
-    _bindTouchGuard() {
-      const clearTouchActive = /* @__PURE__ */ __name(() => {
-        this._touchActive = false;
-        this._touchGuardTimer = null;
-        if (this._pendingRender) this._requestRender();
-      }, "clearTouchActive");
-      this.addEventListener("touchstart", () => {
-        this._touchActive = true;
-        clearTimeout(this._touchGuardTimer);
-        this._touchGuardTimer = setTimeout(clearTouchActive, this._touchGuardTimeoutMs);
-      }, { passive: true });
-      const onTouchEnd = /* @__PURE__ */ __name((e6) => {
-        if (e6.touches.length > 0) return;
-        clearTimeout(this._touchGuardTimer);
-        clearTouchActive();
-      }, "onTouchEnd");
-      this.addEventListener("touchend", onTouchEnd, { passive: true });
-      this.addEventListener("touchcancel", onTouchEnd, { passive: true });
     }
     // Handlers bound from the Lit templates (elements survive renders now, so
     // per-render addEventListener wiring would stack listeners). The delegated
     // power/ready-by buttons stay on the constructor's shadowRoot listener.
     _toggleProfilePicker() {
       this._profileOpen = !this._profileOpen;
-      this._profileInteracting = this._profileOpen;
       this._render();
     }
     _selectProfile(val) {
@@ -2369,16 +2335,7 @@
         }, 8e3);
       }
       this._profileOpen = false;
-      this._profileInteracting = false;
       this._render();
-    }
-    // Ready-by input focus/blur (#64): a typed time must survive an hass update.
-    _readyByFocus() {
-      this._readyByInteracting = true;
-    }
-    _readyByBlur() {
-      this._readyByInteracting = false;
-      if (this._pendingRender) this._requestRender();
     }
     _selectTab(tab) {
       if (tab !== this._activeTab) {
@@ -2505,8 +2462,7 @@
       return b2`<div class="ready-by ready-by-picker">
       <span class="ready-by-label">${T2("ready_by_set_label")}</span>
       <div class="ready-by-picker-row">
-        <input type="time" class="ready-by-time-input" id="glp-readyby-input"
-          @focus=${() => this._readyByFocus()} @blur=${() => this._readyByBlur()}/>
+        <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
         <button class="ready-by-btn primary" data-action="set-ready-by">${T2("ready_by_set")}</button>
       </div>
     </div>`;
@@ -2535,7 +2491,7 @@
       if (!force && sig === this._ordersSig) return;
       this._ordersSig = sig;
       this._orders = active;
-      this._requestRender();
+      this._render();
     }
     async _orderAction(id, action, body) {
       if (!this._hass?.fetchWithAuth || !id) return;
@@ -2596,7 +2552,6 @@
       })}</div>`;
     }
     _navShot(dir) {
-      if (this._animating) return;
       if (this._activeTab !== "shot") return;
       const max = this._recentShots.length - 1;
       if (dir === "prev" && this._shotIndex < max) this._navShotAnimated(dir, this._shotIndex + 1);
@@ -2605,16 +2560,11 @@
     _navShotAnimated(dir, newIndex) {
       const oldContent = this.shadowRoot.querySelector(".swipe-content");
       const oldClone = oldContent ? oldContent.cloneNode(true) : null;
-      this._animating = true;
       this._shotIndex = newIndex;
       this._render();
       const newSwipe = this.shadowRoot.querySelector(".swipe-target");
       const newContent = this.shadowRoot.querySelector(".swipe-content");
-      if (!oldClone || !newSwipe || !newContent) {
-        this._animating = false;
-        if (this._pendingRender) this._requestRender();
-        return;
-      }
+      if (!oldClone || !newSwipe || !newContent) return;
       const enterX = dir === "prev" ? "36px" : "-36px";
       const exitX = dir === "prev" ? "-36px" : "36px";
       oldClone.style.cssText = "position:absolute;top:0;left:0;right:0;pointer-events:none;z-index:2;";
@@ -2632,8 +2582,6 @@
         setTimeout(() => {
           if (oldClone.parentNode) oldClone.remove();
           ["transform", "transition", "opacity"].forEach((p3) => newContent.style.removeProperty(p3));
-          this._animating = false;
-          if (this._pendingRender) this._requestRender();
         }, 250);
       }));
     }
@@ -2753,7 +2701,7 @@
       }
       if (!this._ordersPoll) this._startOrdersPoll();
       this._loadBeansInfo();
-      this._requestRender();
+      this._render();
     }
     // ── Bean metadata (via the integration REST proxy, app >= 1.96) ───────────
     async _loadBeansInfo() {
@@ -3037,25 +2985,6 @@
       this.style.setProperty("--glp-aline", `rgb(${out.join(" ")})`);
     }
     /* /GLP-SHARED:contrast v1 */
-    // Single source of truth for "a full re-render would currently wipe out an
-    // in-progress user interaction" (#72 — this used to be duplicated verbatim
-    // at the orders-poll and `set hass` call sites, and any new interactive
-    // flag had to be added to both by hand or a render would silently blow
-    // away focus/open state, exactly as happened in #64/#66/#68).
-    _renderBlocked() {
-      return !!(this._profileInteracting || this._animating || this._maintConfirm || this._readyByInteracting || this._touchActive);
-    }
-    // Renders now if nothing is blocking, otherwise defers via `_pendingRender`
-    // (ported from glp-order-card.js's `_pendingRender` pattern) so the
-    // deferred render is replayed once by whichever call flips the blocking
-    // flag back off, instead of being discarded outright.
-    _requestRender() {
-      if (this._renderBlocked()) {
-        this._pendingRender = true;
-        return;
-      }
-      this._render();
-    }
     // #195: the switch-only "off" rule — a configured switch reported `off` or
     // `unavailable`. Drives the power button, whose click toggles the switch, so
     // standby must not influence it.
@@ -3518,7 +3447,6 @@
     }
     _render() {
       if (!this._hass || !this._config) return;
-      this._pendingRender = false;
       const vm = this._viewModel();
       if (vm.machineOff) {
         this._profileOpen = false;

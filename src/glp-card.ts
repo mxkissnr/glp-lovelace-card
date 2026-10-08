@@ -20,24 +20,7 @@ class GlpCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this._profileInteracting = false;
-    this._readyByInteracting = false;
     this._profileOpen  = false;
-    this._animating     = false;
-    // #147: true while the user's finger is in contact with the card
-    // (touchstart..touchend/touchcancel) — see _bindTouchGuard().
-    this._touchActive   = false;
-    // #155: safety-net timer that force-clears _touchActive if the
-    // WebView never delivers a matching touchend/touchcancel (Android
-    // ghost-touch cases) — see _bindTouchGuard(). Exposed as an instance
-    // field (not a hardcoded literal in _bindTouchGuard()) so tests can
-    // shrink it instead of depending on mocked global timers.
-    this._touchGuardTimer = null;
-    this._touchGuardTimeoutMs = 1000;
-    // set when a render was requested while _renderBlocked() (#72) — replayed
-    // once by _requestRender() as soon as the blocking interaction ends,
-    // instead of being discarded like it was before.
-    this._pendingRender = false;
     this._shotIndex     = 0;
     this._prevShotIndex = -1;
     this._recentShots   = [];
@@ -126,45 +109,6 @@ class GlpCard extends HTMLElement {
         }
       }
     });
-
-    this._bindTouchGuard();
-  }
-
-  // #147: the card root element (`this`) is never replaced by `_render()` —
-  // only its shadow DOM is patched — so this is bound once, here, and
-  // outlives every re-render exactly like the delegated shadowRoot listener
-  // above. `{ passive: true }` on all three: these must never call
-  // preventDefault(), or the very native scroll this guard exists to protect
-  // would itself be blocked.
-  _bindTouchGuard() {
-    // #155: some Android WebViews occasionally fail to deliver a matching
-    // touchend/touchcancel for a touch (ghost/interrupted gesture) — without
-    // a safety net, _touchActive would then stay true forever, permanently
-    // blocking _renderBlocked() and freezing the card for the rest of the
-    // session. This timer force-clears it if no real end event shows up.
-    const clearTouchActive = () => {
-      this._touchActive = false;
-      this._touchGuardTimer = null;
-      if (this._pendingRender) this._requestRender();
-    };
-    this.addEventListener('touchstart', () => {
-      this._touchActive = true;
-      clearTimeout(this._touchGuardTimer);
-      this._touchGuardTimer = setTimeout(clearTouchActive, this._touchGuardTimeoutMs);
-    }, { passive: true });
-    // touchend/touchcancel fire once per finger lifted, not once all fingers
-    // are gone (Touch Events spec) — a second finger resting on the card
-    // (accidental edge touch, or a pinch/zoom starting on the card) must keep
-    // the guard held until `touches.length === 0` confirms nothing is left
-    // in contact, or lifting the first finger would trigger the very
-    // mid-gesture rebuild #147 exists to prevent.
-    const onTouchEnd = e => {
-      if (e.touches.length > 0) return;
-      clearTimeout(this._touchGuardTimer);
-      clearTouchActive();
-    };
-    this.addEventListener('touchend', onTouchEnd, { passive: true });
-    this.addEventListener('touchcancel', onTouchEnd, { passive: true });
   }
 
   // Handlers bound from the Lit templates (elements survive renders now, so
@@ -172,7 +116,6 @@ class GlpCard extends HTMLElement {
   // power/ready-by buttons stay on the constructor's shadowRoot listener.
   _toggleProfilePicker() {
     this._profileOpen = !this._profileOpen;
-    this._profileInteracting = this._profileOpen;
     this._render();
   }
 
@@ -185,15 +128,7 @@ class GlpCard extends HTMLElement {
       this._pendingProfileTimer = setTimeout(() => { this._pendingProfile = null; this._render(); }, 8000);
     }
     this._profileOpen = false;
-    this._profileInteracting = false;
     this._render();
-  }
-
-  // Ready-by input focus/blur (#64): a typed time must survive an hass update.
-  _readyByFocus() { this._readyByInteracting = true; }
-  _readyByBlur() {
-    this._readyByInteracting = false;
-    if (this._pendingRender) this._requestRender();
   }
 
   _selectTab(tab) {
@@ -327,11 +262,13 @@ class GlpCard extends HTMLElement {
         <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T('ready_by_cancel')}</button>
       </div>`;
     }
+    // The time input is deliberately uncontrolled — no value binding a render
+    // could overwrite — because Lit only patches attributes it bound, so a
+    // hass update leaves a time the user is typing in place.
     return html`<div class="ready-by ready-by-picker">
       <span class="ready-by-label">${T('ready_by_set_label')}</span>
       <div class="ready-by-picker-row">
-        <input type="time" class="ready-by-time-input" id="glp-readyby-input"
-          @focus=${() => this._readyByFocus()} @blur=${() => this._readyByBlur()}/>
+        <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
         <button class="ready-by-btn primary" data-action="set-ready-by">${T('ready_by_set')}</button>
       </div>
     </div>`;
@@ -359,7 +296,7 @@ class GlpCard extends HTMLElement {
     if (!force && sig === this._ordersSig) return;
     this._ordersSig = sig;
     this._orders = active;
-    this._requestRender();
+    this._render();
   }
 
   async _orderAction(id, action, body) {
@@ -401,7 +338,6 @@ class GlpCard extends HTMLElement {
   }
 
   _navShot(dir) {
-    if (this._animating) return;               // ignore nav while an animation is in flight
     if (this._activeTab !== 'shot') return;    // don't swipe-navigate shots on maint/orders tabs
     const max = this._recentShots.length - 1;
     if (dir === 'prev' && this._shotIndex < max) this._navShotAnimated(dir, this._shotIndex + 1);
@@ -412,18 +348,12 @@ class GlpCard extends HTMLElement {
     const oldContent = this.shadowRoot.querySelector('.swipe-content');
     const oldClone   = oldContent ? oldContent.cloneNode(true) : null;
 
-    // Guard set hass() from re-rendering (and clobbering the animation) until it finishes
-    this._animating = true;
     this._shotIndex = newIndex;
     this._render();
 
     const newSwipe   = this.shadowRoot.querySelector('.swipe-target');
     const newContent = this.shadowRoot.querySelector('.swipe-content');
-    if (!oldClone || !newSwipe || !newContent) {
-      this._animating = false;
-      if (this._pendingRender) this._requestRender();
-      return;
-    }
+    if (!oldClone || !newSwipe || !newContent) return;
 
     // prev = going to older shot → new content enters from right, old exits left
     const enterX = dir === 'prev' ? '36px' : '-36px';
@@ -448,8 +378,6 @@ class GlpCard extends HTMLElement {
       setTimeout(() => {
         if (oldClone.parentNode) oldClone.remove();
         ['transform', 'transition', 'opacity'].forEach(p => newContent.style.removeProperty(p));
-        this._animating = false;
-        if (this._pendingRender) this._requestRender();
       }, 250);
     }));
   }
@@ -579,7 +507,7 @@ class GlpCard extends HTMLElement {
     { const l = String(hass?.language || hass?.locale?.language || 'de').slice(0, 2).toLowerCase(); setLang(SUPPORTED_LANGS.includes(l) ? l : 'en'); }
     if (!this._ordersPoll) this._startOrdersPoll();
     this._loadBeansInfo();
-    this._requestRender();
+    this._render();
   }
 
   // ── Bean metadata (via the integration REST proxy, app >= 1.96) ───────────
@@ -887,24 +815,6 @@ class GlpCard extends HTMLElement {
     this.style.setProperty('--glp-aline', `rgb(${out.join(' ')})`);
   }
   /* /GLP-SHARED:contrast v1 */
-
-  // Single source of truth for "a full re-render would currently wipe out an
-  // in-progress user interaction" (#72 — this used to be duplicated verbatim
-  // at the orders-poll and `set hass` call sites, and any new interactive
-  // flag had to be added to both by hand or a render would silently blow
-  // away focus/open state, exactly as happened in #64/#66/#68).
-  _renderBlocked() {
-    return !!(this._profileInteracting || this._animating || this._maintConfirm || this._readyByInteracting || this._touchActive);
-  }
-
-  // Renders now if nothing is blocking, otherwise defers via `_pendingRender`
-  // (ported from glp-order-card.js's `_pendingRender` pattern) so the
-  // deferred render is replayed once by whichever call flips the blocking
-  // flag back off, instead of being discarded outright.
-  _requestRender() {
-    if (this._renderBlocked()) { this._pendingRender = true; return; }
-    this._render();
-  }
 
   // #195: the switch-only "off" rule — a configured switch reported `off` or
   // `unavailable`. Drives the power button, whose click toggles the switch, so
@@ -1372,7 +1282,6 @@ class GlpCard extends HTMLElement {
 
   _render() {
     if (!this._hass || !this._config) return;
-    this._pendingRender = false;
 
     const vm = this._viewModel();
 

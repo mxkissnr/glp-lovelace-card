@@ -298,36 +298,6 @@ test('_readyByCountdownText() returns the scheduling placeholder when a target i
   assert.equal(inst._readyByCountdownText(null, new Date()), 'Wird geplant …');
 });
 
-// ── ready-by focus/blur handlers / _readyByInteracting guard (#64) ──────────
-// The focus/blur listeners now live in the Lit template, so the handlers are
-// exercised directly; they toggle the flag the render-gates check.
-
-test('_readyByFocus()/_readyByBlur() toggle _readyByInteracting', () => {
-  const inst = makeInstance();
-  inst._readyByInteracting = false;
-
-  assert.equal(inst._readyByInteracting, false);
-  inst._readyByFocus();
-  assert.equal(inst._readyByInteracting, true);
-
-  inst._readyByBlur();
-  assert.equal(inst._readyByInteracting, false);
-});
-
-test('_readyByBlur() replays a render deferred while the input was focused', () => {
-  const inst = makeInstance();
-  inst._readyByInteracting = false;
-  inst._pendingRender = false;
-  let rendered = 0;
-  inst._render = () => { rendered++; inst._pendingRender = false; };
-
-  inst._readyByFocus();
-  inst._requestRender();
-  assert.equal(rendered, 0);
-  assert.equal(inst._pendingRender, true);
-
-  inst._readyByBlur();
-  assert.equal(inst._readyByInteracting, false);
-  assert.equal(rendered, 1);
-  assert.equal(inst._pendingRender, false);
-});
+// The ready-by input is left uncontrolled in the Lit template, so a typed time
+// survives an hass update without any focus/blur render guard; that behaviour
+// is covered by test/render-guard.test.js.
