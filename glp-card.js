@@ -2231,7 +2231,7 @@
   __name(metricLineHtml, "metricLineHtml");
 
   // src/glp-card.ts
-  var GLP_CARD_VERSION = "2.21.1";
+  var GLP_CARD_VERSION = "2.22.0";
   var READY_BY_PENDING_FALLBACK_MS = 6e4;
   var GlpCard = class _GlpCard extends HTMLElement {
     static {

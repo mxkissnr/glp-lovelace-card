@@ -16,7 +16,7 @@ import type {
   Hass, HassStateObject, CardConfig, MachineEntry, ThemeStops, Rgb,
   RecentShot, BaristaOrder, BeanInfo, GrinderEntry,
 } from './types.ts';
-const GLP_CARD_VERSION = '2.21.1';
+const GLP_CARD_VERSION = '2.22.0';
 
 // Fallback for a ready-by Set/Cancel whose sensor confirmation never lands
 // (#214). The optimistic value is cleared the moment _readReadyBy() sees the

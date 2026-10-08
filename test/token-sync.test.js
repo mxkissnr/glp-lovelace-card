@@ -107,28 +107,7 @@ const BLOCKS = [
 // GLP-SHARED block is open on the neighbor repo, and empty it again in the
 // same round that companion PR merges — see #115 for the shape that
 // cleanup PR takes.
-const TRANSITIONAL = {
-  'GLP-SHARED:machine-icon v1': {
-    issue: '#197',
-    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
-  },
-  'GLP-SHARED:icons v1': {
-    issue: '#197',
-    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
-  },
-  'GLP-SHARED:contrast v1': {
-    issue: '#197',
-    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
-  },
-  'GLP-SHARED:machine-match v1': {
-    issue: '#197',
-    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
-  },
-  'GLP-SHARED:app-theme-lookup v1': {
-    issue: '#197',
-    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
-  },
-};
+const TRANSITIONAL = {};
 
 for (const [name, entry] of Object.entries(TRANSITIONAL)) {
   if (!entry || !entry.issue) {
