@@ -7,6 +7,7 @@
 - **The power button now follows the switch, not standby.** With a GaggiMate in standby the switch stays reported `on` while the machine reads as off (above), so the header button's class and title wrongly showed "Power on" even though its click calls `switch.toggle` and would cut power to the machine. The button's state and label now use the switch-only rule; the click behavior is unchanged. `glp-card.js`, `test/machine-standby.test.js`. Part of #195
 
 ### Changed
+- **The card's TypeScript sources now type-check under strict mode; the installed file is unchanged.** Part of #180
 - **The shared-block sync check also reads the Order Card's new TypeScript sources; tooling only, no card change.** Part of #197
 - **The card is now built from a TypeScript source; the installed file and its behaviour are unchanged.** Part of #180
 - **The card now updates only the parts that changed instead of redrawing itself, so open pickers, typed times and animations survive Home Assistant updates.** Part of #180
