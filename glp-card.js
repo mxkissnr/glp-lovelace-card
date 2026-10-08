@@ -829,8 +829,7 @@
   }
 `;
 
-  // src/glp-card.ts
-  var GLP_CARD_VERSION = "2.21.1";
+  // src/i18n.ts
   var STRINGS = {
     de: {
       tab_orders: "Bestellungen",
@@ -1243,11 +1242,21 @@
   };
   var SUPPORTED_LANGS = ["de", "en", "it", "fr", "es", "nl"];
   var LANG = "de";
+  function setLang(lang) {
+    LANG = lang;
+  }
+  __name(setLang, "setLang");
+  function getLang() {
+    return LANG;
+  }
+  __name(getLang, "getLang");
   function T(key, ...args) {
     const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
     return typeof v === "function" ? v(...args) : v;
   }
   __name(T, "T");
+
+  // src/helpers.ts
   function roastAgeDays(str) {
     if (!str || typeof str !== "string") return null;
     let d = null;
@@ -1305,6 +1314,8 @@
     "frosty-flat-white": { a: "#0f766e", b: "#38bdf8" }
   };
   var HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
+  // src/icons.ts
   var MACHINE_BODY = /* @__PURE__ */ __name((id, mini, type = "gaggiuino") => `
     <!-- Seitenwand rechts inkl. Kantenlicht, volle Hoehe -->
     <path d="M72.2 2.3 L100 11 L100 130 L88 153 L72.2 153 Z" fill="url(#${id})"/>
@@ -1444,6 +1455,8 @@
     of: /* @__PURE__ */ __name((name, cls = "") => ICONS.has(name) ? `<svg class="glp-i${cls ? " " + cls : ""}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLP_ICON_PATHS[name]}</svg>` : "", "of")
   };
   GLP_ICON_PATHS.descale = '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M8.3 13.6l1.5 1.7 1.4-2.3 1.5 1.7 1.5-2.3"/>';
+
+  // src/charts.ts
   function _scale(arr) {
     return Array.isArray(arr) && arr.length ? arr.map((v) => v / 10) : [];
   }
@@ -1583,6 +1596,9 @@
   </div>`;
   }
   __name(metricLineHtml, "metricLineHtml");
+
+  // src/glp-card.ts
+  var GLP_CARD_VERSION = "2.21.1";
   var GlpCard = class _GlpCard extends HTMLElement {
     static {
       __name(this, "GlpCard");
@@ -1862,7 +1878,7 @@
     }
     _buildReadyByHtml(targetAt, plannedAt) {
       if (targetAt) {
-        const hhmm = targetAt.toLocaleTimeString(LANG, { hour: "2-digit", minute: "2-digit" });
+        const hhmm = targetAt.toLocaleTimeString(getLang(), { hour: "2-digit", minute: "2-digit" });
         return `<div class="ready-by ready-by-set">
         <div class="ready-by-info">
           <span class="ready-by-label">${T("ready_by_target", esc(hhmm))}</span>
@@ -2170,7 +2186,7 @@
       this._hass = hass;
       {
         const l = String(hass?.language || hass?.locale?.language || "de").slice(0, 2).toLowerCase();
-        LANG = SUPPORTED_LANGS.includes(l) ? l : "en";
+        setLang(SUPPORTED_LANGS.includes(l) ? l : "en");
       }
       if (!this._ordersPoll) this._startOrdersPoll();
       this._loadBeansInfo();
