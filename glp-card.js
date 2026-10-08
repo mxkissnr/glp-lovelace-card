@@ -2487,9 +2487,12 @@
     _isMachineOff(switchState, standbyState) {
       return this._isSwitchOff(switchState) || standbyState?.state === "on";
     }
-    _render() {
-      if (!this._hass || !this._config) return;
-      this._pendingRender = false;
+    // Derives every value the render needs from `hass`/config, in the same order
+    // and with the same side effects the single-method _render() had. The
+    // machine-off branch returns before the recent-shot/tab derivations run,
+    // exactly as before. Nothing here builds HTML or touches the DOM — the
+    // section methods below turn this one plain object into the section strings.
+    _viewModel() {
       const prefix = this._resolvePrefix();
       const bsPrefix = prefix.replace(/^sensor\./, "binary_sensor.");
       const selPrefix = prefix.replace(/^sensor\./, "select.");
@@ -2514,37 +2517,20 @@
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
       </button>` : "";
-      if (machineOff) {
-        this._profileOpen = false;
-        const readyByHtml = this._buildReadyByHtml(readyByTargetAt, readyByPlannedAt);
-        const offOrders = this._orders.length > 0 ? `
-        <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
-          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T("tab_orders")}</div>
-          ${this._buildOrdersHtml()}
-        </div>` : "";
-        this.shadowRoot.innerHTML = `
-        <style>${STYLES}</style>
-        <ha-card><div class="card collapsed">
-          <div class="header">
-            <div class="title">
-              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-              ${esc(this._config.title)}
-            </div>
-            <div class="header-right">
-              <span class="off-label">${standbyState?.state === "on" ? T("machine_standby") : T("off_label")}</span>${_powerBtn}
-            </div>
-          </div>
-          ${readyByHtml}
-          ${offOrders}
-        </div></ha-card>`;
-        this._applyMachineTheme();
-        this._applySemanticColorContrast();
-        this._bindPowerBtn();
-        this._bindReadyByPicker();
-        this._startReadyByTicker();
-        if (this._orders.length > 0) this._bindOrderBtns();
-        return;
-      }
+      const vm = {
+        prefix,
+        bsPrefix,
+        selPrefix,
+        switchState,
+        standbyState,
+        machineOff,
+        switchOff,
+        uptimePreheatEl,
+        readyByTargetAt,
+        readyByPlannedAt,
+        _powerBtn
+      };
+      if (machineOff) return vm;
       const machineStatusEnt = this._s("machine_status");
       const freshShots = machineStatusEnt?.attributes?.recent_shots;
       if (Array.isArray(freshShots) && freshShots.length > 0) {
@@ -2621,15 +2607,123 @@
       const showMaint = maintAvailable && !brewing && this._activeTab === "maint";
       const showOrders = ordersTabAvail && this._activeTab === "orders";
       const pendingOrders = this._orders.filter((o) => o.status === "pending").length;
-      const tabBarHtml = maintAvailable || ordersTabAvail ? `
+      const indexChanged = this._shotIndex !== this._prevShotIndex;
+      this._prevShotIndex = this._shotIndex;
+      const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
+      const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
+      const histDp = !brewing && shotObj?.dp || null;
+      const shotChartKey = shotObj ? shotObj.id ?? `idx:${this._shotIndex}` : null;
+      const animateChart = this._shotChartKeyChanged(this._lastChartShotKey, shotChartKey);
+      this._lastChartShotKey = shotChartKey;
+      const lmTiles = [
+        temp !== null ? {
+          val: temp,
+          unit: "°",
+          lbl: boilerOff ? "Temp · Boiler aus" : targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : "Temp",
+          warm: !boilerOff && targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1
+        } : null,
+        livePressure !== null ? { val: livePressure, unit: " bar", lbl: "Druck" } : null,
+        liveWeight !== null ? { val: liveWeight, unit: " g", lbl: "Waage" } : null
+      ].filter(Boolean);
+      const score = shotObj?.score ?? null;
+      const scoreCls = score == null ? "" : score >= 80 ? "high" : score >= 55 ? "mid" : "low";
+      const verdictWord = { high: T("verdict_high"), mid: T("verdict_mid"), low: T("verdict_low") }[scoreCls];
+      return Object.assign(vm, {
+        totalShots,
+        shotObj,
+        brewing,
+        liveDatapoints,
+        liveProfile,
+        isDescaling,
+        steamOn,
+        elapsedSec,
+        profile,
+        coffee,
+        drinkType,
+        grinder,
+        grind,
+        duration,
+        weight,
+        ratio,
+        pressure,
+        rating,
+        shotTemp,
+        temp,
+        targetTemp,
+        livePressure,
+        liveWeight,
+        boilerOff,
+        waterLevel,
+        preheatReady,
+        preheatHasEnt,
+        preheatRem,
+        preheatEl,
+        preheatTotal,
+        preheatPct,
+        preheatMinLeft,
+        profileOptions,
+        currentProfile,
+        profileSwitching,
+        profileAvailable,
+        status,
+        dotClass,
+        today,
+        syncTime,
+        glpUrl,
+        maintAvailable,
+        ordersTabAvail,
+        showMaint,
+        showOrders,
+        pendingOrders,
+        indexChanged,
+        showNav,
+        liveDur,
+        histDp,
+        shotChartKey,
+        animateChart,
+        lmTiles,
+        score,
+        scoreCls,
+        verdictWord
+      });
+    }
+    // ── section builders (each returns the same string the old single-method
+    // _render() produced for that section, from the _viewModel() object) ────────
+    _machineOffHtml(vm) {
+      const { standbyState, _powerBtn } = vm;
+      const readyByHtml = this._buildReadyByHtml(vm.readyByTargetAt, vm.readyByPlannedAt);
+      const offOrders = this._orders.length > 0 ? `
+        <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
+          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T("tab_orders")}</div>
+          ${this._buildOrdersHtml()}
+        </div>` : "";
+      return `
+        <style>${STYLES}</style>
+        <ha-card><div class="card collapsed">
+          <div class="header">
+            <div class="title">
+              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
+              ${esc(this._config.title)}
+            </div>
+            <div class="header-right">
+              <span class="off-label">${standbyState?.state === "on" ? T("machine_standby") : T("off_label")}</span>${_powerBtn}
+            </div>
+          </div>
+          ${readyByHtml}
+          ${offOrders}
+        </div></ha-card>`;
+    }
+    _tabBarHtml(vm) {
+      const { maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders } = vm;
+      return maintAvailable || ordersTabAvail ? `
       <div class="tab-bar">
         <button class="tab-btn${!showMaint && !showOrders ? " active" : ""}" data-tab="shot">${ICONS.of("coffee")} Shot</button>
         ${ordersTabAvail ? `<button class="tab-btn${showOrders ? " active" : ""}" data-tab="orders">${ICONS.of("cart")} ${T("tab_orders")}${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ""}</button>` : ""}
         ${maintAvailable ? `<button class="tab-btn${showMaint ? " active" : ""}" data-tab="maint">${ICONS.of("wrench")} ${T("tab_maint")}${this._maintAnyDue() ? ` ${ICONS.of("warning", "due")}` : ""}</button>` : ""}
       </div>` : "";
-      const indexChanged = this._shotIndex !== this._prevShotIndex;
-      this._prevShotIndex = this._shotIndex;
-      const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
+    }
+    _navHtml(vm) {
+      const { indexChanged, showNav, totalShots, shotObj } = vm;
       let navHtml = "";
       if (showNav) {
         const dots = this._recentShots.slice(0, 10).map((_, i) => {
@@ -2651,7 +2745,11 @@
           <button class="nav-arrow" data-nav="prev"${prevDis}>›</button>
         </div>${tsLine}`;
       }
-      const profilePickerHtml = !brewing && !showMaint && profileAvailable ? `
+      return navHtml;
+    }
+    _profilePickerHtml(vm) {
+      const { brewing, showMaint, profileAvailable, currentProfile, profileSwitching, profileOptions } = vm;
+      return !brewing && !showMaint && profileAvailable ? `
       <div class="profile-picker">
         <button class="profile-current-btn${this._profileOpen ? " open" : ""}" data-action="toggle-profile">
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
@@ -2666,18 +2764,32 @@
       ).join("")}
         </div>` : ""}
       </div>` : "";
-      const ratingHtml = (() => {
+    }
+    // Star rating: drawn ICONS.of('star') replaces the ★ text character —
+    // filled vs. empty is the .on class on the same shape, not a second glyph.
+    _ratingHtml(vm) {
+      const { rating } = vm;
+      return (() => {
         if (!rating || rating < 1 || rating > 5) return "";
         const cls = rating >= 4 ? "high" : rating >= 3 ? "mid" : "low";
         const stars = Array.from({ length: 5 }, (_, i) => ICONS.of("star", i < rating ? `on ${cls}` : "")).join("");
         return `<div class="rating-row">${stars}</div>`;
       })();
-      const metricTrioHtml = metricLineHtml([
+    }
+    // Historical shot: ratio is the recipe target a profile is set to hit,
+    // duration is what actually happened during the pull, yield is what
+    // came out — recipe/process/result, see metricLineHtml() above.
+    _metricTrioHtml(vm) {
+      const { ratio, duration, weight } = vm;
+      return metricLineHtml([
         ratio ? { role: "recipe", num: `1:${ratio}`, unit: "", label: "Ratio" } : null,
         duration ? { role: "process", num: duration, unit: "s", label: T("m_duration") } : null,
         weight ? { role: "result", num: weight, unit: "g", label: T("m_yield") } : null
       ]);
-      const secondaryHtml = (() => {
+    }
+    _secondaryHtml(vm) {
+      const { pressure, shotTemp } = vm;
+      return (() => {
         const pills = [
           pressure !== null ? { label: T("m_pressure"), val: `${pressure} bar` } : null,
           shotTemp !== null ? { label: T("m_temp"), val: `${shotTemp}°` } : null
@@ -2691,29 +2803,34 @@
           </div>`).join("")}
       </div>`;
       })();
-      const liveDur = Array.isArray(liveDatapoints?.timeInShot) && liveDatapoints.timeInShot.length ? liveDatapoints.timeInShot[liveDatapoints.timeInShot.length - 1] / 10 : null;
-      const liveSvgHtml = brewing && liveDatapoints ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : "";
-      const histDp = !brewing && shotObj?.dp || null;
-      const shotChartKey = shotObj ? shotObj.id ?? `idx:${this._shotIndex}` : null;
-      const animateChart = this._shotChartKeyChanged(this._lastChartShotKey, shotChartKey);
-      this._lastChartShotKey = shotChartKey;
-      const histSvgHtml = histDp ? `<div class="chart-wrap">${buildShotChart(histDp.p || [], histDp.t || [], histDp.w || [], histDp.f || [], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : "";
-      const liveStatsHtml = brewing ? metricLineHtml([
+    }
+    _liveSvgHtml(vm) {
+      const { brewing, liveDatapoints, liveDur } = vm;
+      return brewing && liveDatapoints ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : "";
+    }
+    _histSvgHtml(vm) {
+      const { histDp, shotObj, animateChart } = vm;
+      return histDp ? `<div class="chart-wrap">${buildShotChart(histDp.p || [], histDp.t || [], histDp.w || [], histDp.f || [], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : "";
+    }
+    // ── live brewing stats ──────────────────────────────────────────────────
+    // Same metricLineHtml() component as the historical shot (metricTrioHtml
+    // above) — see the redesign note on .metric-line in STYLES. Roles while
+    // brewing: temp is the recipe's set point being held, pressure is the
+    // process happening right now, weight is the result accumulating in the
+    // cup. (labels were hardcoded German before this pass — T() is correct
+    // behavior here, not a scope change: these three tiles are the same
+    // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
+    _liveStatsHtml(vm) {
+      const { brewing, temp, livePressure, liveWeight } = vm;
+      return brewing ? metricLineHtml([
         temp !== null ? { role: "recipe", num: temp, unit: "°", label: T("leg_temp") } : null,
         livePressure !== null ? { role: "process", num: livePressure, unit: "bar", label: T("leg_pressure") } : null,
         liveWeight !== null ? { role: "result", num: liveWeight, unit: "g", label: T("leg_weight") } : null
       ]) : "";
-      const lmTiles = [
-        temp !== null ? {
-          val: temp,
-          unit: "°",
-          lbl: boilerOff ? "Temp · Boiler aus" : targetTemp !== null ? `Temp · Ziel ${targetTemp}°` : "Temp",
-          warm: !boilerOff && targetTemp !== null && parseFloat(temp) < parseFloat(targetTemp) - 1
-        } : null,
-        livePressure !== null ? { val: livePressure, unit: " bar", lbl: "Druck" } : null,
-        liveWeight !== null ? { val: liveWeight, unit: " g", lbl: "Waage" } : null
-      ].filter(Boolean);
-      const liveMachineHtml = !brewing && !showMaint && lmTiles.length ? `
+    }
+    _liveMachineHtml(vm) {
+      const { brewing, showMaint, lmTiles } = vm;
+      return !brewing && !showMaint && lmTiles.length ? `
       <div class="live-machine">
         <div class="lm-head"><span class="lm-live-dot"></span>${T("lm_live")}</div>
         <div class="lm-tiles">
@@ -2724,7 +2841,10 @@
             </div>`).join("")}
         </div>
       </div>` : "";
-      const preheatHtml = !brewing && !showMaint && preheatHasEnt ? preheatReady ? `<div class="preheat-ready">${ICONS.of("check")} ${T("preheat_ready")}</div>` : preheatPct !== null ? `
+    }
+    _preheatHtml(vm) {
+      const { brewing, showMaint, preheatHasEnt, preheatReady, preheatPct, preheatMinLeft } = vm;
+      return !brewing && !showMaint && preheatHasEnt ? preheatReady ? `<div class="preheat-ready">${ICONS.of("check")} ${T("preheat_ready")}</div>` : preheatPct !== null ? `
           <div class="preheat-warming">
             <div class="preheat-warming-label">
               <span>${ICONS.of("heat")} ${T("preheat_heating")}</span>
@@ -2734,11 +2854,11 @@
               <div class="preheat-bar-fill" style="width:${Math.round(preheatPct * 100)}%"></div>
             </div>
           </div>` : "" : "";
-      const score = shotObj?.score ?? null;
-      const scoreCls = score == null ? "" : score >= 80 ? "high" : score >= 55 ? "mid" : "low";
-      const verdictWord = { high: T("verdict_high"), mid: T("verdict_mid"), low: T("verdict_low") }[scoreCls];
+    }
+    _shotSectionHtml(vm) {
+      const { brewing, showMaint, profile, drinkType, coffee, grinder, grind, shotObj, score, scoreCls, verdictWord } = vm;
       const scoreBadge = score != null ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${esc(score)}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>` : "";
-      const shotSectionHtml = !brewing && !showMaint ? `
+      return !brewing && !showMaint ? `
       ${profile ? `<div class="shot-hero">
             <div class="shot-hero-main">
               <div class="shot-profile">${esc(profile)}</div>
@@ -2753,12 +2873,15 @@
             <div class="no-shot-label">${T("no_shot_label")}</div>
             <div class="no-shot-hint">${T("no_shot_hint")}</div>
           </div>`}
-      ${ratingHtml}
-      ${metricTrioHtml}
-      ${secondaryHtml}
-      ${histSvgHtml}
+      ${this._ratingHtml(vm)}
+      ${this._metricTrioHtml(vm)}
+      ${this._secondaryHtml(vm)}
+      ${this._histSvgHtml(vm)}
     ` : "";
-      const footerHtml = `
+    }
+    _footerHtml(vm) {
+      const { today, waterLevel, syncTime, glpUrl } = vm;
+      return `
       <div class="footer">
         <span class="footer-item">${ICONS.of("coffee")} ${T("footer_today", today)}</span>
         ${waterLevel !== null ? `<span class="footer-item">${ICONS.of("droplet")} ${waterLevel}%</span>` : "<span></span>"}
@@ -2767,6 +2890,22 @@
           ${glpUrl ? `${syncTime ? " · " : ""}<a href="${esc(glpUrl)}" target="_blank" rel="noopener noreferrer">GLP ↗</a>` : ""}
         </span>
       </div>`;
+    }
+    _render() {
+      if (!this._hass || !this._config) return;
+      this._pendingRender = false;
+      const vm = this._viewModel();
+      if (vm.machineOff) {
+        this._profileOpen = false;
+        this.shadowRoot.innerHTML = this._machineOffHtml(vm);
+        this._applyMachineTheme();
+        this._applySemanticColorContrast();
+        this._bindPowerBtn();
+        this._bindReadyByPicker();
+        this._startReadyByTicker();
+        if (this._orders.length > 0) this._bindOrderBtns();
+        return;
+      }
       this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card><div class="card">
@@ -2778,32 +2917,32 @@
           </div>
           <div class="header-right">
             ${this._machineOnSince ? `<span class="machine-uptime" title="${T("uptime_title")}">${ICONS.of("plug")}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : ""}
-            <div class="status-dot ${dotClass}"></div>
-            ${_powerBtn}
+            <div class="status-dot ${vm.dotClass}"></div>
+            ${vm._powerBtn}
           </div>
         </div>
 
-        ${tabBarHtml}
-        ${isDescaling && !brewing ? `<div class="descaling-banner">${ICONS.of("descale")} ${T("descaling_mode")}</div>` : ""}
-        ${steamOn && !brewing ? `<div class="steam-banner">${ICONS.of("steam")} ${T("steam_mode")}</div>` : ""}
-        ${waterLevel !== null && waterLevel < 20 ? `<div class="water-low">${ICONS.of("droplet")} ${T("water_low", waterLevel)}</div>` : ""}
-        ${preheatHtml}
-        ${profilePickerHtml}
-        ${liveMachineHtml}
-        ${navHtml}
+        ${this._tabBarHtml(vm)}
+        ${vm.isDescaling && !vm.brewing ? `<div class="descaling-banner">${ICONS.of("descale")} ${T("descaling_mode")}</div>` : ""}
+        ${vm.steamOn && !vm.brewing ? `<div class="steam-banner">${ICONS.of("steam")} ${T("steam_mode")}</div>` : ""}
+        ${vm.waterLevel !== null && vm.waterLevel < 20 ? `<div class="water-low">${ICONS.of("droplet")} ${T("water_low", vm.waterLevel)}</div>` : ""}
+        ${this._preheatHtml(vm)}
+        ${this._profilePickerHtml(vm)}
+        ${this._liveMachineHtml(vm)}
+        ${this._navHtml(vm)}
 
         <div class="swipe-target">
           <div class="swipe-content">
-            ${brewing ? `
-              <div class="brewing-banner">${ICONS.of("coffee")} ${T("brewing")}${elapsedSec !== null ? ` · ${elapsedSec}s` : " …"}</div>
-              ${liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(liveProfile)}</div></div>` : ""}
-              ${liveSvgHtml}
-              ${liveStatsHtml}
-            ` : showMaint ? this._buildMaintHtml() : showOrders ? this._buildOrdersHtml() : shotSectionHtml}
+            ${vm.brewing ? `
+              <div class="brewing-banner">${ICONS.of("coffee")} ${T("brewing")}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : " …"}</div>
+              ${vm.liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(vm.liveProfile)}</div></div>` : ""}
+              ${this._liveSvgHtml(vm)}
+              ${this._liveStatsHtml(vm)}
+            ` : vm.showMaint ? this._buildMaintHtml() : vm.showOrders ? this._buildOrdersHtml() : this._shotSectionHtml(vm)}
           </div>
         </div>
 
-        ${footerHtml}
+        ${this._footerHtml(vm)}
 
       </div></ha-card>`;
       this._applyMachineTheme();
