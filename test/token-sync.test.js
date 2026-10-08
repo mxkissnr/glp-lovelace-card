@@ -110,7 +110,23 @@ const BLOCKS = [
 const TRANSITIONAL = {
   'GLP-SHARED:machine-icon v1': {
     issue: '#197',
-    reason: "the Order Card's main still carries the old wording until its next release; remove the entry in that release round",
+    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
+  },
+  'GLP-SHARED:icons v1': {
+    issue: '#197',
+    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
+  },
+  'GLP-SHARED:contrast v1': {
+    issue: '#197',
+    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
+  },
+  'GLP-SHARED:machine-match v1': {
+    issue: '#197',
+    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
+  },
+  'GLP-SHARED:app-theme-lookup v1': {
+    issue: '#197',
+    reason: "typed in lockstep; the Order Card's main still carries the untyped block until its next release",
   },
 };
 
