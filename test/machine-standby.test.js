@@ -1,9 +1,10 @@
 // Machine standby tests (#195). Same vm-context approach as
 // ready-by.test.js: loads the real glp-card.js into a sandboxed vm context
 // and exercises GlpCard.prototype methods directly, without a real shadow
-// DOM/customElements — covers only the pure-logic decision made by
-// _isMachineOff(), not markup. ready-by.test.js is used only as the pattern
-// source for this new suite and is intentionally left unchanged.
+// DOM/customElements — covers only the pure-logic decisions made by
+// _isMachineOff() and _isSwitchOff(), not markup. ready-by.test.js is used
+// only as the pattern source for this new suite and is intentionally left
+// unchanged.
 'use strict';
 
 const test = require('node:test');
@@ -65,4 +66,19 @@ test('_isMachineOff() is false with no switch configured and no standby entity',
 test('_isMachineOff() is false when the switch is on and no standby entity exists', () => {
   const inst = makeInstance('switch.machine');
   assert.equal(inst._isMachineOff({ state: 'on' }, undefined), false);
+});
+
+// ── _isSwitchOff() ──────────────────────────────────────────────────────────
+
+test('_isSwitchOff() is false when the switch is on, even with the machine in standby', () => {
+  const inst = makeInstance('switch.machine');
+  assert.equal(inst._isSwitchOff({ state: 'on' }), false);
+  // and the same input still selects the off view
+  assert.equal(inst._isMachineOff({ state: 'on' }, { state: 'on' }), true);
+});
+
+test('_isSwitchOff() is true when the switch is off', () => {
+  const inst = makeInstance('switch.machine');
+  assert.equal(inst._isSwitchOff({ state: 'off' }), true);
+  assert.equal(inst._isMachineOff({ state: 'off' }, null), true);
 });

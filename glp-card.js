@@ -2449,15 +2449,21 @@ class GlpCard extends HTMLElement {
     this._render();
   }
 
+  // #195: the switch-only "off" rule — a configured switch reported `off` or
+  // `unavailable`. Drives the power button, whose click toggles the switch, so
+  // standby must not influence it.
+  _isSwitchOff(switchState) {
+    return !!(this._switchEntity &&
+      (switchState?.state === 'off' || switchState?.state === 'unavailable'));
+  }
+
   // #195: a GaggiMate in standby keeps its switch reported `on`, so it used
   // to fall through to the warm-up view and look frozen. Standby is a
   // distinct `effectively off` signal (binary_sensor.<prefix>machine_standby
   // from glp-integration#219); a missing entity or any other state keeps the
   // switch-only rule.
   _isMachineOff(switchState, standbyState) {
-    const switchOff = !!(this._switchEntity &&
-      (switchState?.state === 'off' || switchState?.state === 'unavailable'));
-    return switchOff || standbyState?.state === 'on';
+    return this._isSwitchOff(switchState) || standbyState?.state === 'on';
   }
 
   _render() {
@@ -2484,6 +2490,10 @@ class GlpCard extends HTMLElement {
       ? Date.now() - uptimePreheatEl * 1000 : null;
     const standbyState = this._hass.states[bsPrefix + 'machine_standby'];
     const machineOff  = this._isMachineOff(switchState, standbyState);
+    // The power button toggles the switch (not standby), so its class/label
+    // follow the switch-only rule — otherwise a standby machine would offer
+    // "Power on" while the click actually cuts the switch.
+    const switchOff   = this._isSwitchOff(switchState);
 
     // ready-by preheat scheduler (#61) — only meaningful while the machine is
     // off; moot once it's on/warming/ready, so it's only rendered below in
@@ -2493,8 +2503,8 @@ class GlpCard extends HTMLElement {
     this._readyByTargetAt = readyByTargetAt;
 
     const _powerBtn = this._switchEntity ? `
-      <button class="power-btn ${machineOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
-              title="${machineOff ? T('power_on') : T('power_off')}">
+      <button class="power-btn ${switchOff ? 'is-off' : 'is-on'}" data-action="toggle-switch"
+              title="${switchOff ? T('power_on') : T('power_off')}">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
