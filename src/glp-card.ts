@@ -2243,10 +2243,10 @@ class GlpCard extends HTMLElement {
   ];
 
   _maintAvailable() {
-    return this.constructor.MAINT_TASKS.some(([s]) => this._s(s)) || !!this._s('maintenance_grinders');
+    return GlpCard.MAINT_TASKS.some(([s]) => this._s(s)) || !!this._s('maintenance_grinders');
   }
   _maintAnyDue() {
-    return this.constructor.MAINT_TASKS.some(([s]) => this._s(s)?.state === 'due')
+    return GlpCard.MAINT_TASKS.some(([s]) => this._s(s)?.state === 'due')
       || this._s('maintenance_grinders')?.state === 'due';
   }
 
@@ -2279,7 +2279,7 @@ class GlpCard extends HTMLElement {
         </div>` : ''}
       </div>`;
     };
-    const rows = this.constructor.MAINT_TASKS.map(([suffix, nameKey, icon, task]) => {
+    const rows = GlpCard.MAINT_TASKS.map(([suffix, nameKey, icon, task]) => {
       const s = this._s(suffix);
       if (!s || s.state === 'unavailable' || s.state === 'unknown') return '';
       const a = s.attributes || {};
