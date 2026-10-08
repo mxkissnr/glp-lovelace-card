@@ -4,6 +4,639 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
+  // node_modules/@lit/reactive-element/css-tag.js
+  var t = globalThis;
+  var e = t.ShadowRoot && (void 0 === t.ShadyCSS || t.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype;
+  var s = /* @__PURE__ */ Symbol();
+  var o = /* @__PURE__ */ new WeakMap();
+  var n = class {
+    static {
+      __name(this, "n");
+    }
+    constructor(t5, e6, o8) {
+      if (this._$cssResult$ = true, o8 !== s) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
+      this.cssText = t5, this.t = e6;
+    }
+    get styleSheet() {
+      let t5 = this.o;
+      const s4 = this.t;
+      if (e && void 0 === t5) {
+        const e6 = void 0 !== s4 && 1 === s4.length;
+        e6 && (t5 = o.get(s4)), void 0 === t5 && ((this.o = t5 = new CSSStyleSheet()).replaceSync(this.cssText), e6 && o.set(s4, t5));
+      }
+      return t5;
+    }
+    toString() {
+      return this.cssText;
+    }
+  };
+  var r = /* @__PURE__ */ __name((t5) => new n("string" == typeof t5 ? t5 : t5 + "", void 0, s), "r");
+  var S = /* @__PURE__ */ __name((s4, o8) => {
+    if (e) s4.adoptedStyleSheets = o8.map((t5) => t5 instanceof CSSStyleSheet ? t5 : t5.styleSheet);
+    else for (const e6 of o8) {
+      const o9 = document.createElement("style"), n4 = t.litNonce;
+      void 0 !== n4 && o9.setAttribute("nonce", n4), o9.textContent = e6.cssText, s4.appendChild(o9);
+    }
+  }, "S");
+  var c = e ? (t5) => t5 : (t5) => t5 instanceof CSSStyleSheet ? ((t6) => {
+    let e6 = "";
+    for (const s4 of t6.cssRules) e6 += s4.cssText;
+    return r(e6);
+  })(t5) : t5;
+
+  // node_modules/@lit/reactive-element/reactive-element.js
+  var { is: i2, defineProperty: e2, getOwnPropertyDescriptor: h, getOwnPropertyNames: r2, getOwnPropertySymbols: o2, getPrototypeOf: n2 } = Object;
+  var a = globalThis;
+  var c2 = a.trustedTypes;
+  var l = c2 ? c2.emptyScript : "";
+  var p = a.reactiveElementPolyfillSupport;
+  var d = /* @__PURE__ */ __name((t5, s4) => t5, "d");
+  var u = { toAttribute(t5, s4) {
+    switch (s4) {
+      case Boolean:
+        t5 = t5 ? l : null;
+        break;
+      case Object:
+      case Array:
+        t5 = null == t5 ? t5 : JSON.stringify(t5);
+    }
+    return t5;
+  }, fromAttribute(t5, s4) {
+    let i6 = t5;
+    switch (s4) {
+      case Boolean:
+        i6 = null !== t5;
+        break;
+      case Number:
+        i6 = null === t5 ? null : Number(t5);
+        break;
+      case Object:
+      case Array:
+        try {
+          i6 = JSON.parse(t5);
+        } catch (t6) {
+          i6 = null;
+        }
+    }
+    return i6;
+  } };
+  var f = /* @__PURE__ */ __name((t5, s4) => !i2(t5, s4), "f");
+  var b = { attribute: true, type: String, converter: u, reflect: false, useDefault: false, hasChanged: f };
+  Symbol.metadata ??= /* @__PURE__ */ Symbol("metadata"), a.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
+  var y = class extends HTMLElement {
+    static {
+      __name(this, "y");
+    }
+    static addInitializer(t5) {
+      this._$Ei(), (this.l ??= []).push(t5);
+    }
+    static get observedAttributes() {
+      return this.finalize(), this._$Eh && [...this._$Eh.keys()];
+    }
+    static createProperty(t5, s4 = b) {
+      if (s4.state && (s4.attribute = false), this._$Ei(), this.prototype.hasOwnProperty(t5) && ((s4 = Object.create(s4)).wrapped = true), this.elementProperties.set(t5, s4), !s4.noAccessor) {
+        const i6 = /* @__PURE__ */ Symbol(), h3 = this.getPropertyDescriptor(t5, i6, s4);
+        void 0 !== h3 && e2(this.prototype, t5, h3);
+      }
+    }
+    static getPropertyDescriptor(t5, s4, i6) {
+      const { get: e6, set: r4 } = h(this.prototype, t5) ?? { get() {
+        return this[s4];
+      }, set(t6) {
+        this[s4] = t6;
+      } };
+      return { get: e6, set(s5) {
+        const h3 = e6?.call(this);
+        r4?.call(this, s5), this.requestUpdate(t5, h3, i6);
+      }, configurable: true, enumerable: true };
+    }
+    static getPropertyOptions(t5) {
+      return this.elementProperties.get(t5) ?? b;
+    }
+    static _$Ei() {
+      if (this.hasOwnProperty(d("elementProperties"))) return;
+      const t5 = n2(this);
+      t5.finalize(), void 0 !== t5.l && (this.l = [...t5.l]), this.elementProperties = new Map(t5.elementProperties);
+    }
+    static finalize() {
+      if (this.hasOwnProperty(d("finalized"))) return;
+      if (this.finalized = true, this._$Ei(), this.hasOwnProperty(d("properties"))) {
+        const t6 = this.properties, s4 = [...r2(t6), ...o2(t6)];
+        for (const i6 of s4) this.createProperty(i6, t6[i6]);
+      }
+      const t5 = this[Symbol.metadata];
+      if (null !== t5) {
+        const s4 = litPropertyMetadata.get(t5);
+        if (void 0 !== s4) for (const [t6, i6] of s4) this.elementProperties.set(t6, i6);
+      }
+      this._$Eh = /* @__PURE__ */ new Map();
+      for (const [t6, s4] of this.elementProperties) {
+        const i6 = this._$Eu(t6, s4);
+        void 0 !== i6 && this._$Eh.set(i6, t6);
+      }
+      this.elementStyles = this.finalizeStyles(this.styles);
+    }
+    static finalizeStyles(s4) {
+      const i6 = [];
+      if (Array.isArray(s4)) {
+        const e6 = new Set(s4.flat(1 / 0).reverse());
+        for (const s5 of e6) i6.unshift(c(s5));
+      } else void 0 !== s4 && i6.push(c(s4));
+      return i6;
+    }
+    static _$Eu(t5, s4) {
+      const i6 = s4.attribute;
+      return false === i6 ? void 0 : "string" == typeof i6 ? i6 : "string" == typeof t5 ? t5.toLowerCase() : void 0;
+    }
+    constructor() {
+      super(), this._$Ep = void 0, this.isUpdatePending = false, this.hasUpdated = false, this._$Em = null, this._$Ev();
+    }
+    _$Ev() {
+      this._$ES = new Promise((t5) => this.enableUpdating = t5), this._$AL = /* @__PURE__ */ new Map(), this._$E_(), this.requestUpdate(), this.constructor.l?.forEach((t5) => t5(this));
+    }
+    addController(t5) {
+      (this._$EO ??= /* @__PURE__ */ new Set()).add(t5), void 0 !== this.renderRoot && this.isConnected && t5.hostConnected?.();
+    }
+    removeController(t5) {
+      this._$EO?.delete(t5);
+    }
+    _$E_() {
+      const t5 = /* @__PURE__ */ new Map(), s4 = this.constructor.elementProperties;
+      for (const i6 of s4.keys()) this.hasOwnProperty(i6) && (t5.set(i6, this[i6]), delete this[i6]);
+      t5.size > 0 && (this._$Ep = t5);
+    }
+    createRenderRoot() {
+      const t5 = this.shadowRoot ?? this.attachShadow(this.constructor.shadowRootOptions);
+      return S(t5, this.constructor.elementStyles), t5;
+    }
+    connectedCallback() {
+      this.renderRoot ??= this.createRenderRoot(), this.enableUpdating(true), this._$EO?.forEach((t5) => t5.hostConnected?.());
+    }
+    enableUpdating(t5) {
+    }
+    disconnectedCallback() {
+      this._$EO?.forEach((t5) => t5.hostDisconnected?.());
+    }
+    attributeChangedCallback(t5, s4, i6) {
+      this._$AK(t5, i6);
+    }
+    _$ET(t5, s4) {
+      const i6 = this.constructor.elementProperties.get(t5), e6 = this.constructor._$Eu(t5, i6);
+      if (void 0 !== e6 && true === i6.reflect) {
+        const h3 = (void 0 !== i6.converter?.toAttribute ? i6.converter : u).toAttribute(s4, i6.type);
+        this._$Em = t5, null == h3 ? this.removeAttribute(e6) : this.setAttribute(e6, h3), this._$Em = null;
+      }
+    }
+    _$AK(t5, s4) {
+      const i6 = this.constructor, e6 = i6._$Eh.get(t5);
+      if (void 0 !== e6 && this._$Em !== e6) {
+        const t6 = i6.getPropertyOptions(e6), h3 = "function" == typeof t6.converter ? { fromAttribute: t6.converter } : void 0 !== t6.converter?.fromAttribute ? t6.converter : u;
+        this._$Em = e6;
+        const r4 = h3.fromAttribute(s4, t6.type);
+        this[e6] = r4 ?? this._$Ej?.get(e6) ?? r4, this._$Em = null;
+      }
+    }
+    requestUpdate(t5, s4, i6, e6 = false, h3) {
+      if (void 0 !== t5) {
+        const r4 = this.constructor;
+        if (false === e6 && (h3 = this[t5]), i6 ??= r4.getPropertyOptions(t5), !((i6.hasChanged ?? f)(h3, s4) || i6.useDefault && i6.reflect && h3 === this._$Ej?.get(t5) && !this.hasAttribute(r4._$Eu(t5, i6)))) return;
+        this.C(t5, s4, i6);
+      }
+      false === this.isUpdatePending && (this._$ES = this._$EP());
+    }
+    C(t5, s4, { useDefault: i6, reflect: e6, wrapped: h3 }, r4) {
+      i6 && !(this._$Ej ??= /* @__PURE__ */ new Map()).has(t5) && (this._$Ej.set(t5, r4 ?? s4 ?? this[t5]), true !== h3 || void 0 !== r4) || (this._$AL.has(t5) || (this.hasUpdated || i6 || (s4 = void 0), this._$AL.set(t5, s4)), true === e6 && this._$Em !== t5 && (this._$Eq ??= /* @__PURE__ */ new Set()).add(t5));
+    }
+    async _$EP() {
+      this.isUpdatePending = true;
+      try {
+        await this._$ES;
+      } catch (t6) {
+        Promise.reject(t6);
+      }
+      const t5 = this.scheduleUpdate();
+      return null != t5 && await t5, !this.isUpdatePending;
+    }
+    scheduleUpdate() {
+      return this.performUpdate();
+    }
+    performUpdate() {
+      if (!this.isUpdatePending) return;
+      if (!this.hasUpdated) {
+        if (this.renderRoot ??= this.createRenderRoot(), this._$Ep) {
+          for (const [t7, s5] of this._$Ep) this[t7] = s5;
+          this._$Ep = void 0;
+        }
+        const t6 = this.constructor.elementProperties;
+        if (t6.size > 0) for (const [s5, i6] of t6) {
+          const { wrapped: t7 } = i6, e6 = this[s5];
+          true !== t7 || this._$AL.has(s5) || void 0 === e6 || this.C(s5, void 0, i6, e6);
+        }
+      }
+      let t5 = false;
+      const s4 = this._$AL;
+      try {
+        t5 = this.shouldUpdate(s4), t5 ? (this.willUpdate(s4), this._$EO?.forEach((t6) => t6.hostUpdate?.()), this.update(s4)) : this._$EM();
+      } catch (s5) {
+        throw t5 = false, this._$EM(), s5;
+      }
+      t5 && this._$AE(s4);
+    }
+    willUpdate(t5) {
+    }
+    _$AE(t5) {
+      this._$EO?.forEach((t6) => t6.hostUpdated?.()), this.hasUpdated || (this.hasUpdated = true, this.firstUpdated(t5)), this.updated(t5);
+    }
+    _$EM() {
+      this._$AL = /* @__PURE__ */ new Map(), this.isUpdatePending = false;
+    }
+    get updateComplete() {
+      return this.getUpdateComplete();
+    }
+    getUpdateComplete() {
+      return this._$ES;
+    }
+    shouldUpdate(t5) {
+      return true;
+    }
+    update(t5) {
+      this._$Eq &&= this._$Eq.forEach((t6) => this._$ET(t6, this[t6])), this._$EM();
+    }
+    updated(t5) {
+    }
+    firstUpdated(t5) {
+    }
+  };
+  y.elementStyles = [], y.shadowRootOptions = { mode: "open" }, y[d("elementProperties")] = /* @__PURE__ */ new Map(), y[d("finalized")] = /* @__PURE__ */ new Map(), p?.({ ReactiveElement: y }), (a.reactiveElementVersions ??= []).push("2.1.2");
+
+  // node_modules/lit-html/lit-html.js
+  var t2 = globalThis;
+  var i3 = /* @__PURE__ */ __name((t5) => t5, "i");
+  var s2 = t2.trustedTypes;
+  var e3 = s2 ? s2.createPolicy("lit-html", { createHTML: /* @__PURE__ */ __name((t5) => t5, "createHTML") }) : void 0;
+  var h2 = "$lit$";
+  var o3 = `lit$${Math.random().toFixed(9).slice(2)}$`;
+  var n3 = "?" + o3;
+  var r3 = `<${n3}>`;
+  var l2 = document;
+  var c3 = /* @__PURE__ */ __name(() => l2.createComment(""), "c");
+  var a2 = /* @__PURE__ */ __name((t5) => null === t5 || "object" != typeof t5 && "function" != typeof t5, "a");
+  var u2 = Array.isArray;
+  var d2 = /* @__PURE__ */ __name((t5) => u2(t5) || "function" == typeof t5?.[Symbol.iterator], "d");
+  var f2 = "[ 	\n\f\r]";
+  var v = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g;
+  var _ = /-->/g;
+  var m = />/g;
+  var p2 = RegExp(`>|${f2}(?:([^\\s"'>=/]+)(${f2}*=${f2}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g");
+  var g = /'/g;
+  var $ = /"/g;
+  var y2 = /^(?:script|style|textarea|title)$/i;
+  var x = /* @__PURE__ */ __name((t5) => (i6, ...s4) => ({ _$litType$: t5, strings: i6, values: s4 }), "x");
+  var b2 = x(1);
+  var w = x(2);
+  var T = x(3);
+  var E = /* @__PURE__ */ Symbol.for("lit-noChange");
+  var A = /* @__PURE__ */ Symbol.for("lit-nothing");
+  var C = /* @__PURE__ */ new WeakMap();
+  var P = l2.createTreeWalker(l2, 129);
+  function V(t5, i6) {
+    if (!u2(t5) || !t5.hasOwnProperty("raw")) throw Error("invalid template strings array");
+    return void 0 !== e3 ? e3.createHTML(i6) : i6;
+  }
+  __name(V, "V");
+  var N = /* @__PURE__ */ __name((t5, i6) => {
+    const s4 = t5.length - 1, e6 = [];
+    let n4, l3 = 2 === i6 ? "<svg>" : 3 === i6 ? "<math>" : "", c4 = v;
+    for (let i7 = 0; i7 < s4; i7++) {
+      const s5 = t5[i7];
+      let a3, u3, d3 = -1, f3 = 0;
+      for (; f3 < s5.length && (c4.lastIndex = f3, u3 = c4.exec(s5), null !== u3); ) f3 = c4.lastIndex, c4 === v ? "!--" === u3[1] ? c4 = _ : void 0 !== u3[1] ? c4 = m : void 0 !== u3[2] ? (y2.test(u3[2]) && (n4 = RegExp("</" + u3[2], "g")), c4 = p2) : void 0 !== u3[3] && (c4 = p2) : c4 === p2 ? ">" === u3[0] ? (c4 = n4 ?? v, d3 = -1) : void 0 === u3[1] ? d3 = -2 : (d3 = c4.lastIndex - u3[2].length, a3 = u3[1], c4 = void 0 === u3[3] ? p2 : '"' === u3[3] ? $ : g) : c4 === $ || c4 === g ? c4 = p2 : c4 === _ || c4 === m ? c4 = v : (c4 = p2, n4 = void 0);
+      const x2 = c4 === p2 && t5[i7 + 1].startsWith("/>") ? " " : "";
+      l3 += c4 === v ? s5 + r3 : d3 >= 0 ? (e6.push(a3), s5.slice(0, d3) + h2 + s5.slice(d3) + o3 + x2) : s5 + o3 + (-2 === d3 ? i7 : x2);
+    }
+    return [V(t5, l3 + (t5[s4] || "<?>") + (2 === i6 ? "</svg>" : 3 === i6 ? "</math>" : "")), e6];
+  }, "N");
+  var S2 = class _S {
+    static {
+      __name(this, "S");
+    }
+    constructor({ strings: t5, _$litType$: i6 }, e6) {
+      let r4;
+      this.parts = [];
+      let l3 = 0, a3 = 0;
+      const u3 = t5.length - 1, d3 = this.parts, [f3, v2] = N(t5, i6);
+      if (this.el = _S.createElement(f3, e6), P.currentNode = this.el.content, 2 === i6 || 3 === i6) {
+        const t6 = this.el.content.firstChild;
+        t6.replaceWith(...t6.childNodes);
+      }
+      for (; null !== (r4 = P.nextNode()) && d3.length < u3; ) {
+        if (1 === r4.nodeType) {
+          if (r4.hasAttributes()) for (const t6 of r4.getAttributeNames()) if (t6.endsWith(h2)) {
+            const i7 = v2[a3++], s4 = r4.getAttribute(t6).split(o3), e7 = /([.?@])?(.*)/.exec(i7);
+            d3.push({ type: 1, index: l3, name: e7[2], strings: s4, ctor: "." === e7[1] ? I : "?" === e7[1] ? L : "@" === e7[1] ? z : H }), r4.removeAttribute(t6);
+          } else t6.startsWith(o3) && (d3.push({ type: 6, index: l3 }), r4.removeAttribute(t6));
+          if (y2.test(r4.tagName)) {
+            const t6 = r4.textContent.split(o3), i7 = t6.length - 1;
+            if (i7 > 0) {
+              r4.textContent = s2 ? s2.emptyScript : "";
+              for (let s4 = 0; s4 < i7; s4++) r4.append(t6[s4], c3()), P.nextNode(), d3.push({ type: 2, index: ++l3 });
+              r4.append(t6[i7], c3());
+            }
+          }
+        } else if (8 === r4.nodeType) if (r4.data === n3) d3.push({ type: 2, index: l3 });
+        else {
+          let t6 = -1;
+          for (; -1 !== (t6 = r4.data.indexOf(o3, t6 + 1)); ) d3.push({ type: 7, index: l3 }), t6 += o3.length - 1;
+        }
+        l3++;
+      }
+    }
+    static createElement(t5, i6) {
+      const s4 = l2.createElement("template");
+      return s4.innerHTML = t5, s4;
+    }
+  };
+  function M(t5, i6, s4 = t5, e6) {
+    if (i6 === E) return i6;
+    let h3 = void 0 !== e6 ? s4._$Co?.[e6] : s4._$Cl;
+    const o8 = a2(i6) ? void 0 : i6._$litDirective$;
+    return h3?.constructor !== o8 && (h3?._$AO?.(false), void 0 === o8 ? h3 = void 0 : (h3 = new o8(t5), h3._$AT(t5, s4, e6)), void 0 !== e6 ? (s4._$Co ??= [])[e6] = h3 : s4._$Cl = h3), void 0 !== h3 && (i6 = M(t5, h3._$AS(t5, i6.values), h3, e6)), i6;
+  }
+  __name(M, "M");
+  var R = class {
+    static {
+      __name(this, "R");
+    }
+    constructor(t5, i6) {
+      this._$AV = [], this._$AN = void 0, this._$AD = t5, this._$AM = i6;
+    }
+    get parentNode() {
+      return this._$AM.parentNode;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    u(t5) {
+      const { el: { content: i6 }, parts: s4 } = this._$AD, e6 = (t5?.creationScope ?? l2).importNode(i6, true);
+      P.currentNode = e6;
+      let h3 = P.nextNode(), o8 = 0, n4 = 0, r4 = s4[0];
+      for (; void 0 !== r4; ) {
+        if (o8 === r4.index) {
+          let i7;
+          2 === r4.type ? i7 = new k(h3, h3.nextSibling, this, t5) : 1 === r4.type ? i7 = new r4.ctor(h3, r4.name, r4.strings, this, t5) : 6 === r4.type && (i7 = new Z(h3, this, t5)), this._$AV.push(i7), r4 = s4[++n4];
+        }
+        o8 !== r4?.index && (h3 = P.nextNode(), o8++);
+      }
+      return P.currentNode = l2, e6;
+    }
+    p(t5) {
+      let i6 = 0;
+      for (const s4 of this._$AV) void 0 !== s4 && (void 0 !== s4.strings ? (s4._$AI(t5, s4, i6), i6 += s4.strings.length - 2) : s4._$AI(t5[i6])), i6++;
+    }
+  };
+  var k = class _k {
+    static {
+      __name(this, "k");
+    }
+    get _$AU() {
+      return this._$AM?._$AU ?? this._$Cv;
+    }
+    constructor(t5, i6, s4, e6) {
+      this.type = 2, this._$AH = A, this._$AN = void 0, this._$AA = t5, this._$AB = i6, this._$AM = s4, this.options = e6, this._$Cv = e6?.isConnected ?? true;
+    }
+    get parentNode() {
+      let t5 = this._$AA.parentNode;
+      const i6 = this._$AM;
+      return void 0 !== i6 && 11 === t5?.nodeType && (t5 = i6.parentNode), t5;
+    }
+    get startNode() {
+      return this._$AA;
+    }
+    get endNode() {
+      return this._$AB;
+    }
+    _$AI(t5, i6 = this) {
+      t5 = M(this, t5, i6), a2(t5) ? t5 === A || null == t5 || "" === t5 ? (this._$AH !== A && this._$AR(), this._$AH = A) : t5 !== this._$AH && t5 !== E && this._(t5) : void 0 !== t5._$litType$ ? this.$(t5) : void 0 !== t5.nodeType ? this.T(t5) : d2(t5) ? this.k(t5) : this._(t5);
+    }
+    O(t5) {
+      return this._$AA.parentNode.insertBefore(t5, this._$AB);
+    }
+    T(t5) {
+      this._$AH !== t5 && (this._$AR(), this._$AH = this.O(t5));
+    }
+    _(t5) {
+      this._$AH !== A && a2(this._$AH) ? this._$AA.nextSibling.data = t5 : this.T(l2.createTextNode(t5)), this._$AH = t5;
+    }
+    $(t5) {
+      const { values: i6, _$litType$: s4 } = t5, e6 = "number" == typeof s4 ? this._$AC(t5) : (void 0 === s4.el && (s4.el = S2.createElement(V(s4.h, s4.h[0]), this.options)), s4);
+      if (this._$AH?._$AD === e6) this._$AH.p(i6);
+      else {
+        const t6 = new R(e6, this), s5 = t6.u(this.options);
+        t6.p(i6), this.T(s5), this._$AH = t6;
+      }
+    }
+    _$AC(t5) {
+      let i6 = C.get(t5.strings);
+      return void 0 === i6 && C.set(t5.strings, i6 = new S2(t5)), i6;
+    }
+    k(t5) {
+      u2(this._$AH) || (this._$AH = [], this._$AR());
+      const i6 = this._$AH;
+      let s4, e6 = 0;
+      for (const h3 of t5) e6 === i6.length ? i6.push(s4 = new _k(this.O(c3()), this.O(c3()), this, this.options)) : s4 = i6[e6], s4._$AI(h3), e6++;
+      e6 < i6.length && (this._$AR(s4 && s4._$AB.nextSibling, e6), i6.length = e6);
+    }
+    _$AR(t5 = this._$AA.nextSibling, s4) {
+      for (this._$AP?.(false, true, s4); t5 !== this._$AB; ) {
+        const s5 = i3(t5).nextSibling;
+        i3(t5).remove(), t5 = s5;
+      }
+    }
+    setConnected(t5) {
+      void 0 === this._$AM && (this._$Cv = t5, this._$AP?.(t5));
+    }
+  };
+  var H = class {
+    static {
+      __name(this, "H");
+    }
+    get tagName() {
+      return this.element.tagName;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    constructor(t5, i6, s4, e6, h3) {
+      this.type = 1, this._$AH = A, this._$AN = void 0, this.element = t5, this.name = i6, this._$AM = e6, this.options = h3, s4.length > 2 || "" !== s4[0] || "" !== s4[1] ? (this._$AH = Array(s4.length - 1).fill(new String()), this.strings = s4) : this._$AH = A;
+    }
+    _$AI(t5, i6 = this, s4, e6) {
+      const h3 = this.strings;
+      let o8 = false;
+      if (void 0 === h3) t5 = M(this, t5, i6, 0), o8 = !a2(t5) || t5 !== this._$AH && t5 !== E, o8 && (this._$AH = t5);
+      else {
+        const e7 = t5;
+        let n4, r4;
+        for (t5 = h3[0], n4 = 0; n4 < h3.length - 1; n4++) r4 = M(this, e7[s4 + n4], i6, n4), r4 === E && (r4 = this._$AH[n4]), o8 ||= !a2(r4) || r4 !== this._$AH[n4], r4 === A ? t5 = A : t5 !== A && (t5 += (r4 ?? "") + h3[n4 + 1]), this._$AH[n4] = r4;
+      }
+      o8 && !e6 && this.j(t5);
+    }
+    j(t5) {
+      t5 === A ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, t5 ?? "");
+    }
+  };
+  var I = class extends H {
+    static {
+      __name(this, "I");
+    }
+    constructor() {
+      super(...arguments), this.type = 3;
+    }
+    j(t5) {
+      this.element[this.name] = t5 === A ? void 0 : t5;
+    }
+  };
+  var L = class extends H {
+    static {
+      __name(this, "L");
+    }
+    constructor() {
+      super(...arguments), this.type = 4;
+    }
+    j(t5) {
+      this.element.toggleAttribute(this.name, !!t5 && t5 !== A);
+    }
+  };
+  var z = class extends H {
+    static {
+      __name(this, "z");
+    }
+    constructor(t5, i6, s4, e6, h3) {
+      super(t5, i6, s4, e6, h3), this.type = 5;
+    }
+    _$AI(t5, i6 = this) {
+      if ((t5 = M(this, t5, i6, 0) ?? A) === E) return;
+      const s4 = this._$AH, e6 = t5 === A && s4 !== A || t5.capture !== s4.capture || t5.once !== s4.once || t5.passive !== s4.passive, h3 = t5 !== A && (s4 === A || e6);
+      e6 && this.element.removeEventListener(this.name, this, s4), h3 && this.element.addEventListener(this.name, this, t5), this._$AH = t5;
+    }
+    handleEvent(t5) {
+      "function" == typeof this._$AH ? this._$AH.call(this.options?.host ?? this.element, t5) : this._$AH.handleEvent(t5);
+    }
+  };
+  var Z = class {
+    static {
+      __name(this, "Z");
+    }
+    constructor(t5, i6, s4) {
+      this.element = t5, this.type = 6, this._$AN = void 0, this._$AM = i6, this.options = s4;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    _$AI(t5) {
+      M(this, t5);
+    }
+  };
+  var B = t2.litHtmlPolyfillSupport;
+  B?.(S2, k), (t2.litHtmlVersions ??= []).push("3.3.3");
+  var D = /* @__PURE__ */ __name((t5, i6, s4) => {
+    const e6 = s4?.renderBefore ?? i6;
+    let h3 = e6._$litPart$;
+    if (void 0 === h3) {
+      const t6 = s4?.renderBefore ?? null;
+      e6._$litPart$ = h3 = new k(i6.insertBefore(c3(), t6), t6, void 0, s4 ?? {});
+    }
+    return h3._$AI(t5), h3;
+  }, "D");
+
+  // node_modules/lit-element/lit-element.js
+  var s3 = globalThis;
+  var i4 = class extends y {
+    static {
+      __name(this, "i");
+    }
+    constructor() {
+      super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
+    }
+    createRenderRoot() {
+      const t5 = super.createRenderRoot();
+      return this.renderOptions.renderBefore ??= t5.firstChild, t5;
+    }
+    update(t5) {
+      const r4 = this.render();
+      this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(t5), this._$Do = D(r4, this.renderRoot, this.renderOptions);
+    }
+    connectedCallback() {
+      super.connectedCallback(), this._$Do?.setConnected(true);
+    }
+    disconnectedCallback() {
+      super.disconnectedCallback(), this._$Do?.setConnected(false);
+    }
+    render() {
+      return E;
+    }
+  };
+  i4._$litElement$ = true, i4["finalized"] = true, s3.litElementHydrateSupport?.({ LitElement: i4 });
+  var o4 = s3.litElementPolyfillSupport;
+  o4?.({ LitElement: i4 });
+  (s3.litElementVersions ??= []).push("4.2.2");
+
+  // node_modules/lit-html/directive.js
+  var t3 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
+  var e4 = /* @__PURE__ */ __name((t5) => (...e6) => ({ _$litDirective$: t5, values: e6 }), "e");
+  var i5 = class {
+    static {
+      __name(this, "i");
+    }
+    constructor(t5) {
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    _$AT(t5, e6, i6) {
+      this._$Ct = t5, this._$AM = e6, this._$Ci = i6;
+    }
+    _$AS(t5, e6) {
+      return this.update(t5, e6);
+    }
+    update(t5, e6) {
+      return this.render(...e6);
+    }
+  };
+
+  // node_modules/lit-html/directives/unsafe-html.js
+  var e5 = class extends i5 {
+    static {
+      __name(this, "e");
+    }
+    constructor(i6) {
+      if (super(i6), this.it = A, i6.type !== t3.CHILD) throw Error(this.constructor.directiveName + "() can only be used in child bindings");
+    }
+    render(r4) {
+      if (r4 === A || null == r4) return this._t = void 0, this.it = r4;
+      if (r4 === E) return r4;
+      if ("string" != typeof r4) throw Error(this.constructor.directiveName + "() called with a non-string value");
+      if (r4 === this.it) return this._t;
+      this.it = r4;
+      const s4 = [r4];
+      return s4.raw = s4, this._t = { _$litType$: this.constructor.resultType, strings: s4, values: [] };
+    }
+  };
+  e5.directiveName = "unsafeHTML", e5.resultType = 1;
+  var o5 = e4(e5);
+
+  // node_modules/lit-html/directives/unsafe-svg.js
+  var t4 = class extends e5 {
+    static {
+      __name(this, "t");
+    }
+  };
+  t4.directiveName = "unsafeSVG", t4.resultType = 2;
+  var o6 = e4(t4);
+
+  // node_modules/lit-html/directives/if-defined.js
+  var o7 = /* @__PURE__ */ __name((o8) => o8 ?? A, "o");
+
   // src/styles.ts
   var STYLES = `
   /* GLP-TOKENS v1 — shared contract between glp-card.js and glp-order-card.js, keep byte-identical */
@@ -841,12 +1474,12 @@
       ord_accept: "Annehmen",
       ord_decline: "Ablehnen",
       ord_done: "Fertig",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `fertig in ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `fertig in ~${n4} min`, "ord_ready_in"),
       ord_preparing: "in Zubereitung",
       just_now: "gerade eben",
-      mins_ago: /* @__PURE__ */ __name((n) => `vor ${n} Min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `vor ${n} Std`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `vor ${n} Tagen`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `vor ${n4} Min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `vor ${n4} Std`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `vor ${n4} Tagen`, "days_ago"),
       maint_descaling: "Entkalken",
       maint_backflush: "Backflush",
       maint_grouphead: "Gruppenkopf",
@@ -867,7 +1500,7 @@
       profile_switching: "wechselt …",
       lm_live: "Maschine live",
       steam_mode: "Dampfmodus",
-      water_low: /* @__PURE__ */ __name((p) => `Wasser fast leer (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Wasser fast leer (${p3}%)`, "water_low"),
       descaling_mode: "Entkalkung läuft",
       preheat_ready: "Brühbereit",
       preheat_heating: "Aufheizen …",
@@ -876,7 +1509,7 @@
       ready_by_set: "Setzen",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Brühbereit bis ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Abbrechen",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schaltet in ${n} Min ein`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `schaltet in ${n4} Min ein`, "ready_by_switching_in"),
       ready_by_switching_now: "schaltet jetzt ein",
       ready_by_scheduling: "Wird geplant …",
       brewing: "Bezug läuft",
@@ -892,9 +1525,9 @@
       leg_weight: "Gewicht",
       ph_pre: "Vorinfusion",
       ph_ext: "Extraktion",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} heute`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} heute`, "footer_today"),
       uptime_title: "Maschine an seit",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Geröstet vor ${d} Tagen`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `Geröstet vor ${d3} Tagen`, "bean_roasted_ago"),
       verdict_high: "stark",
       verdict_mid: "gut",
       verdict_low: "schwach"
@@ -909,12 +1542,12 @@
       ord_accept: "Accept",
       ord_decline: "Decline",
       ord_done: "Done",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `ready in ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `ready in ~${n4} min`, "ord_ready_in"),
       ord_preparing: "being prepared",
       just_now: "just now",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min ago`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} h ago`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} days ago`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `${n4} min ago`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `${n4} h ago`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `${n4} days ago`, "days_ago"),
       maint_descaling: "Descaling",
       maint_backflush: "Backflush",
       maint_grouphead: "Group head",
@@ -935,7 +1568,7 @@
       profile_switching: "switching …",
       lm_live: "Machine live",
       steam_mode: "Steam mode",
-      water_low: /* @__PURE__ */ __name((p) => `Water almost empty (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Water almost empty (${p3}%)`, "water_low"),
       descaling_mode: "Descaling",
       preheat_ready: "Ready to brew",
       preheat_heating: "Warming up …",
@@ -944,7 +1577,7 @@
       ready_by_set: "Set",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Ready by ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Cancel",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `switching on in ${n}m`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `switching on in ${n4}m`, "ready_by_switching_in"),
       ready_by_switching_now: "switching on now",
       ready_by_scheduling: "Scheduling…",
       brewing: "Brewing",
@@ -960,9 +1593,9 @@
       leg_weight: "Weight",
       ph_pre: "Preinfusion",
       ph_ext: "Extraction",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} today`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} today`, "footer_today"),
       uptime_title: "Machine on since",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Roasted ${d} days ago`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `Roasted ${d3} days ago`, "bean_roasted_ago"),
       verdict_high: "great",
       verdict_mid: "good",
       verdict_low: "weak"
@@ -977,12 +1610,12 @@
       ord_accept: "Accetta",
       ord_decline: "Rifiuta",
       ord_done: "Fatto",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `pronto tra ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `pronto tra ~${n4} min`, "ord_ready_in"),
       ord_preparing: "in preparazione",
       just_now: "proprio ora",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min fa`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} h fa`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} giorni fa`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `${n4} min fa`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `${n4} h fa`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `${n4} giorni fa`, "days_ago"),
       maint_descaling: "Decalcificazione",
       maint_backflush: "Backflush",
       maint_grouphead: "Gruppo erogazione",
@@ -1003,7 +1636,7 @@
       profile_switching: "cambio in corso …",
       lm_live: "Macchina in diretta",
       steam_mode: "Modalità vapore",
-      water_low: /* @__PURE__ */ __name((p) => `Acqua quasi esaurita (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Acqua quasi esaurita (${p3}%)`, "water_low"),
       descaling_mode: "Decalcificazione in corso",
       preheat_ready: "Pronto per l'estrazione",
       preheat_heating: "Riscaldamento …",
@@ -1012,7 +1645,7 @@
       ready_by_set: "Imposta",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Pronto entro le ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Annulla",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `si accende tra ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `si accende tra ${n4} min`, "ready_by_switching_in"),
       ready_by_switching_now: "si accende ora",
       ready_by_scheduling: "Pianificazione …",
       brewing: "Estrazione in corso",
@@ -1028,9 +1661,9 @@
       leg_weight: "Peso",
       ph_pre: "Preinfusione",
       ph_ext: "Estrazione",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} oggi`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} oggi`, "footer_today"),
       uptime_title: "Macchina accesa da",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostato ${d} giorni fa`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `Tostato ${d3} giorni fa`, "bean_roasted_ago"),
       verdict_high: "ottimo",
       verdict_mid: "buono",
       verdict_low: "debole"
@@ -1045,12 +1678,12 @@
       ord_accept: "Accepter",
       ord_decline: "Refuser",
       ord_done: "Terminé",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `prêt dans ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `prêt dans ~${n4} min`, "ord_ready_in"),
       ord_preparing: "en préparation",
       just_now: "à l'instant",
-      mins_ago: /* @__PURE__ */ __name((n) => `il y a ${n} min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `il y a ${n} h`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `il y a ${n} jours`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `il y a ${n4} min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `il y a ${n4} h`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `il y a ${n4} jours`, "days_ago"),
       maint_descaling: "Détartrage",
       maint_backflush: "Backflush",
       maint_grouphead: "Groupe de percolation",
@@ -1071,7 +1704,7 @@
       profile_switching: "changement …",
       lm_live: "Machine en direct",
       steam_mode: "Mode vapeur",
-      water_low: /* @__PURE__ */ __name((p) => `Eau presque vide (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Eau presque vide (${p3}%)`, "water_low"),
       descaling_mode: "Détartrage en cours",
       preheat_ready: "Prêt à infuser",
       preheat_heating: "Chauffage …",
@@ -1080,7 +1713,7 @@
       ready_by_set: "Définir",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Prêt avant ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Annuler",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `s'allume dans ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `s'allume dans ${n4} min`, "ready_by_switching_in"),
       ready_by_switching_now: "s'allume maintenant",
       ready_by_scheduling: "Planification …",
       brewing: "Extraction en cours",
@@ -1096,9 +1729,9 @@
       leg_weight: "Poids",
       ph_pre: "Préinfusion",
       ph_ext: "Extraction",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} aujourd'hui`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} aujourd'hui`, "footer_today"),
       uptime_title: "Machine allumée depuis",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Torréfié il y a ${d} jours`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `Torréfié il y a ${d3} jours`, "bean_roasted_ago"),
       verdict_high: "excellent",
       verdict_mid: "bon",
       verdict_low: "faible"
@@ -1113,12 +1746,12 @@
       ord_accept: "Aceptar",
       ord_decline: "Rechazar",
       ord_done: "Listo",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `listo en ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `listo en ~${n4} min`, "ord_ready_in"),
       ord_preparing: "en preparación",
       just_now: "justo ahora",
-      mins_ago: /* @__PURE__ */ __name((n) => `hace ${n} min`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `hace ${n} h`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `hace ${n} días`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `hace ${n4} min`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `hace ${n4} h`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `hace ${n4} días`, "days_ago"),
       maint_descaling: "Descalcificación",
       maint_backflush: "Backflush",
       maint_grouphead: "Grupo de erogación",
@@ -1139,7 +1772,7 @@
       profile_switching: "cambiando …",
       lm_live: "Máquina en directo",
       steam_mode: "Modo vapor",
-      water_low: /* @__PURE__ */ __name((p) => `Agua casi vacía (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Agua casi vacía (${p3}%)`, "water_low"),
       descaling_mode: "Descalcificación en curso",
       preheat_ready: "Listo para extraer",
       preheat_heating: "Calentando …",
@@ -1148,7 +1781,7 @@
       ready_by_set: "Fijar",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Listo antes de las ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Cancelar",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `se enciende en ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `se enciende en ${n4} min`, "ready_by_switching_in"),
       ready_by_switching_now: "se enciende ahora",
       ready_by_scheduling: "Programando …",
       brewing: "Extracción en curso",
@@ -1164,9 +1797,9 @@
       leg_weight: "Peso",
       ph_pre: "Preinfusión",
       ph_ext: "Extracción",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} hoy`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} hoy`, "footer_today"),
       uptime_title: "Máquina encendida desde",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `Tostado hace ${d} días`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `Tostado hace ${d3} días`, "bean_roasted_ago"),
       verdict_high: "excelente",
       verdict_mid: "bueno",
       verdict_low: "débil"
@@ -1181,12 +1814,12 @@
       ord_accept: "Accepteren",
       ord_decline: "Afwijzen",
       ord_done: "Klaar",
-      ord_ready_in: /* @__PURE__ */ __name((n) => `klaar over ~${n} min`, "ord_ready_in"),
+      ord_ready_in: /* @__PURE__ */ __name((n4) => `klaar over ~${n4} min`, "ord_ready_in"),
       ord_preparing: "in bereiding",
       just_now: "zojuist",
-      mins_ago: /* @__PURE__ */ __name((n) => `${n} min geleden`, "mins_ago"),
-      hours_ago: /* @__PURE__ */ __name((n) => `${n} u geleden`, "hours_ago"),
-      days_ago: /* @__PURE__ */ __name((n) => `${n} dagen geleden`, "days_ago"),
+      mins_ago: /* @__PURE__ */ __name((n4) => `${n4} min geleden`, "mins_ago"),
+      hours_ago: /* @__PURE__ */ __name((n4) => `${n4} u geleden`, "hours_ago"),
+      days_ago: /* @__PURE__ */ __name((n4) => `${n4} dagen geleden`, "days_ago"),
       maint_descaling: "Ontkalken",
       maint_backflush: "Backflush",
       maint_grouphead: "Groepkop",
@@ -1207,7 +1840,7 @@
       profile_switching: "wisselt …",
       lm_live: "Machine live",
       steam_mode: "Stoommodus",
-      water_low: /* @__PURE__ */ __name((p) => `Water bijna leeg (${p}%)`, "water_low"),
+      water_low: /* @__PURE__ */ __name((p3) => `Water bijna leeg (${p3}%)`, "water_low"),
       descaling_mode: "Ontkalken",
       preheat_ready: "Klaar om te zetten",
       preheat_heating: "Opwarmen …",
@@ -1216,7 +1849,7 @@
       ready_by_set: "Instellen",
       ready_by_target: /* @__PURE__ */ __name((hhmm) => `Klaar voor ${hhmm}`, "ready_by_target"),
       ready_by_cancel: "Annuleren",
-      ready_by_switching_in: /* @__PURE__ */ __name((n) => `schakelt in over ${n} min`, "ready_by_switching_in"),
+      ready_by_switching_in: /* @__PURE__ */ __name((n4) => `schakelt in over ${n4} min`, "ready_by_switching_in"),
       ready_by_switching_now: "schakelt nu in",
       ready_by_scheduling: "Wordt gepland …",
       brewing: "Bereiden",
@@ -1232,9 +1865,9 @@
       leg_weight: "Gewicht",
       ph_pre: "Voorinfusie",
       ph_ext: "Extractie",
-      footer_today: /* @__PURE__ */ __name((n) => `${n} vandaag`, "footer_today"),
+      footer_today: /* @__PURE__ */ __name((n4) => `${n4} vandaag`, "footer_today"),
       uptime_title: "Machine aan sinds",
-      bean_roasted_ago: /* @__PURE__ */ __name((d) => `${d} dagen geleden gebrand`, "bean_roasted_ago"),
+      bean_roasted_ago: /* @__PURE__ */ __name((d3) => `${d3} dagen geleden gebrand`, "bean_roasted_ago"),
       verdict_high: "sterk",
       verdict_mid: "goed",
       verdict_low: "zwak"
@@ -1250,39 +1883,39 @@
     return LANG;
   }
   __name(getLang, "getLang");
-  function T(key, ...args) {
-    const v = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
-    return typeof v === "function" ? v(...args) : v;
+  function T2(key, ...args) {
+    const v2 = (STRINGS[LANG] ?? STRINGS.en)[key] ?? STRINGS.en[key] ?? key;
+    return typeof v2 === "function" ? v2(...args) : v2;
   }
-  __name(T, "T");
+  __name(T2, "T");
 
   // src/helpers.ts
   function roastAgeDays(str) {
     if (!str || typeof str !== "string") return null;
-    let d = null;
-    let m = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
-    if (m) {
-      const y = m[3].length === 2 ? 2e3 + parseInt(m[3]) : parseInt(m[3]);
-      d = new Date(y, parseInt(m[2]) - 1, parseInt(m[1]));
+    let d3 = null;
+    let m2 = str.trim().match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
+    if (m2) {
+      const y3 = m2[3].length === 2 ? 2e3 + parseInt(m2[3]) : parseInt(m2[3]);
+      d3 = new Date(y3, parseInt(m2[2]) - 1, parseInt(m2[1]));
     } else {
-      m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (m) d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      m2 = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m2) d3 = new Date(parseInt(m2[1]), parseInt(m2[2]) - 1, parseInt(m2[3]));
     }
-    if (!d || isNaN(d)) return null;
-    const days = Math.floor((Date.now() - d.getTime()) / 864e5);
+    if (!d3 || isNaN(d3)) return null;
+    const days = Math.floor((Date.now() - d3.getTime()) / 864e5);
     return days >= 0 && days <= 730 ? days : null;
   }
   __name(roastAgeDays, "roastAgeDays");
-  function esc(s) {
-    if (s == null) return "";
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  function esc(s4) {
+    if (s4 == null) return "";
+    return String(s4).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   __name(esc, "esc");
   function safeUrl(url) {
     if (!url) return null;
     try {
-      const u = new URL(url);
-      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+      const u3 = new URL(url);
+      return u3.protocol === "http:" || u3.protocol === "https:" ? u3.href : null;
     } catch {
       return null;
     }
@@ -1297,7 +1930,7 @@
   function downsample(arr, maxPts) {
     if (!arr || arr.length <= maxPts) return arr || [];
     const step = Math.ceil(arr.length / maxPts);
-    const out = arr.filter((_, i) => i % step === 0);
+    const out = arr.filter((_2, i6) => i6 % step === 0);
     if (out[out.length - 1] !== arr[arr.length - 1]) out.push(arr[arr.length - 1]);
     return out;
   }
@@ -1458,27 +2091,27 @@
 
   // src/charts.ts
   function _scale(arr) {
-    return Array.isArray(arr) && arr.length ? arr.map((v) => v / 10) : [];
+    return Array.isArray(arr) && arr.length ? arr.map((v2) => v2 / 10) : [];
   }
   __name(_scale, "_scale");
-  function fmtClock(s) {
-    if (s == null || isNaN(s)) return "0:00";
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+  function fmtClock(s4) {
+    if (s4 == null || isNaN(s4)) return "0:00";
+    return `${Math.floor(s4 / 60)}:${Math.floor(s4 % 60).toString().padStart(2, "0")}`;
   }
   __name(fmtClock, "fmtClock");
   function fmtUptime(ms) {
     if (ms == null || ms < 0 || isNaN(ms)) return "";
-    const s = Math.floor(ms / 1e3), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
-    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
+    const s4 = Math.floor(ms / 1e3), h3 = Math.floor(s4 / 3600), m2 = Math.floor(s4 % 3600 / 60), sec = s4 % 60;
+    return h3 > 0 ? `${h3}:${String(m2).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m2}:${String(sec).padStart(2, "0")}`;
   }
   __name(fmtUptime, "fmtUptime");
   function detectPhases(times, pressures) {
     if (!times?.length || !pressures || pressures.length < 5) return null;
     const THRESH = 3.5;
     let endIdx = -1;
-    for (let i = 0; i < pressures.length; i++) {
-      if (times[i] >= 1 && pressures[i] >= THRESH) {
-        endIdx = i;
+    for (let i6 = 0; i6 < pressures.length; i6++) {
+      if (times[i6] >= 1 && pressures[i6] >= THRESH) {
+        endIdx = i6;
         break;
       }
     }
@@ -1489,23 +2122,23 @@
   }
   __name(detectPhases, "detectPhases");
   function buildShotChart(pres, temp, wt, flow, durationSec, animate = false) {
-    const W = 320, H = 150, L = 30, R = 30, TOP = 12, BOT = 24;
-    const plotW = W - L - R, plotH = H - TOP - BOT;
+    const W = 320, H2 = 150, L2 = 30, R2 = 30, TOP = 12, BOT = 24;
+    const plotW = W - L2 - R2, plotH = H2 - TOP - BOT;
     const pr = _scale(downsample(pres || [], 150));
     const te = _scale(downsample(temp || [], 150));
     const we = _scale(downsample(wt || [], 150));
     const fl = _scale(downsample(flow || [], 150));
-    const n = Math.max(pr.length, te.length, we.length, fl.length);
-    if (n < 2) return "";
-    const dur = durationSec && durationSec > 0 ? durationSec : n - 1;
-    const times = Array.from({ length: n }, (_, i) => i / (n - 1) * dur);
+    const n4 = Math.max(pr.length, te.length, we.length, fl.length);
+    if (n4 < 2) return "";
+    const dur = durationSec && durationSec > 0 ? durationSec : n4 - 1;
+    const times = Array.from({ length: n4 }, (_2, i6) => i6 / (n4 - 1) * dur);
     const PMAX = 12;
     const rMax = Math.max(110, Math.ceil(((te.length ? Math.max(...te) : 0) + 5) / 10) * 10);
-    const xAt = /* @__PURE__ */ __name((i) => L + i / (n - 1) * plotW, "xAt");
-    const xT = /* @__PURE__ */ __name((s) => L + Math.max(0, Math.min(dur, s)) / dur * plotW, "xT");
-    const yL = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(PMAX, v)) / PMAX * plotH, "yL");
-    const yR = /* @__PURE__ */ __name((v) => TOP + plotH - Math.max(0, Math.min(rMax, v)) / rMax * plotH, "yR");
-    const line = /* @__PURE__ */ __name((arr, map, color, sw, series) => arr.length < 2 ? "" : `<polyline points="${arr.map((v, i) => `${xAt(i).toFixed(1)},${map(v).toFixed(1)}`).join(" ")}"
+    const xAt = /* @__PURE__ */ __name((i6) => L2 + i6 / (n4 - 1) * plotW, "xAt");
+    const xT = /* @__PURE__ */ __name((s4) => L2 + Math.max(0, Math.min(dur, s4)) / dur * plotW, "xT");
+    const yL = /* @__PURE__ */ __name((v2) => TOP + plotH - Math.max(0, Math.min(PMAX, v2)) / PMAX * plotH, "yL");
+    const yR = /* @__PURE__ */ __name((v2) => TOP + plotH - Math.max(0, Math.min(rMax, v2)) / rMax * plotH, "yR");
+    const line = /* @__PURE__ */ __name((arr, map, color, sw, series) => arr.length < 2 ? "" : `<polyline points="${arr.map((v2, i6) => `${xAt(i6).toFixed(1)},${map(v2).toFixed(1)}`).join(" ")}"
       class="${animate ? `glp-curve-line s-${series}` : ""}"
       fill="none" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`, "line");
     const ph = detectPhases(times, pr);
@@ -1513,38 +2146,38 @@
     if (ph) {
       const xp = xT(ph.preinfusion);
       const phaseCls = animate ? ' class="glp-curve-phase"' : "";
-      phases = `<rect${phaseCls} x="${L}" y="${TOP}" width="${(xp - L).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-pres, ${CC.pres}) 13%, transparent)"/><rect${phaseCls} x="${xp.toFixed(1)}" y="${TOP}" width="${(L + plotW - xp).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-flow, ${CC.flow}) 10%, transparent)"/>`;
+      phases = `<rect${phaseCls} x="${L2}" y="${TOP}" width="${(xp - L2).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-pres, ${CC.pres}) 13%, transparent)"/><rect${phaseCls} x="${xp.toFixed(1)}" y="${TOP}" width="${(L2 + plotW - xp).toFixed(1)}" height="${plotH}" fill="color-mix(in srgb, var(--glp-series-flow, ${CC.flow}) 10%, transparent)"/>`;
     }
     const endpoint = animate && we.length ? `<circle class="glp-curve-endpoint" cx="${xAt(we.length - 1).toFixed(1)}" cy="${yR(we[we.length - 1]).toFixed(1)}" r="2.6" fill="${CC.wt}"/>` : "";
     let grid = "", leftLbl = "";
-    [0, 3, 6, 9, 12].forEach((b) => {
-      const y = yL(b);
-      grid += `<line x1="${L}" y1="${y.toFixed(1)}" x2="${L + plotW}" y2="${y.toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 6%, transparent)" stroke-width="0.5"/>`;
-      leftLbl += `<text x="${L - 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="var(--glp-sub, #a1a1aa)">${b}</text>`;
+    [0, 3, 6, 9, 12].forEach((b3) => {
+      const y3 = yL(b3);
+      grid += `<line x1="${L2}" y1="${y3.toFixed(1)}" x2="${L2 + plotW}" y2="${y3.toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 6%, transparent)" stroke-width="0.5"/>`;
+      leftLbl += `<text x="${L2 - 4}" y="${(y3 + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="var(--glp-sub, #a1a1aa)">${b3}</text>`;
     });
     let rightLbl = "";
     [0, 0.5, 1].forEach((fr) => {
-      const val = Math.round(rMax * fr), y = yR(val);
-      rightLbl += `<text x="${L + plotW + 4}" y="${(y + 2.5).toFixed(1)}" text-anchor="start" font-size="7" fill="var(--glp-sub, #a1a1aa)">${val}</text>`;
+      const val = Math.round(rMax * fr), y3 = yR(val);
+      rightLbl += `<text x="${L2 + plotW + 4}" y="${(y3 + 2.5).toFixed(1)}" text-anchor="start" font-size="7" fill="var(--glp-sub, #a1a1aa)">${val}</text>`;
     });
     const step = dur <= 15 ? 3 : dur <= 30 ? 5 : dur <= 60 ? 10 : 15;
     let ticks = "";
-    for (let s = 0; s <= dur + 1e-3; s += step) {
-      const x = xT(s);
-      ticks += `<line x1="${x.toFixed(1)}" y1="${TOP + plotH}" x2="${x.toFixed(1)}" y2="${(TOP + plotH + 3).toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 18%, transparent)" stroke-width="0.5"/><text x="${x.toFixed(1)}" y="${(TOP + plotH + 13).toFixed(1)}" text-anchor="middle" font-size="7" fill="var(--glp-sub, #a1a1aa)">${Math.round(s)}s</text>`;
+    for (let s4 = 0; s4 <= dur + 1e-3; s4 += step) {
+      const x2 = xT(s4);
+      ticks += `<line x1="${x2.toFixed(1)}" y1="${TOP + plotH}" x2="${x2.toFixed(1)}" y2="${(TOP + plotH + 3).toFixed(1)}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 18%, transparent)" stroke-width="0.5"/><text x="${x2.toFixed(1)}" y="${(TOP + plotH + 13).toFixed(1)}" text-anchor="middle" font-size="7" fill="var(--glp-sub, #a1a1aa)">${Math.round(s4)}s</text>`;
     }
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" class="${animate ? "glp-anim" : ""}">
-    <rect x="${L}" y="${TOP}" width="${plotW}" height="${plotH}" fill="color-mix(in srgb, var(--glp-text, #e4e4e7) 3%, transparent)"/>
+    return `<svg viewBox="0 0 ${W} ${H2}" width="100%" style="display:block" class="${animate ? "glp-anim" : ""}">
+    <rect x="${L2}" y="${TOP}" width="${plotW}" height="${plotH}" fill="color-mix(in srgb, var(--glp-text, #e4e4e7) 3%, transparent)"/>
     ${phases}${grid}
-    <line x1="${L}" y1="${TOP + plotH}" x2="${L + plotW}" y2="${TOP + plotH}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 22%, transparent)" stroke-width="0.6"/>
+    <line x1="${L2}" y1="${TOP + plotH}" x2="${L2 + plotW}" y2="${TOP + plotH}" stroke="color-mix(in srgb, var(--glp-text, #e4e4e7) 22%, transparent)" stroke-width="0.6"/>
     ${line(we, yR, CC.wt, 1.6, "weight")}
     ${line(fl, yL, CC.flow, 1.8, "flow")}
     ${line(pr, yL, CC.pres, 2.2, "pressure")}
     ${line(te, yR, CC.temp, 2, "temp")}
     ${endpoint}
     ${leftLbl}${rightLbl}${ticks}
-    <text x="${L - 2}" y="${TOP - 3}" text-anchor="start" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">bar</text>
-    <text x="${L + plotW + 2}" y="${TOP - 3}" text-anchor="end" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">°C · g</text>
+    <text x="${L2 - 2}" y="${TOP - 3}" text-anchor="start" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">bar</text>
+    <text x="${L2 + plotW + 2}" y="${TOP - 3}" text-anchor="end" font-size="6.5" fill="var(--glp-sub, #a1a1aa)">°C · g</text>
   </svg>`;
   }
   __name(buildShotChart, "buildShotChart");
@@ -1561,26 +2194,26 @@
   }
   __name(buildLiveChart, "buildLiveChart");
   function chartLegendHtml(dp, durationSec) {
-    const p = _scale(dp.p || dp.pressure), t = _scale(dp.t || dp.temperature), w = _scale(dp.w || dp.shotWeight || dp.weight), f = _scale(dp.f || dp.pumpFlow || dp.weightFlow);
-    const mx = /* @__PURE__ */ __name((a) => a.length ? Math.max(...a) : null, "mx");
-    const last = /* @__PURE__ */ __name((a) => a.length ? a[a.length - 1] : null, "last");
+    const p3 = _scale(dp.p || dp.pressure), t5 = _scale(dp.t || dp.temperature), w2 = _scale(dp.w || dp.shotWeight || dp.weight), f3 = _scale(dp.f || dp.pumpFlow || dp.weightFlow);
+    const mx = /* @__PURE__ */ __name((a3) => a3.length ? Math.max(...a3) : null, "mx");
+    const last = /* @__PURE__ */ __name((a3) => a3.length ? a3[a3.length - 1] : null, "last");
     const items = [
-      p.length ? { c: CC.pres, l: T("leg_pressure"), v: `${mx(p).toFixed(1)} bar` } : null,
-      f.length ? { c: CC.flow, l: T("leg_flow"), v: `${mx(f).toFixed(1)} ml/s` } : null,
-      t.length ? { c: CC.temp, l: T("leg_temp"), v: `${mx(t).toFixed(0)}°` } : null,
-      w.length ? { c: CC.wt, l: T("leg_weight"), v: `${last(w).toFixed(1)} g` } : null
+      p3.length ? { c: CC.pres, l: T2("leg_pressure"), v: `${mx(p3).toFixed(1)} bar` } : null,
+      f3.length ? { c: CC.flow, l: T2("leg_flow"), v: `${mx(f3).toFixed(1)} ml/s` } : null,
+      t5.length ? { c: CC.temp, l: T2("leg_temp"), v: `${mx(t5).toFixed(0)}°` } : null,
+      w2.length ? { c: CC.wt, l: T2("leg_weight"), v: `${last(w2).toFixed(1)} g` } : null
     ].filter(Boolean);
     let phaseTags = "";
-    if (p.length > 1) {
-      const dur = durationSec && durationSec > 0 ? durationSec : p.length - 1;
-      const times = Array.from({ length: p.length }, (_, i) => i / (p.length - 1) * dur);
-      const ph = detectPhases(times, p);
+    if (p3.length > 1) {
+      const dur = durationSec && durationSec > 0 ? durationSec : p3.length - 1;
+      const times = Array.from({ length: p3.length }, (_2, i6) => i6 / (p3.length - 1) * dur);
+      const ph = detectPhases(times, p3);
       if (ph) phaseTags = `<div class="chart-phases">
-      <span class="ph-tag ph-pre">${T("ph_pre")} ${fmtClock(ph.preinfusion)}</span>
-      <span class="ph-tag ph-ext">${T("ph_ext")} ${fmtClock(ph.extraction)}</span></div>`;
+      <span class="ph-tag ph-pre">${T2("ph_pre")} ${fmtClock(ph.preinfusion)}</span>
+      <span class="ph-tag ph-ext">${T2("ph_ext")} ${fmtClock(ph.extraction)}</span></div>`;
     }
     return `<div class="chart-legend2">${items.map(
-      (i) => `<span class="cl-item"><span class="cl-dot" style="background:${i.c}"></span>${i.l} <b>${esc(i.v)}</b></span>`
+      (i6) => `<span class="cl-item"><span class="cl-dot" style="background:${i6.c}"></span>${i6.l} <b>${esc(i6.v)}</b></span>`
     ).join("")}</div>${phaseTags}`;
   }
   __name(chartLegendHtml, "chartLegendHtml");
@@ -1588,10 +2221,10 @@
     const tiles = items.filter(Boolean);
     if (!tiles.length) return "";
     return `<div class="metric-line">
-    ${tiles.map((t) => `
-      <div class="metric-item role-${t.role}">
-        <div class="num">${esc(t.num)}${t.unit ? `<span class="unit">${esc(t.unit)}</span>` : ""}</div>
-        <div class="lbl">${esc(t.label)}</div>
+    ${tiles.map((t5) => `
+      <div class="metric-item role-${t5.role}">
+        <div class="num">${esc(t5.num)}${t5.unit ? `<span class="unit">${esc(t5.unit)}</span>` : ""}</div>
+        <div class="lbl">${esc(t5.label)}</div>
       </div>`).join("")}
   </div>`;
   }
@@ -1618,6 +2251,8 @@
       this._prevShotIndex = -1;
       this._recentShots = [];
       this._lastLatestId = null;
+      this._swipeSx = 0;
+      this._swipeSy = 0;
       this._lastChartShotKey = null;
       this._activeTab = "shot";
       this._pendingProfile = null;
@@ -1642,17 +2277,17 @@
       this._pendingReadyByTimer = null;
       this._lastKnownReadyByTargetAt = null;
       this._lastKnownReadyByPlannedAt = null;
-      this.shadowRoot.addEventListener("pointerdown", (e) => {
-        if (e.target.closest('[data-action="toggle-switch"]')) {
-          e.preventDefault();
-          e.stopPropagation();
+      this.shadowRoot.addEventListener("pointerdown", (e6) => {
+        if (e6.target.closest('[data-action="toggle-switch"]')) {
+          e6.preventDefault();
+          e6.stopPropagation();
           if (this._hass && this._switchEntity)
             this._hass.callService("switch", "toggle", { entity_id: this._switchEntity });
           return;
         }
-        if (e.target.closest('[data-action="set-ready-by"]')) {
-          e.preventDefault();
-          e.stopPropagation();
+        if (e6.target.closest('[data-action="set-ready-by"]')) {
+          e6.preventDefault();
+          e6.stopPropagation();
           const input = this.shadowRoot.getElementById("glp-readyby-input");
           const target = this._resolveReadyByTarget(input?.value, /* @__PURE__ */ new Date());
           if (this._hass && target) {
@@ -1670,9 +2305,9 @@
           }
           return;
         }
-        if (e.target.closest('[data-action="cancel-ready-by"]')) {
-          e.preventDefault();
-          e.stopPropagation();
+        if (e6.target.closest('[data-action="cancel-ready-by"]')) {
+          e6.preventDefault();
+          e6.stopPropagation();
           if (this._hass) {
             this._hass.callService("gaggiuino_profiler", "set_ready_by", {
               ...this._config?.machine != null ? { machine: this._config.machine } : {}
@@ -1689,11 +2324,9 @@
       });
       this._bindTouchGuard();
     }
-    _bindPowerBtn() {
-    }
     // #147: the card root element (`this`) is never replaced by `_render()` —
-    // only `this.shadowRoot`'s content is — so this is bound once, here, and
-    // survives every re-render exactly like the delegated shadowRoot listener
+    // only its shadow DOM is patched — so this is bound once, here, and
+    // outlives every re-render exactly like the delegated shadowRoot listener
     // above. `{ passive: true }` on all three: these must never call
     // preventDefault(), or the very native scroll this guard exists to protect
     // would itself be blocked.
@@ -1708,69 +2341,51 @@
         clearTimeout(this._touchGuardTimer);
         this._touchGuardTimer = setTimeout(clearTouchActive, this._touchGuardTimeoutMs);
       }, { passive: true });
-      const onTouchEnd = /* @__PURE__ */ __name((e) => {
-        if (e.touches.length > 0) return;
+      const onTouchEnd = /* @__PURE__ */ __name((e6) => {
+        if (e6.touches.length > 0) return;
         clearTimeout(this._touchGuardTimer);
         clearTouchActive();
       }, "onTouchEnd");
       this.addEventListener("touchend", onTouchEnd, { passive: true });
       this.addEventListener("touchcancel", onTouchEnd, { passive: true });
     }
-    _bindProfilePicker() {
-      const toggle = this.shadowRoot.querySelector('[data-action="toggle-profile"]');
-      if (toggle) {
-        toggle.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          this._profileOpen = !this._profileOpen;
-          this._profileInteracting = this._profileOpen;
+    // Handlers bound from the Lit templates (elements survive renders now, so
+    // per-render addEventListener wiring would stack listeners). The delegated
+    // power/ready-by buttons stay on the constructor's shadowRoot listener.
+    _toggleProfilePicker() {
+      this._profileOpen = !this._profileOpen;
+      this._profileInteracting = this._profileOpen;
+      this._render();
+    }
+    _selectProfile(val) {
+      if (this._hass) {
+        const entityId = this._resolvePrefix().replace(/^sensor\./, "select.") + "profile";
+        this._hass.callService("select", "select_option", { entity_id: entityId, option: val });
+        this._pendingProfile = val;
+        clearTimeout(this._pendingProfileTimer);
+        this._pendingProfileTimer = setTimeout(() => {
+          this._pendingProfile = null;
           this._render();
-        });
+        }, 8e3);
       }
-      this.shadowRoot.querySelectorAll("[data-profile-opt]").forEach((opt) => {
-        opt.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const val = e.currentTarget.dataset.profileOpt;
-          if (this._hass) {
-            const entityId = this._resolvePrefix().replace(/^sensor\./, "select.") + "profile";
-            this._hass.callService("select", "select_option", { entity_id: entityId, option: val });
-            this._pendingProfile = val;
-            clearTimeout(this._pendingProfileTimer);
-            this._pendingProfileTimer = setTimeout(() => {
-              this._pendingProfile = null;
-              this._render();
-            }, 8e3);
-          }
-          this._profileOpen = false;
-          this._profileInteracting = false;
-          this._render();
-        });
-      });
+      this._profileOpen = false;
+      this._profileInteracting = false;
+      this._render();
     }
-    _bindReadyByPicker() {
-      const input = this.shadowRoot.getElementById("glp-readyby-input");
-      if (!input) return;
-      input.addEventListener("focus", () => {
-        this._readyByInteracting = true;
-      });
-      input.addEventListener("blur", () => {
-        this._readyByInteracting = false;
-        if (this._pendingRender) this._requestRender();
-      });
+    // Ready-by input focus/blur (#64): a typed time must survive an hass update.
+    _readyByFocus() {
+      this._readyByInteracting = true;
     }
-    _bindTabBtns() {
-      this.shadowRoot.querySelectorAll("[data-tab]").forEach((btn) => {
-        btn.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          const tab = e.currentTarget.dataset.tab;
-          if (tab !== this._activeTab) {
-            this._activeTab = tab;
-            this._maintConfirm = null;
-            this._render();
-          }
-        });
-      });
+    _readyByBlur() {
+      this._readyByInteracting = false;
+      if (this._pendingRender) this._requestRender();
+    }
+    _selectTab(tab) {
+      if (tab !== this._activeTab) {
+        this._activeTab = tab;
+        this._maintConfirm = null;
+        this._render();
+      }
     }
     _startUptimeTicker() {
       if (this._uptimeTimer) return;
@@ -1816,12 +2431,12 @@
     // last successfully-parsed value, cached per-sensor on the instance.
     _readReadyBy() {
       const read = /* @__PURE__ */ __name((suffix) => {
-        const s = this._s(suffix);
-        if (s && s.state !== "unknown" && s.state !== "unavailable") {
-          const d = new Date(s.state);
-          if (!isNaN(d.getTime())) return { kind: "value", date: d };
+        const s4 = this._s(suffix);
+        if (s4 && s4.state !== "unknown" && s4.state !== "unavailable") {
+          const d3 = new Date(s4.state);
+          if (!isNaN(d3.getTime())) return { kind: "value", date: d3 };
         }
-        if (s && s.state === "unavailable") return { kind: "unavailable" };
+        if (s4 && s4.state === "unavailable") return { kind: "unavailable" };
         return { kind: "unknown" };
       }, "read");
       const targetRead = read("preheat_ready_by_target_at");
@@ -1850,9 +2465,9 @@
     // (a "ready by 07:00" picked at 22:00 means tomorrow 07:00). Pure/testable
     // on purpose — no DOM/hass access.
     _resolveReadyByTarget(timeString, now = /* @__PURE__ */ new Date()) {
-      const m = /^(\d{1,2}):(\d{2})$/.exec(String(timeString || "").trim());
-      if (!m) return null;
-      const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+      const m2 = /^(\d{1,2}):(\d{2})$/.exec(String(timeString || "").trim());
+      if (!m2) return null;
+      const hh = parseInt(m2[1], 10), mm = parseInt(m2[2], 10);
       if (hh > 23 || mm > 59) return null;
       const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
       if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
@@ -1871,27 +2486,28 @@
     // "target set but the server hasn't reported plannedAt yet" (e.g. right
     // after an optimistic Set click, #66) — shown as a neutral "scheduling…".
     _readyByCountdownText(plannedAt, targetAt) {
-      if (!plannedAt) return targetAt ? T("ready_by_scheduling") : "";
+      if (!plannedAt) return targetAt ? T2("ready_by_scheduling") : "";
       const diffMs = plannedAt.getTime() - Date.now();
-      if (diffMs <= 0) return T("ready_by_switching_now");
-      return T("ready_by_switching_in", Math.ceil(diffMs / 6e4));
+      if (diffMs <= 0) return T2("ready_by_switching_now");
+      return T2("ready_by_switching_in", Math.ceil(diffMs / 6e4));
     }
     _buildReadyByHtml(targetAt, plannedAt) {
       if (targetAt) {
         const hhmm = targetAt.toLocaleTimeString(getLang(), { hour: "2-digit", minute: "2-digit" });
-        return `<div class="ready-by ready-by-set">
+        return b2`<div class="ready-by ready-by-set">
         <div class="ready-by-info">
-          <span class="ready-by-label">${T("ready_by_target", esc(hhmm))}</span>
-          <span class="ready-by-countdown" id="glp-readyby-countdown">${esc(this._readyByCountdownText(plannedAt, targetAt))}</span>
+          <span class="ready-by-label">${T2("ready_by_target", hhmm)}</span>
+          <span class="ready-by-countdown" id="glp-readyby-countdown">${this._readyByCountdownText(plannedAt, targetAt)}</span>
         </div>
-        <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T("ready_by_cancel")}</button>
+        <button class="ready-by-btn ghost" data-action="cancel-ready-by">${T2("ready_by_cancel")}</button>
       </div>`;
       }
-      return `<div class="ready-by ready-by-picker">
-      <span class="ready-by-label">${T("ready_by_set_label")}</span>
+      return b2`<div class="ready-by ready-by-picker">
+      <span class="ready-by-label">${T2("ready_by_set_label")}</span>
       <div class="ready-by-picker-row">
-        <input type="time" class="ready-by-time-input" id="glp-readyby-input"/>
-        <button class="ready-by-btn primary" data-action="set-ready-by">${T("ready_by_set")}</button>
+        <input type="time" class="ready-by-time-input" id="glp-readyby-input"
+          @focus=${() => this._readyByFocus()} @blur=${() => this._readyByBlur()}/>
+        <button class="ready-by-btn primary" data-action="set-ready-by">${T2("ready_by_set")}</button>
       </div>
     </div>`;
     }
@@ -1908,14 +2524,14 @@
       if (!this._hass?.fetchWithAuth) return;
       let list;
       try {
-        const r = await this._hass.fetchWithAuth("/api/glp/orders");
-        if (!r.ok) return;
-        list = await r.json();
+        const r4 = await this._hass.fetchWithAuth("/api/glp/orders");
+        if (!r4.ok) return;
+        list = await r4.json();
       } catch {
         return;
       }
-      const active = (Array.isArray(list) ? list : []).filter((o) => o.status === "pending" || o.status === "accepted").sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-      const sig = JSON.stringify(active.map((o) => [o.id, o.status, o.eta, o.acceptedAt]));
+      const active = (Array.isArray(list) ? list : []).filter((o8) => o8.status === "pending" || o8.status === "accepted").sort((a3, b3) => (a3.createdAt || 0) - (b3.createdAt || 0));
+      const sig = JSON.stringify(active.map((o8) => [o8.id, o8.status, o8.eta, o8.acceptedAt]));
       if (!force && sig === this._ordersSig) return;
       this._ordersSig = sig;
       this._orders = active;
@@ -1936,101 +2552,48 @@
       await this._fetchOrders(true);
     }
     _buildOrdersHtml() {
-      if (!this._orders.length) return `<div class="unavailable">${T("orders_none")}</div>`;
-      const declineRow = /* @__PURE__ */ __name((id) => `<div class="ord-actions"><span class="ord-q">${T("ord_decline_q")}</span>
-      <button class="ord-btn danger" data-ord-decline-yes="${esc(id)}">${ICONS.of("check")} ${T("ord_yes")}</button>
-      <button class="ord-btn ghost" data-ord-cancel="1">${ICONS.of("close")}</button></div>`, "declineRow");
-      return `<div class="ord-list">${this._orders.map((o) => {
-        const label = o.variant ? `${o.item} · ${o.variant}` : o.item;
-        const head = `<div class="ord-top"><span class="ord-item">${ICONS.of("coffee")} ${esc(label)}</span>${o.customer ? `<span class="ord-who">${esc(o.customer)}</span>` : ""}</div>
-        ${o.note ? `<div class="ord-note">„${esc(o.note)}"</div>` : ""}`;
-        if (o.status === "pending") {
-          const actions2 = this._orderDeclineFor === o.id ? declineRow(o.id) : this._orderEtaFor === o.id ? `<div class="ord-actions"><span class="ord-q">${T("ord_done_in")}</span>${[3, 5, 8, 10].map((m) => `<button class="ord-btn eta" data-ord-accept="${esc(o.id)}" data-eta="${m}">${m} min</button>`).join("")}<button class="ord-btn ghost" data-ord-cancel="1">${ICONS.of("close")}</button></div>` : `<div class="ord-actions"><button class="ord-btn primary" data-ord-eta="${esc(o.id)}">${ICONS.of("check")} ${T("ord_accept")}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T("ord_decline")}</button></div>`;
-          return `<div class="ord-row pending">${head}${actions2}</div>`;
-        }
-        const minsLeft = o.acceptedAt && o.eta ? Math.max(0, Math.ceil((o.acceptedAt + o.eta * 6e4 - Date.now()) / 6e4)) : null;
-        const actions = this._orderDeclineFor === o.id ? declineRow(o.id) : `<div class="ord-actions"><button class="ord-btn primary" data-ord-done="${esc(o.id)}">${ICONS.of("check")} ${T("ord_done")}</button><button class="ord-btn ghost" data-ord-decline="${esc(o.id)}">${T("ord_decline")}</button></div>`;
-        return `<div class="ord-row accepted">${head}
-        <div class="ord-sub">${minsLeft != null ? T("ord_ready_in", minsLeft) : T("ord_preparing")}</div>${actions}</div>`;
-      }).join("")}</div>`;
-    }
-    _bindOrderBtns() {
-      const tap = /* @__PURE__ */ __name((sel, fn) => this.shadowRoot.querySelectorAll(sel).forEach((b) => b.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        fn(b);
-      })), "tap");
-      tap("[data-ord-eta]", (b) => {
-        this._orderEtaFor = b.dataset.ordEta;
-        this._render();
-      });
-      tap("[data-ord-accept]", (b) => this._orderAction(b.dataset.ordAccept, "accept", { eta: parseInt(b.dataset.eta) }));
-      tap("[data-ord-done]", (b) => this._orderAction(b.dataset.ordDone, "complete", {}));
-      tap("[data-ord-decline]", (b) => {
-        this._orderDeclineFor = b.dataset.ordDecline;
-        this._render();
-      });
-      tap("[data-ord-decline-yes]", (b) => this._orderAction(b.dataset.ordDeclineYes, "decline", {}));
-      tap("[data-ord-cancel]", () => {
+      if (!this._orders.length) return b2`<div class="unavailable">${T2("orders_none")}</div>`;
+      const tap = /* @__PURE__ */ __name((fn) => (e6) => {
+        e6.preventDefault();
+        e6.stopPropagation();
+        fn();
+      }, "tap");
+      const cancel = tap(() => {
         this._orderEtaFor = null;
         this._orderDeclineFor = null;
         this._render();
       });
-    }
-    _bindMaintRows() {
-      this.shadowRoot.querySelectorAll("[data-maint-task]").forEach((el) => {
-        el.addEventListener("pointerdown", (e) => {
-          if (e.target.closest("[data-maint-done],[data-maint-cancel]")) return;
-          e.preventDefault();
-          const task = el.dataset.maintTask;
-          this._maintConfirm = this._maintConfirm === task ? null : task;
+      const declineRow = /* @__PURE__ */ __name((id) => b2`<div class="ord-actions"><span class="ord-q">${T2("ord_decline_q")}</span>
+      <button class="ord-btn danger" data-ord-decline-yes=${id} @pointerdown=${tap(() => this._orderAction(id, "decline", {}))}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("check"))} ${T2("ord_yes")}</button>
+      <button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("close"))}</button></div>`, "declineRow");
+      return b2`<div class="ord-list">${this._orders.map((o8) => {
+        const label = o8.variant ? `${o8.item} · ${o8.variant}` : o8.item;
+        const head = b2`<div class="ord-top"><span class="ord-item">${/* ICONS.of() emits fixed SVG markup */
+        o5(ICONS.of("coffee"))} ${label}</span>${o8.customer ? b2`<span class="ord-who">${o8.customer}</span>` : A}</div>
+        ${o8.note ? b2`<div class="ord-note">„${o8.note}"</div>` : A}`;
+        if (o8.status === "pending") {
+          const actions2 = this._orderDeclineFor === o8.id ? declineRow(o8.id) : this._orderEtaFor === o8.id ? b2`<div class="ord-actions"><span class="ord-q">${T2("ord_done_in")}</span>${[3, 5, 8, 10].map((m2) => b2`<button class="ord-btn eta" data-ord-accept=${o8.id} data-eta=${m2} @pointerdown=${tap(() => this._orderAction(o8.id, "accept", { eta: m2 }))}>${m2} min</button>`)}<button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */
+          o5(ICONS.of("close"))}</button></div>` : b2`<div class="ord-actions"><button class="ord-btn primary" data-ord-eta=${o8.id} @pointerdown=${tap(() => {
+            this._orderEtaFor = o8.id;
+            this._render();
+          })}>${/* ICONS.of() emits fixed SVG markup */
+          o5(ICONS.of("check"))} ${T2("ord_accept")}</button><button class="ord-btn ghost" data-ord-decline=${o8.id} @pointerdown=${tap(() => {
+            this._orderDeclineFor = o8.id;
+            this._render();
+          })}>${T2("ord_decline")}</button></div>`;
+          return b2`<div class="ord-row pending">${head}${actions2}</div>`;
+        }
+        const minsLeft = o8.acceptedAt && o8.eta ? Math.max(0, Math.ceil((o8.acceptedAt + o8.eta * 6e4 - Date.now()) / 6e4)) : null;
+        const actions = this._orderDeclineFor === o8.id ? declineRow(o8.id) : b2`<div class="ord-actions"><button class="ord-btn primary" data-ord-done=${o8.id} @pointerdown=${tap(() => this._orderAction(o8.id, "complete", {}))}>${/* ICONS.of() emits fixed SVG markup */
+        o5(ICONS.of("check"))} ${T2("ord_done")}</button><button class="ord-btn ghost" data-ord-decline=${o8.id} @pointerdown=${tap(() => {
+          this._orderDeclineFor = o8.id;
           this._render();
-        });
-      });
-      this.shadowRoot.querySelectorAll("[data-maint-done]").forEach((b) => {
-        b.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const task = b.dataset.maintDone;
-          if (this._hass && task)
-            this._hass.callService("gaggiuino_profiler", "maintenance_done", { task });
-          this._maintConfirm = null;
-          this._render();
-        });
-      });
-      this.shadowRoot.querySelectorAll("[data-maint-cancel]").forEach((b) => {
-        b.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          this._maintConfirm = null;
-          this._render();
-        });
-      });
-    }
-    _bindNavBtns() {
-      this.shadowRoot.querySelectorAll("[data-nav]").forEach((btn) => {
-        btn.addEventListener("pointerdown", (e) => {
-          if (btn.hasAttribute("disabled")) return;
-          e.preventDefault();
-          this._navShot(btn.dataset.nav);
-        });
-      });
-    }
-    _bindSwipe() {
-      const el = this.shadowRoot.querySelector(".swipe-target");
-      if (!el) return;
-      let sx = 0, sy = 0;
-      el.addEventListener("touchstart", (e) => {
-        sx = e.touches[0].clientX;
-        sy = e.touches[0].clientY;
-      }, { passive: true });
-      el.addEventListener("touchend", (e) => {
-        if (this._profileOpen) return;
-        const dx = e.changedTouches[0].clientX - sx;
-        const dy = e.changedTouches[0].clientY - sy;
-        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-        this._navShot(dx > 0 ? "next" : "prev");
-      }, { passive: true });
+        })}>${T2("ord_decline")}</button></div>`;
+        return b2`<div class="ord-row accepted">${head}
+        <div class="ord-sub">${minsLeft != null ? T2("ord_ready_in", minsLeft) : T2("ord_preparing")}</div>${actions}</div>`;
+      })}</div>`;
     }
     _navShot(dir) {
       if (this._animating) return;
@@ -2058,17 +2621,17 @@
       newSwipe.appendChild(oldClone);
       newContent.style.transform = `translateX(${enterX})`;
       newContent.style.opacity = "0";
-      const T2 = "transform .22s cubic-bezier(.25,.46,.45,.94), opacity .18s ease-out";
+      const T3 = "transform .22s cubic-bezier(.25,.46,.45,.94), opacity .18s ease-out";
       requestAnimationFrame(() => requestAnimationFrame(() => {
-        newContent.style.transition = T2;
+        newContent.style.transition = T3;
         newContent.style.transform = "translateX(0)";
         newContent.style.opacity = "1";
-        oldClone.style.transition = T2;
+        oldClone.style.transition = T3;
         oldClone.style.transform = `translateX(${exitX})`;
         oldClone.style.opacity = "0";
         setTimeout(() => {
           if (oldClone.parentNode) oldClone.remove();
-          ["transform", "transition", "opacity"].forEach((p) => newContent.style.removeProperty(p));
+          ["transform", "transition", "opacity"].forEach((p3) => newContent.style.removeProperty(p3));
           this._animating = false;
           if (this._pendingRender) this._requestRender();
         }, 250);
@@ -2116,9 +2679,9 @@
       let entry = null;
       if (this._config?.machine) {
         const needle = String(this._config.machine).toLowerCase();
-        entry = machines.find((m) => String(m.name || "").toLowerCase() === needle || String(m.id) === needle);
+        entry = machines.find((m2) => String(m2.name || "").toLowerCase() === needle || String(m2.id) === needle);
       }
-      if (!entry) entry = machines.find((m) => m.isDefault) || null;
+      if (!entry) entry = machines.find((m2) => m2.isDefault) || null;
       return entry;
     }
     _appMachineTheme() {
@@ -2185,8 +2748,8 @@
     set hass(hass) {
       this._hass = hass;
       {
-        const l = String(hass?.language || hass?.locale?.language || "de").slice(0, 2).toLowerCase();
-        setLang(SUPPORTED_LANGS.includes(l) ? l : "en");
+        const l3 = String(hass?.language || hass?.locale?.language || "de").slice(0, 2).toLowerCase();
+        setLang(SUPPORTED_LANGS.includes(l3) ? l3 : "en");
       }
       if (!this._ordersPoll) this._startOrdersPoll();
       this._loadBeansInfo();
@@ -2199,15 +2762,15 @@
       if (this._beansInfoAt && Date.now() - this._beansInfoAt < 3e5) return;
       this._beansInfoAt = Date.now();
       try {
-        const r = await this._hass.fetchWithAuth("/api/glp/library/beans-info");
-        if (!r.ok) {
+        const r4 = await this._hass.fetchWithAuth("/api/glp/library/beans-info");
+        if (!r4.ok) {
           this._beansInfoUnavailable = true;
           return;
         }
-        const list = await r.json();
+        const list = await r4.json();
         const beans = Array.isArray(list) ? list : [];
-        this._beansInfoById = new Map(beans.filter((b) => b.id != null).map((b) => [b.id, b]));
-        this._beansInfo = new Map(beans.map((b) => [String(b.name || "").toLowerCase(), b]));
+        this._beansInfoById = new Map(beans.filter((b3) => b3.id != null).map((b3) => [b3.id, b3]));
+        this._beansInfo = new Map(beans.map((b3) => [String(b3.name || "").toLowerCase(), b3]));
       } catch {
       }
     }
@@ -2219,14 +2782,14 @@
     // beanId on the annotation, or an integration too old to expose it).
     _beanExtraHtml(coffee, beanId) {
       const bean = beanId != null && this._beansInfoById?.get(beanId) || this._beansInfo?.get(String(coffee || "").toLowerCase());
-      if (!bean) return "";
+      if (!bean) return A;
       const parts = [];
-      if (bean.variety) parts.push(esc(bean.variety));
+      if (bean.variety) parts.push(bean.variety);
       const age = roastAgeDays(bean.roastDate);
       if (age != null) parts.push(`${age}d`);
-      if (!parts.length) return "";
-      const title = age != null ? T("bean_roasted_ago", age) : "";
-      return `<span class="shot-bean-extra"${title ? ` title="${esc(title)}"` : ""}>${parts.join(" · ")}</span>`;
+      if (!parts.length) return A;
+      const title = age != null ? T2("bean_roasted_ago", age) : "";
+      return b2`<span class="shot-bean-extra" title=${o7(title || void 0)}>${parts.join(" · ")}</span>`;
     }
     // machine (#50): optional config option naming/slugging a specific
     // machine, for setups with more than one GLP machine device (see the app's
@@ -2263,23 +2826,23 @@
       return this._hass.states[this._resolvePrefix() + suffix];
     }
     _val(suffix, fallback = "—") {
-      const s = this._s(suffix);
-      return s && s.state !== "unknown" && s.state !== "unavailable" ? s.state : fallback;
+      const s4 = this._s(suffix);
+      return s4 && s4.state !== "unknown" && s4.state !== "unavailable" ? s4.state : fallback;
     }
     _num(suffix, decimals = 1, fallback = null) {
-      const v = this._val(suffix, null);
-      if (v === null) return fallback;
-      const n = parseFloat(v);
-      return isNaN(n) ? fallback : n.toFixed(decimals);
+      const v2 = this._val(suffix, null);
+      if (v2 === null) return fallback;
+      const n4 = parseFloat(v2);
+      return isNaN(n4) ? fallback : n4.toFixed(decimals);
     }
     _reltime(suffix) {
-      const s = this._s(suffix);
-      if (!s || s.state === "unknown" || s.state === "unavailable") return null;
-      const diff = Math.round((Date.now() - new Date(s.state).getTime()) / 6e4);
-      if (diff < 1) return T("just_now");
-      if (diff < 60) return T("mins_ago", diff);
-      const h = Math.round(diff / 60);
-      return h < 24 ? T("hours_ago", h) : T("days_ago", Math.round(h / 24));
+      const s4 = this._s(suffix);
+      if (!s4 || s4.state === "unknown" || s4.state === "unavailable") return null;
+      const diff = Math.round((Date.now() - new Date(s4.state).getTime()) / 6e4);
+      if (diff < 1) return T2("just_now");
+      if (diff < 60) return T2("mins_ago", diff);
+      const h3 = Math.round(diff / 60);
+      return h3 < 24 ? T2("hours_ago", h3) : T2("days_ago", Math.round(h3 / 24));
     }
     // Icon column is now an ICONS name (#120), not an emoji glyph — resolved
     // through ICONS.of() in _buildMaintHtml() below.
@@ -2291,50 +2854,70 @@
       ["maintenance_water_filter", "maint_waterfilter", "droplet", "waterfilter"]
     ];
     _maintAvailable() {
-      return _GlpCard.MAINT_TASKS.some(([s]) => this._s(s)) || !!this._s("maintenance_grinders");
+      return _GlpCard.MAINT_TASKS.some(([s4]) => this._s(s4)) || !!this._s("maintenance_grinders");
     }
     _maintAnyDue() {
-      return _GlpCard.MAINT_TASKS.some(([s]) => this._s(s)?.state === "due") || this._s("maintenance_grinders")?.state === "due";
+      return _GlpCard.MAINT_TASKS.some(([s4]) => this._s(s4)?.state === "due") || this._s("maintenance_grinders")?.state === "due";
     }
     _buildMaintHtml() {
-      const pills = { ok: T("pill_ok"), soon: T("pill_soon"), due: T("pill_due"), never: T("pill_never") };
+      const pills = { ok: T2("pill_ok"), soon: T2("pill_soon"), due: T2("pill_due"), never: T2("pill_never") };
       const pillIcon = { ok: "check", due: "warning" };
       const row = /* @__PURE__ */ __name((icon, name, status, pct, daysSince, shotsSince, task) => {
         const cls = pills[status] ? status : "never";
         const pctW = Math.max(0, Math.min(100, Math.round((parseFloat(pct) || 0) * 100)));
         const sub = [
-          daysSince != null ? daysSince === 0 ? T("maint_today") : T("days_ago", daysSince) : null,
+          daysSince != null ? daysSince === 0 ? T2("maint_today") : T2("days_ago", daysSince) : null,
           shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null
         ].filter(Boolean).join(" · ");
         const confirming = task && this._maintConfirm === task;
-        return `<div class="maint-row${confirming ? " confirming" : ""}"${task ? ` data-maint-task="${esc(task)}" role="button"` : ""}>
+        return b2`<div class="maint-row${confirming ? " confirming" : ""}" data-maint-task=${o7(task || void 0)} role=${o7(task ? "button" : void 0)} @pointerdown=${(e6) => {
+          if (!task) return;
+          if (e6.target.closest("[data-maint-done],[data-maint-cancel]")) return;
+          e6.preventDefault();
+          this._maintConfirm = this._maintConfirm === task ? null : task;
+          this._render();
+        }}>
         <div class="maint-row-top">
-          ${ICONS.of(icon)}
-          <span class="maint-name">${esc(name)}</span>
-          <span class="maint-pill ${cls}">${pillIcon[cls] ? ICONS.of(pillIcon[cls]) : ""}${pills[status] || "—"}</span>
+          ${/* ICONS.of() emits fixed SVG markup */
+        o5(ICONS.of(icon))}
+          <span class="maint-name">${name}</span>
+          <span class="maint-pill ${cls}">${pillIcon[cls] ? o5(ICONS.of(pillIcon[cls])) : A}${pills[status] || "—"}</span>
         </div>
-        ${sub ? `<div class="maint-sub">${esc(sub)}</div>` : ""}
+        ${sub ? b2`<div class="maint-sub">${sub}</div>` : A}
         <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
-        ${confirming ? `<div class="maint-confirm">
-          <span class="maint-confirm-q">${T("maint_confirm_q")}</span>
-          <button class="maint-confirm-yes" data-maint-done="${esc(task)}">${ICONS.of("check")} ${T("ord_yes")}</button>
-          <button class="maint-confirm-no" data-maint-cancel="1">${ICONS.of("close")}</button>
-        </div>` : ""}
+        ${confirming ? b2`<div class="maint-confirm">
+          <span class="maint-confirm-q">${T2("maint_confirm_q")}</span>
+          <button class="maint-confirm-yes" data-maint-done=${task} @pointerdown=${(e6) => {
+          e6.preventDefault();
+          e6.stopPropagation();
+          if (this._hass && task) this._hass.callService("gaggiuino_profiler", "maintenance_done", { task });
+          this._maintConfirm = null;
+          this._render();
+        }}>${/* ICONS.of() emits fixed SVG markup */
+        o5(ICONS.of("check"))} ${T2("ord_yes")}</button>
+          <button class="maint-confirm-no" data-maint-cancel="1" @pointerdown=${(e6) => {
+          e6.preventDefault();
+          e6.stopPropagation();
+          this._maintConfirm = null;
+          this._render();
+        }}>${/* ICONS.of() emits fixed SVG markup */
+        o5(ICONS.of("close"))}</button>
+        </div>` : A}
       </div>`;
       }, "row");
       const rows = _GlpCard.MAINT_TASKS.map(([suffix, nameKey, icon, task]) => {
-        const s = this._s(suffix);
-        if (!s || s.state === "unavailable" || s.state === "unknown") return "";
-        const a = s.attributes || {};
-        return row(icon, T(nameKey), s.state, a.pct, a.days_since, a.shots_since, task);
+        const s4 = this._s(suffix);
+        if (!s4 || s4.state === "unavailable" || s4.state === "unknown") return null;
+        const a3 = s4.attributes || {};
+        return row(icon, T2(nameKey), s4.state, a3.pct, a3.days_since, a3.shots_since, task);
       }).filter(Boolean);
       const gAttrs = this._s("maintenance_grinders")?.attributes || {};
-      const gRows = Object.entries(gAttrs).filter(([, v]) => v && typeof v === "object" && "status" in v).map(([name, v]) => row("gear", name, v.status, v.pct, v.days_since, v.shots_since, v.task));
+      const gRows = Object.entries(gAttrs).filter(([, v2]) => v2 && typeof v2 === "object" && "status" in v2).map(([name, v2]) => row("gear", name, v2.status, v2.pct, v2.days_since, v2.shots_since, v2.task));
       if (!rows.length && !gRows.length)
-        return `<div class="unavailable">${T("maint_none")}</div>`;
-      return `<div class="maint-list">
-      ${rows.join("")}
-      ${gRows.length ? `<div class="maint-section-label">${T("maint_grinders")}</div>${gRows.join("")}` : ""}
+        return b2`<div class="unavailable">${T2("maint_none")}</div>`;
+      return b2`<div class="maint-list">
+      ${rows}
+      ${gRows.length ? b2`<div class="maint-section-label">${T2("maint_grinders")}</div>${gRows}` : A}
     </div>`;
     }
     /* GLP-SHARED:contrast v1 — kept byte-identical with glp-order-card.js's
@@ -2361,31 +2944,31 @@
       } catch {
         return null;
       }
-      const m = rgb && rgb.match(/[\d.]+/g);
-      if (!m || m.length < 3) return null;
-      return m.slice(0, 3).map(Number);
+      const m2 = rgb && rgb.match(/[\d.]+/g);
+      if (!m2 || m2.length < 3) return null;
+      return m2.slice(0, 3).map(Number);
     }
     _luminanceOf(cssColor) {
       const rgb = this._rgbOf(cssColor);
       if (!rgb) return null;
-      const [r, g, b] = rgb;
-      const lin = /* @__PURE__ */ __name((c) => {
-        c /= 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      const [r4, g2, b3] = rgb;
+      const lin = /* @__PURE__ */ __name((c4) => {
+        c4 /= 255;
+        return c4 <= 0.04045 ? c4 / 12.92 : ((c4 + 0.055) / 1.055) ** 2.4;
       }, "lin");
-      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      return 0.2126 * lin(r4) + 0.7152 * lin(g2) + 0.0722 * lin(b3);
     }
     // Relative-luminance contrast ratio of two [r,g,b] triples, WCAG 2.x.
     _contrastOf(rgbA, rgbB) {
-      const lum = /* @__PURE__ */ __name(([r, g, b2]) => {
-        const lin = /* @__PURE__ */ __name((c) => {
-          c /= 255;
-          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      const lum = /* @__PURE__ */ __name(([r4, g2, b4]) => {
+        const lin = /* @__PURE__ */ __name((c4) => {
+          c4 /= 255;
+          return c4 <= 0.04045 ? c4 / 12.92 : ((c4 + 0.055) / 1.055) ** 2.4;
         }, "lin");
-        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b2);
+        return 0.2126 * lin(r4) + 0.7152 * lin(g2) + 0.0722 * lin(b4);
       }, "lum");
-      const a = lum(rgbA), b = lum(rgbB);
-      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      const a3 = lum(rgbA), b3 = lum(rgbB);
+      return (Math.max(a3, b3) + 0.05) / (Math.min(a3, b3) + 0.05);
     }
     // Picks the contrast-safe --glp-ok/--glp-warn/--glp-err/--glp-accent-text
     // variants at runtime, each keyed off the LUMINANCE OF THE ACTUAL RESOLVED
@@ -2411,7 +2994,7 @@
       }
       const startLuminance = this._luminanceOf(getComputedStyle(this).getPropertyValue("--glp-accent-start").trim());
       const endLuminance = this._luminanceOf(getComputedStyle(this).getPropertyValue("--glp-accent-end").trim());
-      const accentLuminance = [startLuminance, endLuminance].filter((v) => v != null).reduce((min, v) => min == null || v < min ? v : min, null);
+      const accentLuminance = [startLuminance, endLuminance].filter((v2) => v2 != null).reduce((min, v2) => min == null || v2 < min ? v2 : min, null);
       if (accentLuminance != null) {
         this.style.setProperty("--glp-accent-text", accentLuminance > 0.179 ? "#000" : "#fff");
       }
@@ -2438,16 +3021,16 @@
       const cs = getComputedStyle(this);
       const bg = this._rgbOf(cs.getPropertyValue("--glp-bg").trim());
       const text = this._rgbOf(cs.getPropertyValue("--glp-text").trim());
-      const stops = ["--glp-accent-start", "--glp-accent-end"].map((v) => this._rgbOf(cs.getPropertyValue(v).trim())).filter(Boolean);
+      const stops = ["--glp-accent-start", "--glp-accent-end"].map((v2) => this._rgbOf(cs.getPropertyValue(v2).trim())).filter(Boolean);
       if (!bg || !text || !stops.length) return;
-      const weakest = stops.reduce((worst, s) => this._contrastOf(s, bg) < this._contrastOf(worst, bg) ? s : worst, stops[0]);
+      const weakest = stops.reduce((worst, s4) => this._contrastOf(s4, bg) < this._contrastOf(worst, bg) ? s4 : worst, stops[0]);
       if (this._contrastOf(weakest, bg) >= 3) {
         this.style.setProperty("--glp-aline", `rgb(${weakest.join(" ")})`);
         return;
       }
       let out = weakest;
-      for (let t = 0.05; t <= 1.0001; t += 0.05) {
-        const mixed = weakest.map((c, i) => Math.round(c + (text[i] - c) * t));
+      for (let t5 = 0.05; t5 <= 1.0001; t5 += 0.05) {
+        const mixed = weakest.map((c4, i6) => Math.round(c4 + (text[i6] - c4) * t5));
         out = mixed;
         if (this._contrastOf(mixed, bg) >= 3) break;
       }
@@ -2490,8 +3073,8 @@
     // Derives every value the render needs from `hass`/config, in the same order
     // and with the same side effects the single-method _render() had. The
     // machine-off branch returns before the recent-shot/tab derivations run,
-    // exactly as before. Nothing here builds HTML or touches the DOM — the
-    // section methods below turn this one plain object into the section strings.
+    // exactly as before. Nothing here touches the DOM or writes an HTML string —
+    // the section methods below turn this one plain object into Lit templates.
     _viewModel() {
       const prefix = this._resolvePrefix();
       const bsPrefix = prefix.replace(/^sensor\./, "binary_sensor.");
@@ -2510,13 +3093,13 @@
       const { targetAt: readyByTargetAt, plannedAt: readyByPlannedAt } = this._readReadyBy();
       this._readyByPlannedAt = readyByPlannedAt;
       this._readyByTargetAt = readyByTargetAt;
-      const _powerBtn = this._switchEntity ? `
+      const _powerBtn = this._switchEntity ? b2`
       <button class="power-btn ${switchOff ? "is-off" : "is-on"}" data-action="toggle-switch"
-              title="${switchOff ? T("power_on") : T("power_off")}">
+              title=${switchOff ? T2("power_on") : T2("power_off")}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13 3h-2v10h2V3zm4.83 2.17-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.28 1.09-4.3 2.58-5.42L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9A8.932 8.932 0 0 0 17.83 5.17z"/>
         </svg>
-      </button>` : "";
+      </button>` : A;
       const vm = {
         prefix,
         bsPrefix,
@@ -2563,13 +3146,13 @@
       const ratio = shotObj != null ? shotObj.ratio != null ? shotObj.ratio.toFixed(2) : null : this._num("last_shot_brew_ratio", 2);
       const pressure = shotObj != null ? shotObj.pressure != null ? shotObj.pressure.toFixed(1) : null : this._num("last_shot_avg_pressure", 1);
       const rating = shotObj != null ? shotObj.rating || null : (() => {
-        const v = parseInt(this._val("last_shot_rating", null));
-        return !isNaN(v) && v >= 1 && v <= 5 ? v : null;
+        const v2 = parseInt(this._val("last_shot_rating", null));
+        return !isNaN(v2) && v2 >= 1 && v2 <= 5 ? v2 : null;
       })();
       const shotTemp = (() => {
-        const t = shotObj?.dp?.t;
-        if (!Array.isArray(t) || !t.length) return null;
-        const avg = t.reduce((a, b) => a + b, 0) / t.length;
+        const t5 = shotObj?.dp?.t;
+        if (!Array.isArray(t5) || !t5.length) return null;
+        const avg = t5.reduce((a3, b3) => a3 + b3, 0) / t5.length;
         return (avg > 200 ? avg / 10 : avg).toFixed(1);
       })();
       const temp = this._num("machine_temperature", 1);
@@ -2578,8 +3161,8 @@
       const liveWeight = this._num("machine_live_weight", 1);
       const boilerOff = targetTemp !== null && parseFloat(targetTemp) < 30;
       const waterLevel = (() => {
-        const v = parseFloat(this._val("machine_water_level", null));
-        return isNaN(v) ? null : Math.round(v);
+        const v2 = parseFloat(this._val("machine_water_level", null));
+        return isNaN(v2) ? null : Math.round(v2);
       })();
       const preheatReady = this._hass.states[bsPrefix + "preheat_ready"]?.state === "on";
       const preheatHasEnt = !!this._hass.states[bsPrefix + "preheat_ready"];
@@ -2606,7 +3189,7 @@
       if (this._activeTab === "orders" && !ordersTabAvail) this._activeTab = "shot";
       const showMaint = maintAvailable && !brewing && this._activeTab === "maint";
       const showOrders = ordersTabAvail && this._activeTab === "orders";
-      const pendingOrders = this._orders.filter((o) => o.status === "pending").length;
+      const pendingOrders = this._orders.filter((o8) => o8.status === "pending").length;
       const indexChanged = this._shotIndex !== this._prevShotIndex;
       this._prevShotIndex = this._shotIndex;
       const showNav = !brewing && !showMaint && !showOrders && totalShots > 1;
@@ -2627,7 +3210,7 @@
       ].filter(Boolean);
       const score = shotObj?.score ?? null;
       const scoreCls = score == null ? "" : score >= 80 ? "high" : score >= 55 ? "mid" : "low";
-      const verdictWord = { high: T("verdict_high"), mid: T("verdict_mid"), low: T("verdict_low") }[scoreCls];
+      const verdictWord = { high: T2("verdict_high"), mid: T2("verdict_mid"), low: T2("verdict_low") }[scoreCls];
       return Object.assign(vm, {
         totalShots,
         shotObj,
@@ -2687,26 +3270,27 @@
         verdictWord
       });
     }
-    // ── section builders (each returns the same string the old single-method
-    // _render() produced for that section, from the _viewModel() object) ────────
+    // ── section builders (each returns a Lit TemplateResult built from the
+    // _viewModel() object) ─────────────────────────────────────────────────────
     _machineOffHtml(vm) {
       const { standbyState, _powerBtn } = vm;
       const readyByHtml = this._buildReadyByHtml(vm.readyByTargetAt, vm.readyByPlannedAt);
-      const offOrders = this._orders.length > 0 ? `
+      const offOrders = this._orders.length > 0 ? b2`
         <div style="padding:0 var(--glp-sp-3) var(--glp-sp-3)">
-          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T("tab_orders")}</div>
+          <div class="section-label" style="margin-bottom:var(--glp-sp-2)">${T2("tab_orders")}</div>
           ${this._buildOrdersHtml()}
-        </div>` : "";
-      return `
+        </div>` : A;
+      return b2`
         <style>${STYLES}</style>
         <ha-card><div class="card collapsed">
           <div class="header">
             <div class="title">
-              <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-              ${esc(this._config.title)}
+              <span class="machine-icon-badge">${/* MACHINE_ICON_MINI() emits fixed SVG geometry, no user input */
+      o6(MACHINE_ICON_MINI(this._iconGradId, this._appMachineType()))}</span>
+              ${this._config.title}
             </div>
             <div class="header-right">
-              <span class="off-label">${standbyState?.state === "on" ? T("machine_standby") : T("off_label")}</span>${_powerBtn}
+              <span class="off-label">${standbyState?.state === "on" ? T2("machine_standby") : T2("off_label")}</span>${_powerBtn}
             </div>
           </div>
           ${readyByHtml}
@@ -2715,65 +3299,94 @@
     }
     _tabBarHtml(vm) {
       const { maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders } = vm;
-      return maintAvailable || ordersTabAvail ? `
+      return maintAvailable || ordersTabAvail ? b2`
       <div class="tab-bar">
-        <button class="tab-btn${!showMaint && !showOrders ? " active" : ""}" data-tab="shot">${ICONS.of("coffee")} Shot</button>
-        ${ordersTabAvail ? `<button class="tab-btn${showOrders ? " active" : ""}" data-tab="orders">${ICONS.of("cart")} ${T("tab_orders")}${pendingOrders ? ` <span class="tab-badge">${pendingOrders}</span>` : ""}</button>` : ""}
-        ${maintAvailable ? `<button class="tab-btn${showMaint ? " active" : ""}" data-tab="maint">${ICONS.of("wrench")} ${T("tab_maint")}${this._maintAnyDue() ? ` ${ICONS.of("warning", "due")}` : ""}</button>` : ""}
-      </div>` : "";
+        <button class="tab-btn${!showMaint && !showOrders ? " active" : ""}" data-tab="shot" @pointerdown=${(e6) => {
+        e6.preventDefault();
+        this._selectTab("shot");
+      }}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("coffee"))} Shot</button>
+        ${ordersTabAvail ? b2`<button class="tab-btn${showOrders ? " active" : ""}" data-tab="orders" @pointerdown=${(e6) => {
+        e6.preventDefault();
+        this._selectTab("orders");
+      }}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("cart"))} ${T2("tab_orders")}${pendingOrders ? b2` <span class="tab-badge">${pendingOrders}</span>` : A}</button>` : A}
+        ${maintAvailable ? b2`<button class="tab-btn${showMaint ? " active" : ""}" data-tab="maint" @pointerdown=${(e6) => {
+        e6.preventDefault();
+        this._selectTab("maint");
+      }}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("wrench"))} ${T2("tab_maint")}${this._maintAnyDue() ? b2` ${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("warning", "due"))}` : A}</button>` : A}
+      </div>` : A;
     }
     _navHtml(vm) {
       const { indexChanged, showNav, totalShots, shotObj } = vm;
-      let navHtml = "";
+      let navHtml = A;
       if (showNav) {
-        const dots = this._recentShots.slice(0, 10).map((_, i) => {
-          const active = i === this._shotIndex;
-          return `<span class="nav-dot${active ? ` active${indexChanged ? " changed" : ""}` : ""}"></span>`;
-        }).join("");
-        const prevDis = this._shotIndex >= totalShots - 1 ? " disabled" : "";
-        const nextDis = this._shotIndex <= 0 ? " disabled" : "";
-        let tsLine = "";
+        const dots = this._recentShots.slice(0, 10).map((_2, i6) => {
+          const active = i6 === this._shotIndex;
+          return b2`<span class="nav-dot${active ? ` active${indexChanged ? " changed" : ""}` : ""}"></span>`;
+        });
+        const prevDis = this._shotIndex >= totalShots - 1;
+        const nextDis = this._shotIndex <= 0;
+        let tsLine = A;
         if (this._shotIndex > 0 && shotObj?.ts) {
-          const d = parseTs(shotObj.ts);
-          if (d && !isNaN(d))
-            tsLine = `<div class="nav-ts">${d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })} ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</div>`;
+          const d3 = parseTs(shotObj.ts);
+          if (d3 && !isNaN(d3))
+            tsLine = b2`<div class="nav-ts">${d3.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })} ${d3.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</div>`;
         }
-        navHtml = `
+        navHtml = b2`
         <div class="nav-row">
-          <button class="nav-arrow" data-nav="next"${nextDis}>‹</button>
+          <button class="nav-arrow" data-nav="next" ?disabled=${nextDis} @pointerdown=${(e6) => {
+          if (e6.currentTarget.hasAttribute("disabled")) return;
+          e6.preventDefault();
+          this._navShot("next");
+        }}>‹</button>
           <div class="nav-dots">${dots}</div>
-          <button class="nav-arrow" data-nav="prev"${prevDis}>›</button>
+          <button class="nav-arrow" data-nav="prev" ?disabled=${prevDis} @pointerdown=${(e6) => {
+          if (e6.currentTarget.hasAttribute("disabled")) return;
+          e6.preventDefault();
+          this._navShot("prev");
+        }}>›</button>
         </div>${tsLine}`;
       }
       return navHtml;
     }
     _profilePickerHtml(vm) {
       const { brewing, showMaint, profileAvailable, currentProfile, profileSwitching, profileOptions } = vm;
-      return !brewing && !showMaint && profileAvailable ? `
+      return !brewing && !showMaint && profileAvailable ? b2`
       <div class="profile-picker">
-        <button class="profile-current-btn${this._profileOpen ? " open" : ""}" data-action="toggle-profile">
+        <button class="profile-current-btn${this._profileOpen ? " open" : ""}" data-action="toggle-profile" @pointerdown=${(e6) => {
+        e6.preventDefault();
+        e6.stopPropagation();
+        this._toggleProfilePicker();
+      }}>
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
-            <span class="profile-label-small">${T("profile_label")}</span>
-            <span class="profile-current-name">${esc(currentProfile || "—")}${profileSwitching ? `<span style="color:var(--amber);font-weight:500;font-size:var(--glp-fs-1)"> · ${T("profile_switching")}</span>` : ""}</span>
+            <span class="profile-label-small">${T2("profile_label")}</span>
+            <span class="profile-current-name">${currentProfile || "—"}${profileSwitching ? b2`<span style="color:var(--amber);font-weight:500;font-size:var(--glp-fs-1)"> · ${T2("profile_switching")}</span>` : A}</span>
           </div>
           <span class="profile-chevron${this._profileOpen ? " open" : ""}">▾</span>
         </button>
-        ${this._profileOpen ? `<div class="profile-opts">
+        ${this._profileOpen ? b2`<div class="profile-opts">
           ${profileOptions.map(
-        (p) => `<button class="profile-opt${p === currentProfile ? " active" : ""}" data-profile-opt="${esc(p)}">${esc(p)}</button>`
-      ).join("")}
-        </div>` : ""}
-      </div>` : "";
+        (p3) => b2`<button class="profile-opt${p3 === currentProfile ? " active" : ""}" data-profile-opt=${p3} @pointerdown=${(e6) => {
+          e6.preventDefault();
+          e6.stopPropagation();
+          this._selectProfile(p3);
+        }}>${p3}</button>`
+      )}
+        </div>` : A}
+      </div>` : A;
     }
     // Star rating: drawn ICONS.of('star') replaces the ★ text character —
     // filled vs. empty is the .on class on the same shape, not a second glyph.
     _ratingHtml(vm) {
       const { rating } = vm;
       return (() => {
-        if (!rating || rating < 1 || rating > 5) return "";
+        if (!rating || rating < 1 || rating > 5) return A;
         const cls = rating >= 4 ? "high" : rating >= 3 ? "mid" : "low";
-        const stars = Array.from({ length: 5 }, (_, i) => ICONS.of("star", i < rating ? `on ${cls}` : "")).join("");
-        return `<div class="rating-row">${stars}</div>`;
+        const stars = Array.from({ length: 5 }, (_2, i6) => o5(ICONS.of("star", i6 < rating ? `on ${cls}` : "")));
+        return b2`<div class="rating-row">${stars}</div>`;
       })();
     }
     // Historical shot: ratio is the recipe target a profile is set to hit,
@@ -2781,36 +3394,41 @@
     // came out — recipe/process/result, see metricLineHtml() above.
     _metricTrioHtml(vm) {
       const { ratio, duration, weight } = vm;
-      return metricLineHtml([
+      return b2`${/* metricLineHtml() escapes its own input and emits fixed markup */
+      o5(metricLineHtml([
         ratio ? { role: "recipe", num: `1:${ratio}`, unit: "", label: "Ratio" } : null,
-        duration ? { role: "process", num: duration, unit: "s", label: T("m_duration") } : null,
-        weight ? { role: "result", num: weight, unit: "g", label: T("m_yield") } : null
-      ]);
+        duration ? { role: "process", num: duration, unit: "s", label: T2("m_duration") } : null,
+        weight ? { role: "result", num: weight, unit: "g", label: T2("m_yield") } : null
+      ]))}`;
     }
     _secondaryHtml(vm) {
       const { pressure, shotTemp } = vm;
       return (() => {
         const pills = [
-          pressure !== null ? { label: T("m_pressure"), val: `${pressure} bar` } : null,
-          shotTemp !== null ? { label: T("m_temp"), val: `${shotTemp}°` } : null
+          pressure !== null ? { label: T2("m_pressure"), val: `${pressure} bar` } : null,
+          shotTemp !== null ? { label: T2("m_temp"), val: `${shotTemp}°` } : null
         ].filter(Boolean);
-        if (!pills.length) return "";
-        return `<div class="stats-secondary">
-        ${pills.map((p) => `
+        if (!pills.length) return A;
+        return b2`<div class="stats-secondary">
+        ${pills.map((p3) => b2`
           <div class="stat-pill">
-            <span class="stat-pill-label">${p.label}</span>
-            <span class="stat-pill-value">${esc(p.val)}</span>
-          </div>`).join("")}
+            <span class="stat-pill-label">${p3.label}</span>
+            <span class="stat-pill-value">${p3.val}</span>
+          </div>`)}
       </div>`;
       })();
     }
     _liveSvgHtml(vm) {
       const { brewing, liveDatapoints, liveDur } = vm;
-      return brewing && liveDatapoints ? `<div class="chart-wrap">${buildLiveChart(liveDatapoints)}</div>${chartLegendHtml(liveDatapoints, liveDur)}` : "";
+      return brewing && liveDatapoints ? b2`<div class="chart-wrap">${/* buildLiveChart() emits fixed SVG from numeric data */
+      o6(buildLiveChart(liveDatapoints))}</div>${/* chartLegendHtml() escapes its own input */
+      o5(chartLegendHtml(liveDatapoints, liveDur))}` : A;
     }
     _histSvgHtml(vm) {
       const { histDp, shotObj, animateChart } = vm;
-      return histDp ? `<div class="chart-wrap">${buildShotChart(histDp.p || [], histDp.t || [], histDp.w || [], histDp.f || [], shotObj?.duration, animateChart)}</div>${chartLegendHtml(histDp, shotObj?.duration)}` : "";
+      return histDp ? b2`<div class="chart-wrap">${/* buildShotChart() emits fixed SVG from numeric data */
+      o6(buildShotChart(histDp.p || [], histDp.t || [], histDp.w || [], histDp.f || [], shotObj?.duration, animateChart))}</div>${/* chartLegendHtml() escapes its own input */
+      o5(chartLegendHtml(histDp, shotObj?.duration))}` : A;
     }
     // ── live brewing stats ──────────────────────────────────────────────────
     // Same metricLineHtml() component as the historical shot (metricTrioHtml
@@ -2822,72 +3440,79 @@
     // per-shot stats as leg_temp/leg_pressure/leg_weight used elsewhere.)
     _liveStatsHtml(vm) {
       const { brewing, temp, livePressure, liveWeight } = vm;
-      return brewing ? metricLineHtml([
-        temp !== null ? { role: "recipe", num: temp, unit: "°", label: T("leg_temp") } : null,
-        livePressure !== null ? { role: "process", num: livePressure, unit: "bar", label: T("leg_pressure") } : null,
-        liveWeight !== null ? { role: "result", num: liveWeight, unit: "g", label: T("leg_weight") } : null
-      ]) : "";
+      return brewing ? b2`${/* metricLineHtml() escapes its own input and emits fixed markup */
+      o5(metricLineHtml([
+        temp !== null ? { role: "recipe", num: temp, unit: "°", label: T2("leg_temp") } : null,
+        livePressure !== null ? { role: "process", num: livePressure, unit: "bar", label: T2("leg_pressure") } : null,
+        liveWeight !== null ? { role: "result", num: liveWeight, unit: "g", label: T2("leg_weight") } : null
+      ]))}` : A;
     }
     _liveMachineHtml(vm) {
       const { brewing, showMaint, lmTiles } = vm;
-      return !brewing && !showMaint && lmTiles.length ? `
+      return !brewing && !showMaint && lmTiles.length ? b2`
       <div class="live-machine">
-        <div class="lm-head"><span class="lm-live-dot"></span>${T("lm_live")}</div>
+        <div class="lm-head"><span class="lm-live-dot"></span>${T2("lm_live")}</div>
         <div class="lm-tiles">
-          ${lmTiles.map((t) => `
-            <div class="lm-tile${t.warm ? " warming" : ""}">
-              <div class="lm-val">${esc(String(t.val))}<span class="lm-unit">${t.unit}</span></div>
-              <div class="lm-lbl">${esc(t.lbl)}</div>
-            </div>`).join("")}
+          ${lmTiles.map((t5) => b2`
+            <div class="lm-tile${t5.warm ? " warming" : ""}">
+              <div class="lm-val">${String(t5.val)}<span class="lm-unit">${t5.unit}</span></div>
+              <div class="lm-lbl">${t5.lbl}</div>
+            </div>`)}
         </div>
-      </div>` : "";
+      </div>` : A;
     }
     _preheatHtml(vm) {
       const { brewing, showMaint, preheatHasEnt, preheatReady, preheatPct, preheatMinLeft } = vm;
-      return !brewing && !showMaint && preheatHasEnt ? preheatReady ? `<div class="preheat-ready">${ICONS.of("check")} ${T("preheat_ready")}</div>` : preheatPct !== null ? `
+      return !brewing && !showMaint && preheatHasEnt ? preheatReady ? b2`<div class="preheat-ready">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("check"))} ${T2("preheat_ready")}</div>` : preheatPct !== null ? b2`
           <div class="preheat-warming">
             <div class="preheat-warming-label">
-              <span>${ICONS.of("heat")} ${T("preheat_heating")}</span>
+              <span>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("heat"))} ${T2("preheat_heating")}</span>
               <span>${preheatMinLeft !== null ? `${preheatMinLeft} min` : ""}</span>
             </div>
             <div class="preheat-bar-bg">
               <div class="preheat-bar-fill" style="width:${Math.round(preheatPct * 100)}%"></div>
             </div>
-          </div>` : "" : "";
+          </div>` : A : A;
     }
     _shotSectionHtml(vm) {
       const { brewing, showMaint, profile, drinkType, coffee, grinder, grind, shotObj, score, scoreCls, verdictWord } = vm;
-      const scoreBadge = score != null ? `<div class="verdict ${scoreCls}"><span class="verdict-num">${esc(score)}</span><span class="verdict-sep"> · </span><span class="verdict-word">${esc(verdictWord)}</span></div>` : "";
-      return !brewing && !showMaint ? `
-      ${profile ? `<div class="shot-hero">
+      const scoreBadge = score != null ? b2`<div class="verdict ${scoreCls}"><span class="verdict-num">${score}</span><span class="verdict-sep"> · </span><span class="verdict-word">${verdictWord}</span></div>` : A;
+      return !brewing && !showMaint ? b2`
+      ${profile ? b2`<div class="shot-hero">
             <div class="shot-hero-main">
-              <div class="shot-profile">${esc(profile)}</div>
+              <div class="shot-profile">${profile}</div>
               <div class="shot-meta">
-                ${drinkType ? `<span class="shot-drink">${esc(drinkType)}</span>` : ""}
-                ${coffee ? `<span class="shot-coffee">${ICONS.of("coffee")} ${esc(coffee)}</span>${this._beanExtraHtml(coffee, shotObj?.beanId)}` : ""}
+                ${drinkType ? b2`<span class="shot-drink">${drinkType}</span>` : A}
+                ${coffee ? b2`<span class="shot-coffee">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("coffee"))} ${coffee}</span>${this._beanExtraHtml(coffee, shotObj?.beanId)}` : A}
               </div>
-              ${grinder || grind ? `<div class="shot-grind">${ICONS.of("gear")} ${esc([grinder, grind].filter(Boolean).join(" · "))}</div>` : ""}
+              ${grinder || grind ? b2`<div class="shot-grind">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("gear"))} ${[grinder, grind].filter(Boolean).join(" · ")}</div>` : A}
             </div>
             ${scoreBadge}
-          </div>` : `<div class="no-shot">
-            <div class="no-shot-label">${T("no_shot_label")}</div>
-            <div class="no-shot-hint">${T("no_shot_hint")}</div>
+          </div>` : b2`<div class="no-shot">
+            <div class="no-shot-label">${T2("no_shot_label")}</div>
+            <div class="no-shot-hint">${T2("no_shot_hint")}</div>
           </div>`}
       ${this._ratingHtml(vm)}
       ${this._metricTrioHtml(vm)}
       ${this._secondaryHtml(vm)}
       ${this._histSvgHtml(vm)}
-    ` : "";
+    ` : A;
     }
     _footerHtml(vm) {
       const { today, waterLevel, syncTime, glpUrl } = vm;
-      return `
+      return b2`
       <div class="footer">
-        <span class="footer-item">${ICONS.of("coffee")} ${T("footer_today", today)}</span>
-        ${waterLevel !== null ? `<span class="footer-item">${ICONS.of("droplet")} ${waterLevel}%</span>` : "<span></span>"}
+        <span class="footer-item">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("coffee"))} ${T2("footer_today", today)}</span>
+        ${waterLevel !== null ? b2`<span class="footer-item">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("droplet"))} ${waterLevel}%</span>` : b2`<span></span>`}
         <span class="footer-item">
-          ${syncTime ? `${syncTime}` : ""}
-          ${glpUrl ? `${syncTime ? " · " : ""}<a href="${esc(glpUrl)}" target="_blank" rel="noopener noreferrer">GLP ↗</a>` : ""}
+          ${syncTime ? syncTime : A}
+          ${glpUrl ? b2`${syncTime ? " · " : ""}<a href=${glpUrl} target="_blank" rel="noopener noreferrer">GLP ↗</a>` : A}
         </span>
       </div>`;
     }
@@ -2897,45 +3522,59 @@
       const vm = this._viewModel();
       if (vm.machineOff) {
         this._profileOpen = false;
-        this.shadowRoot.innerHTML = this._machineOffHtml(vm);
+        D(this._machineOffHtml(vm), this.shadowRoot);
         this._applyMachineTheme();
         this._applySemanticColorContrast();
-        this._bindPowerBtn();
-        this._bindReadyByPicker();
         this._startReadyByTicker();
-        if (this._orders.length > 0) this._bindOrderBtns();
         return;
       }
-      this.shadowRoot.innerHTML = `
+      D(b2`
       <style>${STYLES}</style>
       <ha-card><div class="card">
 
         <div class="header">
           <div class="title">
-            <span class="machine-icon-badge">${MACHINE_ICON_MINI(this._iconGradId, this._appMachineType())}</span>
-            ${esc(this._config.title)}
+            <span class="machine-icon-badge">${/* MACHINE_ICON_MINI() emits fixed SVG geometry, no user input */
+      o6(MACHINE_ICON_MINI(this._iconGradId, this._appMachineType()))}</span>
+            ${this._config.title}
           </div>
           <div class="header-right">
-            ${this._machineOnSince ? `<span class="machine-uptime" title="${T("uptime_title")}">${ICONS.of("plug")}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : ""}
+            ${this._machineOnSince ? b2`<span class="machine-uptime" title=${T2("uptime_title")}>${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("plug"))}<span id="glp-uptime-text">${fmtUptime(Date.now() - this._machineOnSince)}</span></span>` : A}
             <div class="status-dot ${vm.dotClass}"></div>
             ${vm._powerBtn}
           </div>
         </div>
 
         ${this._tabBarHtml(vm)}
-        ${vm.isDescaling && !vm.brewing ? `<div class="descaling-banner">${ICONS.of("descale")} ${T("descaling_mode")}</div>` : ""}
-        ${vm.steamOn && !vm.brewing ? `<div class="steam-banner">${ICONS.of("steam")} ${T("steam_mode")}</div>` : ""}
-        ${vm.waterLevel !== null && vm.waterLevel < 20 ? `<div class="water-low">${ICONS.of("droplet")} ${T("water_low", vm.waterLevel)}</div>` : ""}
+        ${vm.isDescaling && !vm.brewing ? b2`<div class="descaling-banner">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("descale"))} ${T2("descaling_mode")}</div>` : A}
+        ${vm.steamOn && !vm.brewing ? b2`<div class="steam-banner">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("steam"))} ${T2("steam_mode")}</div>` : A}
+        ${vm.waterLevel !== null && vm.waterLevel < 20 ? b2`<div class="water-low">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("droplet"))} ${T2("water_low", vm.waterLevel)}</div>` : A}
         ${this._preheatHtml(vm)}
         ${this._profilePickerHtml(vm)}
         ${this._liveMachineHtml(vm)}
         ${this._navHtml(vm)}
 
-        <div class="swipe-target">
+        <div class="swipe-target"
+          @touchstart=${{ handleEvent: /* @__PURE__ */ __name((e6) => {
+        this._swipeSx = e6.touches[0].clientX;
+        this._swipeSy = e6.touches[0].clientY;
+      }, "handleEvent"), passive: true }}
+          @touchend=${{ handleEvent: /* @__PURE__ */ __name((e6) => {
+        if (this._profileOpen) return;
+        const dx = e6.changedTouches[0].clientX - this._swipeSx;
+        const dy = e6.changedTouches[0].clientY - this._swipeSy;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+        this._navShot(dx > 0 ? "next" : "prev");
+      }, "handleEvent"), passive: true }}>
           <div class="swipe-content">
-            ${vm.brewing ? `
-              <div class="brewing-banner">${ICONS.of("coffee")} ${T("brewing")}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : " …"}</div>
-              ${vm.liveProfile ? `<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${esc(vm.liveProfile)}</div></div>` : ""}
+            ${vm.brewing ? b2`
+              <div class="brewing-banner">${/* ICONS.of() emits fixed SVG markup */
+      o5(ICONS.of("coffee"))} ${T2("brewing")}${vm.elapsedSec !== null ? ` · ${vm.elapsedSec}s` : " …"}</div>
+              ${vm.liveProfile ? b2`<div class="shot-hero" style="margin-bottom:var(--glp-sp-3)"><div class="shot-profile">${vm.liveProfile}</div></div>` : A}
               ${this._liveSvgHtml(vm)}
               ${this._liveStatsHtml(vm)}
             ` : vm.showMaint ? this._buildMaintHtml() : vm.showOrders ? this._buildOrdersHtml() : this._shotSectionHtml(vm)}
@@ -2944,16 +3583,9 @@
 
         ${this._footerHtml(vm)}
 
-      </div></ha-card>`;
+      </div></ha-card>`, this.shadowRoot);
       this._applyMachineTheme();
       this._applySemanticColorContrast();
-      this._bindPowerBtn();
-      this._bindProfilePicker();
-      this._bindTabBtns();
-      this._bindMaintRows();
-      this._bindOrderBtns();
-      this._bindNavBtns();
-      this._bindSwipe();
       this._startUptimeTicker();
     }
     getCardSize() {
@@ -2980,3 +3612,38 @@
     "background:#111113;color:#ff3b30;padding:2px 4px;border-radius:0 3px 3px 0"
   );
 })();
+/*! Bundled license information:
+
+@lit/reactive-element/css-tag.js:
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+@lit/reactive-element/reactive-element.js:
+lit-html/lit-html.js:
+lit-element/lit-element.js:
+lit-html/directive.js:
+lit-html/directives/unsafe-html.js:
+lit-html/directives/unsafe-svg.js:
+  (**
+   * @license
+   * Copyright 2017 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+lit-html/is-server.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+
+lit-html/directives/if-defined.js:
+  (**
+   * @license
+   * Copyright 2018 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   *)
+*/
