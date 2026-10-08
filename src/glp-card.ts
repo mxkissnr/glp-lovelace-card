@@ -468,7 +468,7 @@ class GlpCard extends HTMLElement {
   // validation only (HEX_COLOR_RE) — operator-set YAML, not attacker input,
   // but never let an unvalidated string reach a style attribute regardless
   // of source.
-  _resolveMachineTheme() {
+  _resolveMachineTheme(): ThemeStops | null {
     const fromApp = this._appMachineTheme();
     if (fromApp) return fromApp;
     const cfg = this._config || {};

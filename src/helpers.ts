@@ -60,7 +60,7 @@ function downsample(arr: number[] | null | undefined, maxPts: number): number[] 
 
 // Card chart series colors — GLP-series palette, kept in sync with the GLP-TOKENS
 // --glp-series-* fallback values in STYLES and with glp-order-card.js (see CLAUDE.md).
-const CC = { pres: '#0072b2', flow: '#c77000', temp: '#c0392b', wt: '#009e73' };
+const CC: { pres: string; flow: string; temp: string; wt: string } = { pres: '#0072b2', flow: '#c77000', temp: '#c0392b', wt: '#009e73' };
 
 // GLP-SHARED:theme-presets v1 — the 8 approved per-machine colour theme
 // presets (mxkissnr/glp-lovelace-card#87 / mxkissnr/glp-order-card#62),
@@ -87,6 +87,6 @@ const THEME_PRESETS = {
 // (_applyMachineTheme()) so get the same validation discipline as any other
 // value reaching the DOM: reject anything that isn't exactly a 6-digit hex
 // triplet, never pass an unvalidated string through.
-const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+const HEX_COLOR_RE: RegExp = /^#[0-9a-fA-F]{6}$/;
 
 export { roastAgeDays, esc, safeUrl, parseTs, downsample, CC, THEME_PRESETS, HEX_COLOR_RE };
