@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Buttons on the card now react to a tap or click instead of the first touch, so scrolling over the power button no longer switches the machine and every button works from the keyboard.** Closes #225
 
 ## [2.22.0] – 2026-10-08
 ### Changed
