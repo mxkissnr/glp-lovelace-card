@@ -199,17 +199,18 @@ class GlpCard extends HTMLElement {
 
     // Delegated power-button/ready-by handlers on shadowRoot — attached once
     // here (Lit patches the shadow DOM in place, so the host listener
-    // outlives every render).
-    this.shadowRoot!.addEventListener('pointerdown', (e: Event) => {
+    // outlives every render). Bound on 'click' (#225): the old touch-down
+    // binding fired the action the instant a finger touched the button, so a
+    // scroll starting on the power button toggled the machine, and keyboard
+    // activation only ever emits click.
+    this.shadowRoot!.addEventListener('click', (e: Event) => {
       if ((e.target as Element).closest('[data-action="toggle-switch"]')) {
-        e.preventDefault();
         e.stopPropagation();
         if (this._hass && this._switchEntity)
           this._hass.callService!('switch', 'toggle', { entity_id: this._switchEntity });
         return;
       }
       if ((e.target as Element).closest('[data-action="set-ready-by"]')) {
-        e.preventDefault();
         e.stopPropagation();
         const input = this.shadowRoot!.getElementById('glp-readyby-input') as HTMLInputElement | null;
         const target = this._resolveReadyByTarget(input?.value, new Date());
@@ -226,7 +227,6 @@ class GlpCard extends HTMLElement {
         return;
       }
       if ((e.target as Element).closest('[data-action="cancel-ready-by"]')) {
-        e.preventDefault();
         e.stopPropagation();
         if (this._hass) {
           this._hass.callService!('gaggiuino_profiler', 'set_ready_by', {
@@ -445,11 +445,11 @@ class GlpCard extends HTMLElement {
 
   _buildOrdersHtml(): TemplateResult {
     if (!this._orders.length) return html`<div class="unavailable">${T('orders_none')}</div>`;
-    const tap = (fn: () => void) => (e: Event) => { e.preventDefault(); e.stopPropagation(); fn(); };
+    const tap = (fn: () => void) => (e: Event) => { e.stopPropagation(); fn(); };
     const cancel = tap(() => { this._orderEtaFor = null; this._orderDeclineFor = null; this._render(); });
     const declineRow = (id: string) => html`<div class="ord-actions"><span class="ord-q">${T('ord_decline_q')}</span>
-      <button class="ord-btn danger" data-ord-decline-yes=${id} @pointerdown=${tap(() => this._orderAction(id, 'decline', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
-      <button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`;
+      <button class="ord-btn danger" data-ord-decline-yes=${id} @click=${tap(() => this._orderAction(id, 'decline', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
+      <button class="ord-btn ghost" data-ord-cancel="1" @click=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`;
     return html`<div class="ord-list">${this._orders.map(o => {
       const label = o.variant ? `${o.item} · ${o.variant}` : o.item;
       const head = html`<div class="ord-top"><span class="ord-item">${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} ${label}</span>${o.customer ? html`<span class="ord-who">${o.customer}</span>` : nothing}</div>
@@ -457,13 +457,13 @@ class GlpCard extends HTMLElement {
       if (o.status === 'pending') {
         const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
           : this._orderEtaFor === o.id
-            ? html`<div class="ord-actions"><span class="ord-q">${T('ord_done_in')}</span>${[3,5,8,10].map(m => html`<button class="ord-btn eta" data-ord-accept=${o.id} data-eta=${m} @pointerdown=${tap(() => this._orderAction(o.id, 'accept', { eta: m }))}>${m} min</button>`)}<button class="ord-btn ghost" data-ord-cancel="1" @pointerdown=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`
-            : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-eta=${o.id} @pointerdown=${tap(() => { this._orderEtaFor = o.id; this._render(); })}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_accept')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @pointerdown=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
+            ? html`<div class="ord-actions"><span class="ord-q">${T('ord_done_in')}</span>${[3,5,8,10].map(m => html`<button class="ord-btn eta" data-ord-accept=${o.id} data-eta=${m} @click=${tap(() => this._orderAction(o.id, 'accept', { eta: m }))}>${m} min</button>`)}<button class="ord-btn ghost" data-ord-cancel="1" @click=${cancel}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button></div>`
+            : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-eta=${o.id} @click=${tap(() => { this._orderEtaFor = o.id; this._render(); })}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_accept')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @click=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
         return html`<div class="ord-row pending">${head}${actions}</div>`;
       }
       const minsLeft = (o.acceptedAt && o.eta) ? Math.max(0, Math.ceil((o.acceptedAt + o.eta * 60000 - Date.now()) / 60000)) : null;
       const actions = this._orderDeclineFor === o.id ? declineRow(o.id)
-        : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-done=${o.id} @pointerdown=${tap(() => this._orderAction(o.id, 'complete', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_done')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @pointerdown=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
+        : html`<div class="ord-actions"><button class="ord-btn primary" data-ord-done=${o.id} @click=${tap(() => this._orderAction(o.id, 'complete', {}))}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_done')}</button><button class="ord-btn ghost" data-ord-decline=${o.id} @click=${tap(() => { this._orderDeclineFor = o.id; this._render(); })}>${T('ord_decline')}</button></div>`;
       return html`<div class="ord-row accepted">${head}
         <div class="ord-sub">${minsLeft != null ? T('ord_ready_in', minsLeft as unknown as string) : T('ord_preparing')}</div>${actions}</div>`;
     })}</div>`;
@@ -778,10 +778,9 @@ class GlpCard extends HTMLElement {
         shotsSince != null && shotsSince > 0 ? `${shotsSince} Shots` : null,
       ].filter(Boolean).join(' · ');
       const confirming = task && this._maintConfirm === task;
-      return html`<div class="maint-row${confirming ? ' confirming' : ''}" data-maint-task=${ifDefined(task || undefined)} role=${ifDefined(task ? 'button' : undefined)} @pointerdown=${(e: Event) => {
+      return html`<div class="maint-row${confirming ? ' confirming' : ''}" data-maint-task=${ifDefined(task || undefined)} role=${ifDefined(task ? 'button' : undefined)} @click=${(e: Event) => {
         if (!task) return;
         if ((e.target as Element).closest('[data-maint-done],[data-maint-cancel]')) return;
-        e.preventDefault();
         this._maintConfirm = this._maintConfirm === task ? null : task;
         this._render();
       }}>
@@ -794,8 +793,8 @@ class GlpCard extends HTMLElement {
         <div class="maint-bar-bg"><div class="maint-bar ${cls}" style="width:${pctW}%"></div></div>
         ${confirming ? html`<div class="maint-confirm">
           <span class="maint-confirm-q">${T('maint_confirm_q')}</span>
-          <button class="maint-confirm-yes" data-maint-done=${task} @pointerdown=${(e: Event) => { e.preventDefault(); e.stopPropagation(); if (this._hass && task) this._hass.callService!('gaggiuino_profiler', 'maintenance_done', { task }); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
-          <button class="maint-confirm-no" data-maint-cancel="1" @pointerdown=${(e: Event) => { e.preventDefault(); e.stopPropagation(); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button>
+          <button class="maint-confirm-yes" data-maint-done=${task} @click=${(e: Event) => { e.stopPropagation(); if (this._hass && task) this._hass.callService!('gaggiuino_profiler', 'maintenance_done', { task }); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('check'))} ${T('ord_yes')}</button>
+          <button class="maint-confirm-no" data-maint-cancel="1" @click=${(e: Event) => { e.stopPropagation(); this._maintConfirm = null; this._render(); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('close'))}</button>
         </div>` : nothing}
       </div>`;
     };
@@ -1214,9 +1213,9 @@ class GlpCard extends HTMLElement {
     const { maintAvailable, ordersTabAvail, showMaint, showOrders, pendingOrders } = vm;
     return (maintAvailable || ordersTabAvail) ? html`
       <div class="tab-bar">
-        <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot" @pointerdown=${(e: Event) => { e.preventDefault(); this._selectTab('shot'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} Shot</button>
-        ${ordersTabAvail ? html`<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders" @pointerdown=${(e: Event) => { e.preventDefault(); this._selectTab('orders'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('cart'))} ${T('tab_orders')}${pendingOrders ? html` <span class="tab-badge">${pendingOrders}</span>` : nothing}</button>` : nothing}
-        ${maintAvailable ? html`<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint" @pointerdown=${(e: Event) => { e.preventDefault(); this._selectTab('maint'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('wrench'))} ${T('tab_maint')}${this._maintAnyDue() ? html` ${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('warning', 'due'))}` : nothing}</button>` : nothing}
+        <button class="tab-btn${(!showMaint && !showOrders) ? ' active':''}" data-tab="shot" @click=${() => { this._selectTab('shot'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('coffee'))} Shot</button>
+        ${ordersTabAvail ? html`<button class="tab-btn${showOrders ? ' active':''}" data-tab="orders" @click=${() => { this._selectTab('orders'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('cart'))} ${T('tab_orders')}${pendingOrders ? html` <span class="tab-badge">${pendingOrders}</span>` : nothing}</button>` : nothing}
+        ${maintAvailable ? html`<button class="tab-btn${showMaint ? ' active':''}" data-tab="maint" @click=${() => { this._selectTab('maint'); }}>${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('wrench'))} ${T('tab_maint')}${this._maintAnyDue() ? html` ${/* ICONS.of() emits fixed SVG markup */ unsafeHTML(ICONS.of('warning', 'due'))}` : nothing}</button>` : nothing}
       </div>` : nothing;
   }
 
@@ -1238,9 +1237,9 @@ class GlpCard extends HTMLElement {
       }
       navHtml = html`
         <div class="nav-row">
-          <button class="nav-arrow" data-nav="next" ?disabled=${nextDis} @pointerdown=${(e: Event) => { if ((e.currentTarget as HTMLButtonElement).hasAttribute('disabled')) return; e.preventDefault(); this._navShot('next'); }}>‹</button>
+          <button class="nav-arrow" data-nav="next" ?disabled=${nextDis} @click=${(e: Event) => { if ((e.currentTarget as HTMLButtonElement).hasAttribute('disabled')) return; this._navShot('next'); }}>‹</button>
           <div class="nav-dots">${dots}</div>
-          <button class="nav-arrow" data-nav="prev" ?disabled=${prevDis} @pointerdown=${(e: Event) => { if ((e.currentTarget as HTMLButtonElement).hasAttribute('disabled')) return; e.preventDefault(); this._navShot('prev'); }}>›</button>
+          <button class="nav-arrow" data-nav="prev" ?disabled=${prevDis} @click=${(e: Event) => { if ((e.currentTarget as HTMLButtonElement).hasAttribute('disabled')) return; this._navShot('prev'); }}>›</button>
         </div>${tsLine}`;
     }
     return navHtml;
@@ -1250,7 +1249,7 @@ class GlpCard extends HTMLElement {
     const { brewing, showMaint, profileAvailable, currentProfile, profileSwitching, profileOptions } = vm;
     return !brewing && !showMaint && profileAvailable ? html`
       <div class="profile-picker">
-        <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile" @pointerdown=${(e: Event) => { e.preventDefault(); e.stopPropagation(); this._toggleProfilePicker(); }}>
+        <button class="profile-current-btn${this._profileOpen?' open':''}" data-action="toggle-profile" @click=${(e: Event) => { e.stopPropagation(); this._toggleProfilePicker(); }}>
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
             <span class="profile-label-small">${T('profile_label')}</span>
             <span class="profile-current-name">${currentProfile || '—'}${profileSwitching ? html`<span style="color:var(--amber);font-weight:500;font-size:var(--glp-fs-1)"> · ${T('profile_switching')}</span>` : nothing}</span>
@@ -1259,7 +1258,7 @@ class GlpCard extends HTMLElement {
         </button>
         ${this._profileOpen ? html`<div class="profile-opts">
           ${profileOptions!.map(p =>
-            html`<button class="profile-opt${p===currentProfile?' active':''}" data-profile-opt=${p} @pointerdown=${(e: Event) => { e.preventDefault(); e.stopPropagation(); this._selectProfile(p); }}>${p}</button>`
+            html`<button class="profile-opt${p===currentProfile?' active':''}" data-profile-opt=${p} @click=${(e: Event) => { e.stopPropagation(); this._selectProfile(p); }}>${p}</button>`
           )}
         </div>` : nothing}
       </div>` : nothing;
