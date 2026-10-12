@@ -1,7 +1,7 @@
 // Minimal Playwright E2E smoke test. Reuses the static-server harness from
 // scripts/e2e-harness.mts (shared with scripts/screenshot.mts) to render the
 // real glp-card.js in a headless Chromium tab -- not a vm sandbox -- so it
-// can exercise real custom-element lifecycle, shadow DOM and pointerdown
+// can exercise real custom-element lifecycle, shadow DOM and click
 // event wiring that vm.runInContext-based unit tests structurally can't
 // reach. Mirrors glp-order-card's test/e2e/smoke.test.mjs (same harness
 // shape, same npm test auto-discovery via test/**/*.test.mjs).
@@ -11,7 +11,7 @@
 // 'unavailable' collapses to the defined off-card branch instead of
 // throwing, and (3) the ready-by optimistic-UI guard (_pendingReadyByTargetAt,
 // see glp-card.js's _readReadyBy()) survives a concurrently-arriving `hass`
-// push wired through the *real* pointerdown handler and _render() -- the
+// push wired through the *real* click handler and _render() -- the
 // exact bug class (#66/#68/#70) that ready-by.test.js covers in isolation
 // on the pure _readReadyBy()/_resolveReadyByTarget() functions, but can't
 // prove is actually connected end-to-end.
@@ -132,10 +132,9 @@ test('a concurrent hass update does not clobber an in-progress ready-by pick', a
   const { page, pageErrors } = ctx;
   try {
     await page.locator('#glp-readyby-input').fill('07:30');
-    // Real pointerdown-driven click (the card binds its action handlers on
-    // 'pointerdown', not 'click' -- a page.evaluate(() => el.click()) would
-    // silently no-op here since the native .click() method never dispatches
-    // pointerdown).
+    // A real click on the set-ready-by button -- the card binds its action
+    // handlers on 'click' now, so a page.evaluate(() => el.click()) would work
+    // too; Playwright's .click() drives an actual user-style click.
     await page.locator('[data-action="set-ready-by"]').click();
 
     await page.waitForFunction(() => {

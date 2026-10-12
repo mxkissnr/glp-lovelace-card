@@ -1,10 +1,10 @@
 // Ready-by preheat scheduler tests (#61, #214). Most of the suite drives the
 // pure logic directly (_resolveReadyByTarget's today/tomorrow date math,
 // _readReadyBy's hass.states parsing) on an Object.create(GlpCard.prototype)
-// instance. The #214 fallback-timer tests need the real pointerdown handler —
-// which is where _pendingReadyByTimer is armed — so those render the card into
-// a real happy-dom document (like test/render-guard.test.js), dispatch
-// pointerdown and advance the clock with node:test's fake timers.
+// instance. The #214 fallback-timer tests need the real click handler — which
+// is where _pendingReadyByTimer is armed — so those render the card into a
+// real happy-dom document (like test/render-guard.test.js), dispatch click and
+// advance the clock with node:test's fake timers.
 'use strict';
 
 const test = require('node:test');
@@ -367,12 +367,12 @@ function makeLiveCard(hass) {
   return card;
 }
 
-// Fires the constructor's delegated pointerdown handler — the same path a real
-// tap takes (the card binds on 'pointerdown', not 'click').
+// Fires the constructor's delegated click handler — the same path a real tap or
+// keyboard activation takes (the card binds on 'click').
 function press(card, action) {
   const btn = card.shadowRoot.querySelector(`[data-action="${action}"]`);
   assert.ok(btn, `the ${action} button is rendered`);
-  btn.dispatchEvent(new window.Event('pointerdown', { bubbles: true, cancelable: true, composed: true }));
+  btn.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true, composed: true }));
 }
 
 test('a pending Set holds through 15 s of unconfirmed hass updates, then clears on the matching sensor value (#214)', (t) => {

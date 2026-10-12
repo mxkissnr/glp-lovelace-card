@@ -107,7 +107,7 @@ test('a pending maintenance confirmation survives a hass update', () => {
   }));
   card._activeTab = 'maint';
   card._render();
-  card._maintConfirm = 'backflush';   // what the row's pointerdown handler sets
+  card._maintConfirm = 'backflush';   // what the row's click handler sets
   card._render();
   assert.ok(card.shadowRoot.querySelector('.maint-confirm'), 'the confirmation prompt is shown');
 
