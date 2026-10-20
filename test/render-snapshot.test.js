@@ -209,9 +209,14 @@ function renderScenario(scenario) {
 const results = {};
 for (const scenario of SCENARIOS) results[scenario.name] = renderScenario(scenario);
 
-if (UPDATE || !fs.existsSync(SNAPSHOT_PATH)) {
+if (UPDATE) {
   fs.mkdirSync(path.dirname(SNAPSHOT_PATH), { recursive: true });
   fs.writeFileSync(SNAPSHOT_PATH, `${JSON.stringify(results, null, 2)}\n`);
+} else if (!fs.existsSync(SNAPSHOT_PATH)) {
+  throw new Error(
+    `missing snapshot fixture ${path.relative(process.cwd(), SNAPSHOT_PATH)}; a missing `
+    + 'snapshot is not a pass and is not recreated implicitly: regenerate it with '
+    + 'UPDATE_SNAPSHOTS=1 npm test -- test/render-snapshot.test.js');
 }
 
 const expected = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));

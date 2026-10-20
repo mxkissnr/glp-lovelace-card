@@ -17,6 +17,20 @@ if [ ! -d "$INTEGRATION_REPO/custom_components/gaggiuino_profiler" ]; then
   exit 1
 fi
 
+# Build from source first, then require the tree to be clean: a dirty tree means
+# either uncommitted edits or that glp-card.js differs from the fresh build.
+# Copying an uncommitted or stale bundle would ship code that is not in the repo.
+(cd "$CARD_REPO" && npm run build)
+if [ -n "$(git -C "$CARD_REPO" status --porcelain)" ]; then
+  {
+    echo "error: '$CARD_REPO' is not clean after 'npm run build'."
+    echo "       Commit the rebuilt glp-card.js (and any other pending changes) first,"
+    echo "       then run this script again so the integration gets the committed bundle:"
+    git -C "$CARD_REPO" status --porcelain
+  } >&2
+  exit 1
+fi
+
 cp "$CARD_REPO/glp-card.js" "$DEST"
 echo "synced glp-card.js -> $DEST"
 echo "next: bump glp-integration's manifest.json version and release it too"

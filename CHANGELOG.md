@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **The release tooling now builds and checks the card bundle before copying it into the integration, and a missing test snapshot now fails the tests instead of being recreated.** Refs #228
+
 ### Fixed
 - **Buttons on the card now react to a tap or click instead of the first touch, so scrolling over the power button no longer switches the machine and every button works from the keyboard.** Closes #225
 

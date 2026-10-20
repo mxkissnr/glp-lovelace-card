@@ -27,7 +27,10 @@ export function startServer(harnessHtml: string): Promise<Server> {
       return;
     }
     const filePath = path.join(repoRoot, decodeURIComponent(urlPath));
-    if (!filePath.startsWith(repoRoot)) { res.writeHead(403); res.end(); return; }
+    // A string-prefix check accepts siblings such as `/a/repo-evil` for root
+    // `/a/repo`; the relative path is `..`-rooted for anything outside instead.
+    const relativePath = path.relative(repoRoot, filePath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) { res.writeHead(403); res.end(); return; }
     fs.readFile(filePath, (err, data) => {
       if (err) { res.writeHead(404); res.end('not found'); return; }
       const ext = path.extname(filePath);
