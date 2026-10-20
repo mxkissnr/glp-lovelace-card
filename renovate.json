@@ -17,9 +17,11 @@
     {
       "matchManagers": ["npm"],
       "matchDepTypes": ["devDependencies"],
+      "matchPackageNames": ["!lit"],
       "groupName": "dev-dependencies",
-      "description": "The card itself is a single self-contained JS file with no runtime npm dependencies — everything here is build/lint/test tooling, safe to automerge on green CI.",
+      "description": "Everything in devDependencies except lit is build/lint/test tooling, safe to automerge on green CI. lit is excluded here: it is bundled into glp-card.js, so it is a runtime dependency even though it sits in devDependencies (see the lit rule below).",
       "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
       "automerge": true
     },
     {
@@ -27,6 +29,14 @@
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["major"],
       "groupName": "dev-dependencies"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchPackageNames": ["lit"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev-dependencies",
+      "description": "lit is bundled into glp-card.js by npm run build, so it ships to users as the card's runtime templating library even though it is declared in devDependencies. A bad release breaks the rendered card, so this rule deliberately has no automerge and updates are reviewed by hand."
     },
     {
       "matchManagers": ["github-actions"],
